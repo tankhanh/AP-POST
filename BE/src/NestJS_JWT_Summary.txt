@@ -1,0 +1,43 @@
+TÓM TẮT QUY TRÌNH TẠO BACKEND NESTJS + JWT AUTH (TỪ A-Z)
+
+I. KHỞI TẠO DỰ ÁN
+1. nest new backend
+2. cài thư viện: @nestjs/jwt passport passport-jwt bcrypt @nestjs/config cookie-parser ms class-validator class-transformer @nestjs/swagger swagger-ui-express helmet
+
+II. MODULE USERS
+3. nest g module users
+4. nest g service users
+5. nest g controller users
+6. Tạo dto/create-user.dto.ts, update-user.dto.ts
+7. Viết logic UsersService: CRUD, register, isValidPassword, updateUserToken,...
+8. Viết UsersController: CRUD API, phân trang, dùng @UseGuards(JwtAuthGuard)
+
+III. MODULE AUTH
+9. nest g module auth
+10. nest g service auth
+11. nest g controller auth
+12. Tạo dto/login.dto.ts
+13. Tạo strategies/local.strategy.ts, jwt.strategy.ts
+14. Tạo guards/jwt.auth.guard.ts
+15. Viết logic AuthService: validateUser, login, register, logout, refreshToken...
+16. Viết AuthController: POST /auth/login, /auth/register, /auth/refresh, /auth/logout
+17. Gắn LocalStrategy vào login, JwtStrategy vào guard
+
+IV. DECORATOR + CORE
+18. Tạo decorator: @Public(), @Users(), @ResponseMessage()
+19. Tạo TransformInterceptor format response
+20. Tạo user.interface.ts trong /types
+
+V. CONFIG TOÀN CỤC
+21. Cấu hình main.ts:
+   - Global Guard (JwtAuthGuard)
+   - Global Interceptor (TransformInterceptor)
+   - Global Pipe (ValidationPipe)
+   - cookieParser(), helmet()
+   - enableCors()
+   - Swagger (bearer token)
+   - setGlobalPrefix('api')
+
+VI. HOÀN THIỆN
+22. Thêm biến môi trường .env: JWT_SECRET, JWT_REFRESH_TOKEN, JWT_REFRESH_EXPIRE, PORT
+23. Chạy thử login -> nhận access_token -> gọi API cần bảo vệ -> thành công

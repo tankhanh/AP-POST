@@ -1,0 +1,38 @@
+src/
+├── app.module.ts
+├── main.ts                        # bootstrap + swagger + guard global
+│
+├── auth/
+│   ├── auth.module.ts
+│   ├── auth.service.ts             # validateUser(), login(), register()
+│   ├── auth.controller.ts          # POST /auth/login, /auth/register
+│   ├── strategies/
+│   │   ├── local.strategy.ts       # LocalStrategy
+│   │   └── jwt.strategy.ts         # JwtStrategy
+│   ├── guards/
+│   │   ├── jwt.auth.guard.ts       # JwtAuthGuard
+│   │   └── roles.guard.ts          # (nếu có phân quyền)
+│   └── dto/
+│       └── login.dto.ts
+│
+├── users/
+│   ├── users.module.ts
+│   ├── users.service.ts             # CRUD user
+│   ├── users.controller.ts          # API user
+│   └── dto/
+│       ├── create-user.dto.ts
+│       └── update-user.dto.ts
+│
+├── health/
+│   └── decorator/
+│       ├── customize.ts             # @Public, @Users, @ResponseMessage
+│
+├── core/
+│   ├── transform.interceptor.ts     # format lại response
+│   └── (các helper khác nếu có)
+│
+├── types/
+│   └── user.interface.ts             # định nghĩa IUser
+│
+├── public/                           # static files
+└── views/                            # ejs views (nếu có)
