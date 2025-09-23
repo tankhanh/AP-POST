@@ -14,9 +14,14 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { UsersModule } from './modules/users/users.module';
 import { FilesModule } from './modules/files/files.module';
 import { DatabasesModule } from './modules/databases/databases.module';
-import { PromotionsModule } from './modules/promotions/promotions.module';
-import { MembershipsModule } from './modules/memberships/memberships.module';
 import { ProductsModule } from './modules/products/products.module';
+import { MembershipsModule } from './modules/memberships/memberships.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { CartsModule } from './modules/carts/carts.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -69,16 +74,21 @@ import { ProductsModule } from './modules/products/products.module';
       }),
       inject: [ConfigService],
     }),
-
     ///
+
     UsersModule,
     AuthModule,
     FilesModule,
     DatabasesModule,
     HealthModule,
     ProductsModule,
-    PromotionsModule,
     MembershipsModule,
+    PromotionsModule,
+    CategoriesModule,
+    OrdersModule,
+    PaymentsModule,
+    CartsModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

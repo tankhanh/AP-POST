@@ -4,6 +4,9 @@ export class CreateProductDto {
   @IsString()
   name: string;
 
+  @IsString()
+  brand: string;
+
   @IsOptional()
   @IsString()
   description?: string;
@@ -16,6 +19,11 @@ export class CreateProductDto {
   @IsNumber()
   @Min(0)
   stock?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  sold?: number;
 
   @IsOptional()
   @IsString()
