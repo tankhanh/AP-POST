@@ -3,6 +3,7 @@ import { Home } from './home/home';
 import { Login } from './account/login/login';
 import { Register } from './account/register/register';
 import { ForgetPassword } from './account/forgetpassword/forgetpassword';
+import { Verify } from './account/verify/verify';
 
 export const routes: Routes = [
     {
@@ -24,5 +25,9 @@ export const routes: Routes = [
     {
         path:'forget-password',
         component: ForgetPassword
+    },
+    {
+        path:'verify',
+        component: Verify
     }
 ];

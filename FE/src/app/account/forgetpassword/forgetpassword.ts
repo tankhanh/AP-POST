@@ -4,7 +4,7 @@ import { RouterLink, RouterOutlet } from "@angular/router";
 @Component({
     selector: 'forgetpassword',
     imports: [
-        RouterOutlet,
+        // RouterOutlet,
         RouterLink
     ],
     templateUrl: './forgetpassword.html',

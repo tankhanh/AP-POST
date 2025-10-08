@@ -11,6 +11,7 @@ export class AuthService {
   private apiUrl = `${env.baseUrl}/auth/login`;
   private registerUrl = `${env.baseUrl}/auth/register`;
   private isBrowser: boolean;
+  private verifyCode = `${env.baseUrl}/auth/check-code`;
 
   constructor(private http: HttpClient, @Inject(PLATFORM_ID) platformId: Object) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -19,7 +20,7 @@ export class AuthService {
   login(email: string, password: string): Observable<any> {
     return this.http.post(this.apiUrl, { username: email, password });
   }
-  
+
   register(userData: {
     name: string;
     age: number;
@@ -40,5 +41,15 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return this.isBrowser && !!localStorage.getItem('access_token');
+  }
+  // verify(data: any) {
+  //   return this.http.post(this.verifyCode, data);
+  // }
+  verify(data: { _id: string; code: string }): Observable<any> {
+    return this.http.post(this.verifyCode, data);
+  }
+
+  retry(email: string) {
+    return this.http.post(`${this.apiUrl}/auth/retry-active`, { email });
   }
 }

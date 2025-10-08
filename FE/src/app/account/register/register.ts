@@ -47,14 +47,13 @@ export class Register implements OnInit {
       next: (res) => {
         console.log('Register success:', res);
 
-        if (res.data?.access_token) {
-          localStorage.setItem('access_token', res.data.access_token);
+        if (res.data?._id) {
+          localStorage.setItem('pending_user_id', res.data._id);
         }
 
-        this.router.navigate(['/login']);
+        this.router.navigate(['/verify']);
       },
       error: (err) => {
-        console.error('Register failed:', err);
         this.errorMessage = err.error?.message || 'Register failed!';
       },
     });

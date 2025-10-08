@@ -23,20 +23,27 @@ export class Login implements OnInit {
     this.password = '';
     this.errorMessage = '';
   }
+
   login() {
-  this.authService.login(this.email, this.password).subscribe({
-    next: (res) => {
-      console.log('Login success:', res);
+    this.authService.login(this.email, this.password).subscribe({
+      next: (res: any) => {
+        console.log('Login success:', res);
 
-      localStorage.setItem('access_token', res.data.access_token);
+        localStorage.setItem('access_token', res.data.access_token);
+        localStorage.setItem('user_email', res.data.user.email);
 
-      this.router.navigate(['/']);
-    },
-    error: (err) => {
-      console.error('Login failed:', err);
-      this.errorMessage = err.error?.message || 'Login failed!';
-    },
-  });
-}
-
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        if (err.error?.code === 'ACCOUNT_INACTIVE') {
+          if (err.error?.userId) {
+            localStorage.setItem('pending_user_id', err.error.userId);
+          }
+          this.router.navigate(['/verify']);
+        } else {
+          this.errorMessage = err.error?.message || 'Login failed!';
+        }
+      },
+    });
+  }
 }

@@ -6,7 +6,7 @@ import { AuthService } from './services/auth.service';
 @Component({
   selector: 'app-root',
   imports: [
-    RouterOutlet, RouterLink, AsyncPipe
+    RouterOutlet, RouterLink
   ],
   templateUrl: './app.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
@@ -24,7 +24,8 @@ export class App implements OnInit{
         this.isAuthPage = 
           url.startsWith('/login') ||
           url.startsWith('/register') ||
-          url.startsWith('/forget-password');
+          url.startsWith('/forget-password') ||
+          url.startsWith('/verify');
       }
     });
   }
