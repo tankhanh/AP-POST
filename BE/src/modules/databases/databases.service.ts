@@ -79,21 +79,28 @@ export class DatabasesService implements OnModuleInit {
     await this.userModel.insertMany([
       {
         name: 'Admin User',
-        email: 'admin@post.vn',
-        password: hash,
+        email: 'admin@gmail.vn',
+        password: '123',
         role: 'ADMIN',
         isActive: true,
       },
       {
+        name: 'User',
+        email: 'user@gmail.vn',
+        password: '123',
+        role: 'USER',
+        isActive: true,
+      },
+      {
         name: 'Post Staff',
-        email: 'staff@post.vn',
+        email: 'staff@gmail.vn',
         password: hash,
         role: 'STAFF',
         isActive: true,
       },
       {
         name: 'Courier Guy',
-        email: 'courier@post.vn',
+        email: 'courier@gmail.vn',
         password: hash,
         role: 'COURIER',
         isActive: true,
