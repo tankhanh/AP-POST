@@ -3,10 +3,10 @@ import { RouterLink, RouterOutlet } from "@angular/router";
 
 @Component({
     selector: 'home',
-    imports: [
-        RouterOutlet,
-        RouterLink
-    ],
+    // imports: [
+    //     RouterOutlet,
+    //     RouterLink
+    // ],
     templateUrl: './home.html',
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

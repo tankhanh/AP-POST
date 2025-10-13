@@ -52,4 +52,9 @@ export class AuthService {
   retry(email: string) {
     return this.http.post(`${this.apiUrl}/auth/retry-active`, { email });
   }
+
+  requestPasswordReset(email: string) {
+  return this.http.post(`${this.apiUrl}/auth/forgot-password`, { email });
+}
+
 }
