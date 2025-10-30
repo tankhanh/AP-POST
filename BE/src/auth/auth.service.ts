@@ -107,7 +107,19 @@ export class AuthService {
     return await this.usersService.changePassword(data);
   };
 
-  ///
+  // Bổ sung đổi mật khẩu (FE)
+  async resetPassword(data: { _id: string; newPassword: string }) {
+    const user = await this.usersService.findById(data._id);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const hashPassword = await this.usersService.getHashPassword(
+      data.newPassword,
+    );
+    await user.updateOne({ password: hashPassword });
+    return { message: 'Password changed successfully' };
+  }
 
   createRefreshToken = (payload: any) => {
     const refresh_token = this.jwtService.sign(payload, {

@@ -1,41 +1,82 @@
-import { CommonModule } from "@angular/common";
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from "@angular/core";
-import { FormsModule } from "@angular/forms";
-import { RouterLink, RouterOutlet } from "@angular/router";
-import { AuthService } from "../../services/auth.service";
+import { CommonModule } from '@angular/common';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
-    selector: 'forgetpassword',
-    imports: [
-        CommonModule, FormsModule, RouterLink
-    ],
-    templateUrl: './forgetpassword.html',
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+  selector: 'forgetpassword',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  templateUrl: './forgetpassword.html',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class ForgetPassword implements OnInit {
-email: string = '';
+  email: string = '';
+
+  // 👉 Thêm hai biến thông báo ở đây
   successMessage: string = '';
   errorMessage: string = '';
-  constructor(private authService: AuthService) {}
-    ngOnInit() {
-    }
-sendResetLink() {
+
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private toastr: ToastrService
+  ) {}
+
+  ngOnInit() {}
+
+  sendResetLink() {
+    // Xóa thông báo cũ mỗi lần gửi
     this.successMessage = '';
     this.errorMessage = '';
 
     if (!this.email) {
-      this.errorMessage = 'Please enter your email.';
+      this.toastr.warning('Vui lòng nhập địa chỉ email của bạn.', 'Thiếu thông tin');
+      this.errorMessage = 'Vui lòng nhập địa chỉ email của bạn.';
       return;
     }
 
+    // this.authService.requestPasswordReset(this.email).subscribe({
+    //   next: (res: any) => {
+    //     // ✅ Khi gửi thành công
+    //     this.successMessage = 'Mã đặt lại mật khẩu đã được gửi, vui lòng kiểm tra email của bạn.';
+    //     this.toastr.success(this.successMessage, 'Thành công');
+    //     console.log('Reset request success:', res);
+
+    //     localStorage.setItem('reset_user_id', res.userId);
+
+    //     // Chuyển trang sau 1 giây
+    //     setTimeout(() => {
+    //       this.router.navigate(['/verify-reset'], {
+    //         queryParams: { user: res.userId }
+    //       });
+    //     }, 1000);
+    //   },
+    //   error: (err) => {
+    //     // ❌ Khi gửi thất bại
+    //     console.error('Reset request failed:', err);
+    //     const message = err.error?.message || 'Đã xảy ra lỗi, vui lòng thử lại sau.';
+    //     this.errorMessage = message;
+    //     this.toastr.error(message, 'Lỗi');
+    //   },
+    // });
     this.authService.requestPasswordReset(this.email).subscribe({
       next: (res: any) => {
-        this.successMessage = 'Reset link has been sent to your email.';
-        console.log('Reset request success:', res);
+        console.log('Response reset password:', res);
+        const data = res.data || res;
+
+        // lưu userId vào localStorage
+        if (data._id) {
+          localStorage.setItem('reset_user_id', data._id);
+        }
+
+        // chuyển sang trang verify-reset
+        this.router.navigate(['/verify-reset']);
       },
       error: (err) => {
-        console.error('Reset request failed:', err);
-        this.errorMessage = err.error?.message || 'Something went wrong.';
+        console.error(err);
       },
     });
   }

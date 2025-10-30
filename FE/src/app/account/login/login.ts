@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { Router, RouterLink } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-login',
@@ -16,7 +17,11 @@ export class Login implements OnInit {
   password: string;
   errorMessage: string;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private toastr: ToastrService
+  ) {}
 
   ngOnInit(): void {
     this.email = '';
@@ -29,20 +34,38 @@ export class Login implements OnInit {
       next: (res: any) => {
         console.log('Login success:', res);
 
-        localStorage.setItem('access_token', res.data.access_token);
-        localStorage.setItem('user_email', res.data.user.email);
+        const data = res.data || res; // hỗ trợ cả hai trường hợp
 
+        if (!data.user) {
+          this.toastr.error('Dữ liệu người dùng không hợp lệ.');
+          return;
+        }
+
+        // Nếu tài khoản chưa được xác minh
+        if (data.user.status === false) {
+          localStorage.setItem('pending_user_id', data.user._id);
+          this.toastr.warning(
+            'Tài khoản của bạn chưa được xác minh. Đang chuyển đến trang xác minh...',
+            'Chú ý',
+            { timeOut: 3000 }
+          );
+          this.router.navigate(['/verify']);
+          return;
+        }
+
+        // Nếu tài khoản đã xác minh
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('userId', data.user._id);
+
+        this.authService.setUser(data.user);
         this.router.navigate(['/']);
+        this.toastr.success('Đăng nhập thành công!');
       },
       error: (err) => {
-        if (err.error?.code === 'ACCOUNT_INACTIVE') {
-          if (err.error?.userId) {
-            localStorage.setItem('pending_user_id', err.error.userId);
-          }
-          this.router.navigate(['/verify']);
-        } else {
-          this.errorMessage = err.error?.message || 'Login failed!';
-        }
+        this.errorMessage = err.error?.message || 'Đăng nhập thất bại!';
+        this.toastr.error(this.errorMessage);
       },
     });
   }

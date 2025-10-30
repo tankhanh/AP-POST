@@ -1,35 +1,78 @@
-<!--  Banner Section -->
-    <section class="banner-section position-relative d-flex align-items-end min-vh-100">
-      <video class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover" autoplay muted loop playsinline>
-        <source src="../assets/images/backgrounds/banner-video.mp4" type="video/mp4" />
-      </video>
-      <div class="container">
-        <div class="d-flex flex-column gap-4 pb-8 position-relative z-1">
-          <div class="row align-items-center">
-            <div class="col-xl-4">
-              <div class="d-flex align-items-center gap-4" data-aos="fade-up" data-aos-delay="100"
-                data-aos-duration="1000">
-                <img src="../assets/images/svgs/primary-leaf.svg" alt="" class="img-fluid animate-spin">
-                <p class="mb-0 text-white fs-5 text-opacity-70">We create <span
-                    class="text-primary">high-performing</span> digital designs that elevate brands and enhance
-                  conversions.</p>
-              </div>
-            </div>
-          </div>
-          <div class="d-flex align-items-end gap-3" data-aos="fade-up" data-aos-delay="200" data-aos-duration="1000">
-            <h1 class="mb-0 fs-16 text-white lh-1">Studiova</h1>
-            <a href="javascript:void(0)" class="p-1 ps-7 bg-primary rounded-pill">
-              <span class="bg-white round-52 rounded-circle d-flex align-items-center justify-content-center">
-                <iconify-icon icon="lucide:arrow-up-right" class="fs-8 text-dark"></iconify-icon>
-              </span>
-            </a>
+<section class="banner-section position-relative d-flex align-items-end min-vh-100">
+  <!-- Carousel background -->
+  <div
+    id="bgCarousel"
+    class="carousel slide position-absolute top-0 start-0 w-100 h-100"
+    data-bs-ride="carousel"
+    data-bs-interval="2000"
+  >
+    <div class="carousel-inner h-100">
+      <div class="carousel-item active h-100">
+        <img
+          src="../assets/images/backgrounds/blog-detail-img.jpg"
+          class="d-block w-100 h-100 object-fit-cover"
+          alt="Background 1"
+        />
+      </div>
+      <div class="carousel-item h-100">
+        <img
+          src="../assets/images/backgrounds/contact-banner.jpg"
+          class="d-block w-100 h-100 object-fit-cover"
+          alt="Background 2"
+        />
+      </div>
+      <div class="carousel-item h-100">
+        <img
+          src="../assets/images/backgrounds/blog-banner.jpg"
+          class="d-block w-100 h-100 object-fit-cover"
+          alt="Background 3"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="d-flex flex-column gap-4 pb-8 position-relative z-1">
+      <div class="row align-items-center">
+        <div class="col-xl-4">
+          <div
+            class="d-flex align-items-center gap-4"
+            data-aos="fade-up"
+            data-aos-delay="100"
+            data-aos-duration="1000"
+          >
+            <img
+              src="../assets/images/svgs/primary-leaf.svg"
+              alt=""
+              class="img-fluid animate-spin"
+            />
+            <p class="mb-0 text-white fs-5 text-opacity-70">
+              Apps that make <span class="text-primary">shipping easier.</span>
+            </p>
           </div>
         </div>
       </div>
-    </section>
+      <div
+        class="d-flex align-items-end gap-3"
+        data-aos="fade-up"
+        data-aos-delay="200"
+        data-aos-duration="1000"
+      >
+        <h1 class="mb-0 fs-16 text-white lh-1">App Post</h1>
+        <a href="javascript:void(0)" class="p-1 ps-7 bg-primary rounded-pill">
+          <span
+            class="bg-white round-52 rounded-circle d-flex align-items-center justify-content-center"
+          >
+            <iconify-icon icon="lucide:arrow-up-right" class="fs-8 text-dark"></iconify-icon>
+          </span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!--  Stats & Facts Section -->
-    <section class="stats-facts py-5 py-lg-11 py-xl-12 position-relative overflow-hidden">
+<!--  Stats & Facts Section -->
+<!-- <section class="stats-facts py-5 py-lg-11 py-xl-12 position-relative overflow-hidden">
       <div class="container">
         <div class="row gap-7 gap-xl-0">
           <div class="col-xl-4 col-xxl-4">
@@ -88,10 +131,10 @@
       <div class="position-absolute bottom-0 start-0" data-aos="zoom-in" data-aos-delay="100" data-aos-duration="1000">
         <img src="../assets/images/backgrounds/stats-facts-bg.svg" alt="" class="img-fluid">
       </div>
-    </section>
+    </section> -->
 
-    <!--  Featured Projects Section -->
-    <section class="featured-projects py-5 py-lg-11 py-xl-12 bg-light-gray">
+<!--  Featured Projects Section -->
+<!-- <section class="featured-projects py-5 py-lg-11 py-xl-12 bg-light-gray">
       <div class="d-flex flex-column gap-5 gap-xl-11">
         <div class="container">
           <div class="row gap-7 gap-xl-0">
@@ -243,10 +286,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
-    <!--  Services Section -->
-    <section class="services py-5 py-lg-11 py-xl-12 bg-dark" id="services">
+<!--  Services Section -->
+<!-- <section class="services py-5 py-lg-11 py-xl-12 bg-dark" id="services">
       <div class="container">
         <div class="d-flex flex-column gap-5 gap-xl-10">
           <div class="row gap-7 gap-xl-0">
@@ -383,10 +426,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
-    <!--  Why choose us Section -->
-    <section class="why-choose-us py-5 py-lg-11 py-xl-12">
+<!--  Why choose us Section -->
+<!-- <section class="why-choose-us py-5 py-lg-11 py-xl-12">
       <div class="container">
         <div class="row justify-content-between gap-5 gap-xl-0">
           <div class="col-xl-3 col-xxl-3">
@@ -515,10 +558,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
-    <!--  Testimonial Section -->
-    <section class="testimonial py-5 py-lg-11 py-xl-12 bg-light-gray">
+<!--  Testimonial Section -->
+<!-- <section class="testimonial py-5 py-lg-11 py-xl-12 bg-light-gray">
       <div class="container">
         <div class="d-flex flex-column gap-5 gap-xl-11">
           <div class="row gap-7 gap-xl-0">
@@ -622,10 +665,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
-    <!--  Meet our team Section -->
-    <section class="meet-our-team py-5 py-lg-11 py-xl-12">
+<!--  Meet our team Section -->
+<!-- <section class="meet-our-team py-5 py-lg-11 py-xl-12">
       <div class="container">
         <div class="d-flex flex-column gap-5 gap-xl-11">
           <div class="row gap-7 gap-xl-0">
@@ -755,10 +798,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
-    <!--  Pricing Section -->
-    <section class="pricing-section py-5 py-lg-11 py-xl-12 bg-light-gray">
+<!--  Pricing Section -->
+<!-- <section class="pricing-section py-5 py-lg-11 py-xl-12 bg-light-gray">
       <div class="container">
         <div class="d-flex flex-column gap-5 gap-xl-10">
           <div class="d-flex flex-column gap-5 gap-xl-11">
@@ -1006,10 +1049,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
-    <!--  FAQ Section -->
-    <section class="faq py-5 py-lg-11 py-xl-12">
+<!--  FAQ Section -->
+<!-- <section class="faq py-5 py-lg-11 py-xl-12">
       <div class="container">
         <div class="d-flex flex-column gap-5 gap-xl-11">
           <div class="row gap-7 gap-xl-0">
@@ -1114,10 +1157,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
-    <!--  Recent news Section -->
-    <section class="Recent-news bg-light-gray py-5 py-lg-11 py-xl-12">
+<!--  Recent news Section -->
+<!-- <section class="Recent-news bg-light-gray py-5 py-lg-11 py-xl-12">
       <div class="container">
         <div class="d-flex flex-column gap-5 gap-xl-11">
           <div class="row gap-7 gap-xl-0">
@@ -1184,10 +1227,10 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
-    <!--  Get in touch Section -->
-    <section class="get-in-touch py-5 py-lg-11 py-xl-12">
+<!--  Get in touch Section -->
+<!-- <section class="get-in-touch py-5 py-lg-11 py-xl-12">
       <div class="container">
         <div class="d-flex flex-column gap-5 gap-xl-10">
           <div class="row gap-7 gap-xl-0">
@@ -1241,4 +1284,4 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->

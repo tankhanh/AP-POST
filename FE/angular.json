@@ -26,7 +26,8 @@
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "node_modules/aos/dist/aos.css",
               "node_modules/owl.carousel/dist/assets/owl.carousel.min.css",
-              "public/assets/css/styles.css"
+              "public/assets/css/styles.css",
+              "node_modules/ngx-toastr/toastr.css"
             ],
             "scripts": [
               "node_modules/jquery/dist/jquery.min.js",

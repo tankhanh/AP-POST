@@ -1,6 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { env } from '../environments/environment';
 import { isPlatformBrowser } from '@angular/common';
 
@@ -10,11 +10,33 @@ import { isPlatformBrowser } from '@angular/common';
 export class AuthService {
   private apiUrl = `${env.baseUrl}/auth/login`;
   private registerUrl = `${env.baseUrl}/auth/register`;
-  private isBrowser: boolean;
   private verifyCode = `${env.baseUrl}/auth/check-code`;
+  private apiAccount = `${env.baseUrl}/auth`;
 
-  constructor(private http: HttpClient, @Inject(PLATFORM_ID) platformId: Object) {
-    this.isBrowser = isPlatformBrowser(platformId);
+  private userSubject: BehaviorSubject<any>;
+  public currentUser$: Observable<any>;
+  private isBrowser: boolean;
+
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+    let initialUser = null;
+
+    if (this.isBrowser) {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        initialUser = JSON.parse(userData);
+      }
+    }
+
+    this.userSubject = new BehaviorSubject<any>(initialUser);
+    this.currentUser$ = this.userSubject.asObservable();
+  }
+
+  setUser(user: any) {
+    if (this.isBrowser) {
+      localStorage.setItem('user', JSON.stringify(user));
+      this.userSubject.next(user);
+    }
   }
 
   login(email: string, password: string): Observable<any> {
@@ -23,9 +45,6 @@ export class AuthService {
 
   register(userData: {
     name: string;
-    age: number;
-    gender: string;
-    address: string;
     phone: string;
     email: string;
     password: string;
@@ -33,28 +52,44 @@ export class AuthService {
     return this.http.post(this.registerUrl, userData);
   }
 
-  logout(): void {
+  logout() {
     if (this.isBrowser) {
+      localStorage.removeItem('user');
       localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('userId');
+
+      this.userSubject.next(null);
     }
   }
 
   isLoggedIn(): boolean {
-    return this.isBrowser && !!localStorage.getItem('access_token');
+    if (this.isBrowser) {
+      return !!localStorage.getItem('access_token');
+    }
+    return false;
   }
-  // verify(data: any) {
-  //   return this.http.post(this.verifyCode, data);
-  // }
+
   verify(data: { _id: string; code: string }): Observable<any> {
     return this.http.post(this.verifyCode, data);
   }
 
-  retry(email: string) {
-    return this.http.post(`${this.apiUrl}/auth/retry-active`, { email });
+  requestPasswordReset(email: string) {
+    return this.http.post(`${this.apiAccount}/retry-password`, { email });
   }
 
-  requestPasswordReset(email: string) {
-  return this.http.post(`${this.apiUrl}/auth/forgot-password`, { email });
-}
+  verifyReset(data: { _id: string; code: string }) {
+    return this.http.post(`${this.apiAccount}/verify-reset`, data);
+  }
 
+  resetPassword(data: { _id: string; newPassword: string }) {
+    return this.http.post(`${this.apiAccount}/reset-password`, data);
+  }
+
+  updateAccount(id: string, data: any) {
+    const token = localStorage.getItem('access_token');
+    return this.http.put<any>(`${this.apiAccount}/update/${id}`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
 }

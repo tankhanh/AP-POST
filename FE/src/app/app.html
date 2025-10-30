@@ -4,11 +4,13 @@
   <div class="container">
     <div class="header-wrapper d-flex align-items-center justify-content-between">
       <div class="logo">
-        <a href="index.html" class="logo-white">
-          <img src="../assets/images/logos/logo-white.svg" alt="logo" class="img-fluid" />
+        <a [routerLink]="['/']" class="logo-white">
+          <!-- <img src="../assets/images/logos/logo-white.svg" alt="logo" class="img-fluid" /> -->
+          <h2 class="img-fluid" style="color: #c1ff72">App Post</h2>
         </a>
-        <a href="index.html" class="logo-dark">
-          <img src="../assets/images/logos/logo-dark.svg" alt="logo" class="img-fluid" />
+        <a [routerLink]="['/']" class="logo-dark">
+          <!-- <img src="../assets/images/logos/logo-dark.svg" alt="logo" class="img-fluid" /> -->
+          <h2 class="img-fluid" style="color: black">App Post</h2>
         </a>
       </div>
       <div class="d-flex align-items-center gap-4">
@@ -27,120 +29,70 @@
           </button>
           <ul class="dropdown-menu dropdown-menu-end p-4">
             <div class="d-flex flex-column gap-6">
+              @if (!isAuthPage) {
               <div class="hstack justify-content-between border-bottom pb-6">
-                <p class="mb-0 fs-5 text-dark">Menu</p>
+                <div>
+                  <p class="mb-1 fw-semibold text-dark">
+                    Xin chào {{ user?.name ?? user?.email ?? 'Guest' }}
+                  </p>
+                  <p class="mb-0 text-secondary">
+                    Số dư: {{ balance | currency : 'VND' : 'symbol' : '1.0-0' }}
+                  </p>
+                </div>
                 <button type="button" class="btn-close opacity-75" aria-label="Close"></button>
               </div>
+              }
               <div class="d-flex flex-column gap-3">
-                <ul class="header-menu list-unstyled mb-0 d-flex flex-column gap-2">
-                  <li class="header-item">
-                    <a
-                      href="index.html"
-                      aria-current="true"
-                      class="header-link active hstack gap-2 fs-7 fw-bold text-dark"
-                      ><img
-                        src="../assets/images/svgs/secondary-leaf.svg"
-                        alt=""
-                        width="20"
-                        height="20"
-                        class="img-fluid animate-spin"
-                      />Home</a
-                    >
-                  </li>
-                  <li class="header-item">
-                    <a href="about-us.html" class="header-link hstack gap-2 fs-7 fw-bold text-dark"
-                      ><img
-                        src="../assets/images/svgs/secondary-leaf.svg"
-                        alt=""
-                        width="20"
-                        height="20"
-                        class="img-fluid animate-spin"
-                      />About</a
-                    >
-                  </li>
-                  <li class="header-item">
-                    <a href="projects.html" class="header-link hstack gap-2 fs-7 fw-bold text-dark"
-                      ><img
-                        src="../assets/images/svgs/secondary-leaf.svg"
-                        alt=""
-                        width="20"
-                        height="20"
-                        class="img-fluid animate-spin"
-                      />Projects</a
-                    >
-                  </li>
-                  <li class="header-item">
-                    <a href="blog.html" class="header-link hstack gap-2 fs-7 fw-bold text-dark"
-                      ><img
-                        src="../assets/images/svgs/secondary-leaf.svg"
-                        alt=""
-                        width="20"
-                        height="20"
-                        class="img-fluid animate-spin"
-                      />Blog</a
-                    >
-                  </li>
-                  <li class="header-item">
-                    <a href="index.html" class="header-link hstack gap-2 fs-7 fw-bold text-dark"
-                      ><img
-                        src="../assets/images/svgs/secondary-leaf.svg"
-                        alt=""
-                        width="20"
-                        height="20"
-                        class="img-fluid animate-spin"
-                      />Services</a
-                    >
-                  </li>
-                  <li class="header-item">
-                    <a href="contact.html" class="header-link hstack gap-2 fs-7 fw-bold text-dark"
-                      ><img
-                        src="../assets/images/svgs/secondary-leaf.svg"
-                        alt=""
-                        width="20"
-                        height="20"
-                        class="img-fluid animate-spin"
-                      />Contact</a
-                    >
-                  </li>
-                  <li class="header-item">
-                    <a href="index.html" class="header-link hstack gap-2 fs-7 fw-bold text-dark"
-                      ><img
-                        src="../assets/images/svgs/secondary-leaf.svg"
-                        alt=""
-                        width="20"
-                        height="20"
-                        class="img-fluid animate-spin"
-                      />Docs</a
-                    >
-                  </li>
-                </ul>
                 <div class="hstack gap-3">
                   @if (!authService.isLoggedIn()) {
                   <a
                     [routerLink]="['/login']"
-                    class="btn btn-outline-light fs-6 bg-white px-3 py-2 text-dark w-50 hstack justify-content-center"
+                    class="btn btn-outline-light fs-4 bg-white px-3 py-2 text-dark w-50 hstack justify-content-center"
                   >
-                    Sign In
+                    Đăng nhập
                   </a>
                   <a
                     [routerLink]="['/register']"
-                    class="btn btn-dark text-white fs-6 bg-dark px-3 py-2 w-50 hstack justify-content-center"
+                    class="btn btn-dark text-white fs-4 bg-dark px-3 py-2 w-50 hstack justify-content-center"
                   >
-                    Sign Up
+                    Đăng ký
                   </a>
                   } @else {
-                  <a
-                    [routerLink]="['/profile']"
-                    class="btn btn-outline-light fs-6 bg-white px-3 py-2 text-dark w-50 hstack justify-content-center"
-                  >
-                    Profile
-                  </a>
-                  <button
-                    (click)="logout()"
-                    class="btn btn-danger fs-6 px-3 py-2 w-50 hstack justify-content-center"
-                  >
-                    Logout
-                  </button>
+                  <div class="d-flex flex-column gap-3 w-100 align-items-stretch text-center">
+                    <!-- Hàng trên: hai nút ngang full width -->
+                    <div class="d-flex gap-3 w-100">
+                      <a
+                        [routerLink]="['/transaction']"
+                        class="btn btn-outline-light fs-4 bg-white px-0 py-2 text-dark flex-fill text-nowrap rounded-pill d-flex align-items-center justify-content-center"
+                        style="height: 42px; line-height: 1"
+                      >
+                        Tạo giao dịch
+                      </a>
+
+                      <a
+                        [routerLink]="['/profile']"
+                        class="btn btn-outline-light fs-4 bg-white px-0 py-2 text-dark flex-fill text-nowrap rounded-pill d-flex align-items-center justify-content-center"
+                        style="height: 42px; line-height: 1"
+                      >
+                        Tài khoản
+                      </a>
+                    </div>
+
+                    <!-- Hàng dưới -->
+                    <button
+                      (click)="logout()"
+                      class="btn fs-4 px-0 py-2 w-100 rounded-pill d-flex align-items-center justify-content-center"
+                      style="
+                        background-color: #c1ff72;
+                        color: black;
+                        font-weight: 600;
+                        height: 44px;
+                        line-height: 1;
+                      "
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
                   }
                 </div>
               </div>
@@ -148,7 +100,7 @@
                 <a class="text-dark" href="tel:+1-212-456-7890">+1-212-456-7890</a>
                 <br />
                 <a class="fs-8 text-dark fw-bold" href="mailto:info@wrappixel.com"
-                  >info@wrappixel.com</a
+                  >info@gmail.com</a
                 >
               </div>
             </div>
@@ -179,7 +131,7 @@
               class="link-hover hstack gap-3 text-white fs-5"
             >
               <iconify-icon icon="lucide:arrow-up-right" class="fs-7 text-primary"></iconify-icon>
-              info@wrappixel.com
+              info@gmail.com
             </a>
             <a
               href="https://maps.app.goo.gl/hpDp81fqzGt5y4bC8"
@@ -187,7 +139,7 @@
               class="link-hover hstack gap-3 text-white fs-5"
             >
               <iconify-icon icon="lucide:map-pin" class="fs-7 text-primary"></iconify-icon>
-              info@wrappixel.com
+              info@gmail.com
             </a>
           </div>
         </div>
@@ -213,7 +165,7 @@
         </ul>
       </div>
       <div class="col-md-4 col-xl-3 mb-8 mb-xl-0">
-        <p class="mb-0 text-white text-opacity-70 text-md-end">© Studiova copyright 2025</p>
+        <p class="mb-0 text-white text-opacity-70 text-md-end">© App Post copyright 2025</p>
       </div>
     </div>
   </div>

@@ -5,16 +5,16 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-  selector: 'verify',
+  selector: 'verify-reset',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './verify.html',
+  templateUrl: './verify-reset.html',
 })
-export class Verify {
+export class VerifyReset {
   code = '';
+  userId = '';
   errorMessage = '';
   successMessage = '';
-  userId = '';
 
   constructor(
     private authService: AuthService,
@@ -25,34 +25,26 @@ export class Verify {
     if (isPlatformBrowser(this.platformId)) {
       this.route.queryParams.subscribe((params) => {
         const fromQuery = params['user'];
-        const fromStorage = localStorage.getItem('pending_user_id');
+        const fromStorage = localStorage.getItem('reset_user_id');
         this.userId = fromQuery || fromStorage || '';
-        console.log('✅ Loaded userId:', this.userId);
       });
-    } else {
-      this.userId = '';
     }
   }
 
-  verifyCode() {
-    console.log('userId:', this.userId);
-    console.log('code:', this.code);
-
+  verifyResetCode() {
     if (!this.code || !this.userId) {
-      this.errorMessage = 'Missing user or code!';
+      this.errorMessage = 'Thiếu user hoặc mã code!';
       return;
     }
 
-    this.authService.verify({ _id: this.userId, code: this.code }).subscribe({
-      next: () => {
-        this.successMessage = 'Account activated successfully!';
+    console.log('Gửi verify reset:', this.userId, this.code);
+    this.authService.verifyReset({ _id: this.userId, code: this.code }).subscribe({
+      next: (res: any) => {
+        this.successMessage = 'Xác thực thành công!';
         this.errorMessage = '';
-
-        if (isPlatformBrowser(this.platformId)) {
-          localStorage.removeItem('pending_user_id');
-        }
-
-        setTimeout(() => this.router.navigate(['/login']), 1500);
+        setTimeout(() => {
+          this.router.navigate(['/reset-password'], { queryParams: { user: this.userId } });
+        }, 1000);
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Verification failed!';
