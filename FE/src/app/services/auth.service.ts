@@ -12,6 +12,7 @@ export class AuthService {
   private registerUrl = `${env.baseUrl}/auth/register`;
   private verifyCode = `${env.baseUrl}/auth/check-code`;
   private apiAccount = `${env.baseUrl}/auth`;
+  private apiUser = `${env.baseUrl}/users`;
 
   private userSubject: BehaviorSubject<any>;
   public currentUser$: Observable<any>;
@@ -88,7 +89,7 @@ export class AuthService {
 
   updateAccount(id: string, data: any) {
     const token = localStorage.getItem('access_token');
-    return this.http.put<any>(`${this.apiAccount}/update/${id}`, data, {
+    return this.http.patch<any>(`${this.apiUser}/${id}`, data, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

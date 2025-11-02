@@ -5,12 +5,20 @@
     <div class="header-wrapper d-flex align-items-center justify-content-between">
       <div class="logo">
         <a [routerLink]="['/']" class="logo-white">
-          <!-- <img src="../assets/images/logos/logo-white.svg" alt="logo" class="img-fluid" /> -->
-          <h2 class="img-fluid" style="color: #c1ff72">App Post</h2>
+          <img
+            src="../assets/images/logos/logo.png"
+            alt="logo"
+            class="img-fluid"
+            style="width: 100px; height: auto"
+          />
         </a>
         <a [routerLink]="['/']" class="logo-dark">
-          <!-- <img src="../assets/images/logos/logo-dark.svg" alt="logo" class="img-fluid" /> -->
-          <h2 class="img-fluid" style="color: black">App Post</h2>
+          <img
+            src="../assets/images/logos/logo.png"
+            alt="logo"
+            class="img-fluid"
+            style="width: 100px; height: auto"
+          />
         </a>
       </div>
       <div class="d-flex align-items-center gap-4">
@@ -62,36 +70,27 @@
                     <!-- Hàng trên: hai nút ngang full width -->
                     <div class="d-flex gap-3 w-100">
                       <a
-                        [routerLink]="['/transaction']"
-                        class="btn btn-outline-light fs-4 bg-white px-0 py-2 text-dark flex-fill text-nowrap rounded-pill d-flex align-items-center justify-content-center"
+                        [routerLink]="['/dashboard']"
+                        class="btn btn-outline-light fs-4 bg-white px-3 py-2 text-dark w-50 hstack justify-content-center"
                         style="height: 42px; line-height: 1"
                       >
-                        Tạo giao dịch
+                        Tạo đơn hàng
                       </a>
 
-                      <a
-                        [routerLink]="['/profile']"
-                        class="btn btn-outline-light fs-4 bg-white px-0 py-2 text-dark flex-fill text-nowrap rounded-pill d-flex align-items-center justify-content-center"
-                        style="height: 42px; line-height: 1"
+                      <button
+                        (click)="logout()"
+                        class="btn btn-dark text-white fs-4 bg-dark px-3 py-2 w-50 hstack justify-content-center"
+                        style="
+                          background-color: #c1ff72;
+                          color: black;
+                          font-weight: 600;
+                          height: 44px;
+                          line-height: 1;
+                        "
                       >
-                        Tài khoản
-                      </a>
+                        Đăng xuất
+                      </button>
                     </div>
-
-                    <!-- Hàng dưới -->
-                    <button
-                      (click)="logout()"
-                      class="btn fs-4 px-0 py-2 w-100 rounded-pill d-flex align-items-center justify-content-center"
-                      style="
-                        background-color: #c1ff72;
-                        color: black;
-                        font-weight: 600;
-                        height: 44px;
-                        line-height: 1;
-                      "
-                    >
-                      Đăng xuất
-                    </button>
                   </div>
                   }
                 </div>

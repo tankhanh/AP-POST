@@ -38,45 +38,25 @@ export class ForgetPassword implements OnInit {
       return;
     }
 
-    // this.authService.requestPasswordReset(this.email).subscribe({
-    //   next: (res: any) => {
-    //     // ✅ Khi gửi thành công
-    //     this.successMessage = 'Mã đặt lại mật khẩu đã được gửi, vui lòng kiểm tra email của bạn.';
-    //     this.toastr.success(this.successMessage, 'Thành công');
-    //     console.log('Reset request success:', res);
-
-    //     localStorage.setItem('reset_user_id', res.userId);
-
-    //     // Chuyển trang sau 1 giây
-    //     setTimeout(() => {
-    //       this.router.navigate(['/verify-reset'], {
-    //         queryParams: { user: res.userId }
-    //       });
-    //     }, 1000);
-    //   },
-    //   error: (err) => {
-    //     // ❌ Khi gửi thất bại
-    //     console.error('Reset request failed:', err);
-    //     const message = err.error?.message || 'Đã xảy ra lỗi, vui lòng thử lại sau.';
-    //     this.errorMessage = message;
-    //     this.toastr.error(message, 'Lỗi');
-    //   },
-    // });
     this.authService.requestPasswordReset(this.email).subscribe({
       next: (res: any) => {
-        console.log('Response reset password:', res);
+        this.successMessage = 'Mã đặt lại mật khẩu đã được gửi, vui lòng kiểm tra email của bạn.';
+        this.toastr.success(this.successMessage, 'Thành công');
+        console.log('Reset request success:', res);
+
         const data = res.data || res;
 
-        // lưu userId vào localStorage
         if (data._id) {
           localStorage.setItem('reset_user_id', data._id);
         }
 
-        // chuyển sang trang verify-reset
         this.router.navigate(['/verify-reset']);
       },
       error: (err) => {
-        console.error(err);
+        console.error('Reset request failed:', err);
+        const message = err.error?.message || 'Đã xảy ra lỗi, vui lòng thử lại sau.';
+        this.errorMessage = message;
+        this.toastr.error(message, 'Lỗi');
       },
     });
   }

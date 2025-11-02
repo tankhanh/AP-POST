@@ -56,7 +56,8 @@ export class App implements OnInit, OnDestroy {
           url.startsWith('/register') ||
           url.startsWith('/forget-password') ||
           url.startsWith('/verify') ||
-          url.startsWith('/reset-password');
+          url.startsWith('/reset-password')||
+          url.startsWith('/dashboard');
       }
     });
   }
