@@ -18,11 +18,12 @@ import { ConfigService } from '@nestjs/config';
 import { MailerService } from '@nestjs-modules/mailer';
 import { UsersService } from 'src/modules/users/users.service';
 import {
-  ChangePasswordDto,
-  CodeAuthDto,
   RegisterUserDto,
   UserLoginDto,
 } from 'src/modules/users/dto/create-user.dto';
+import { CodeAuthDto } from 'src/modules/users/dto/code-auth.dto';
+import { ChangePasswordDto } from 'src/modules/users/dto/change-password.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -47,6 +48,7 @@ export class AuthController {
 
   //////////////jwt
   @Public()
+  @UseGuards(AuthGuard('jwt'))
   @ResponseMessage('Register a new user')
   @Post('/register')
   handleRegister(@Body() registerUserDto: RegisterUserDto) {

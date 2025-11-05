@@ -14,7 +14,14 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { UsersModule } from './modules/users/users.module';
 import { FilesModule } from './modules/files/files.module';
 import { DatabasesModule } from './modules/databases/databases.module';
-import { SubscribersModule } from './modules/subscribers/subscribers.module';
+import { ShipmentsModule } from './modules/shipments/shipments.module';
+import { BranchesModule } from './modules/branches/branches.module';
+import { ServicesModule } from './modules/services/services.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { PricingModule } from './modules/pricing/pricing.module';
+import { TrackingModule } from './modules/tracking/tracking.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -68,13 +75,19 @@ import { SubscribersModule } from './modules/subscribers/subscribers.module';
       inject: [ConfigService],
     }),
     ///
-
     UsersModule,
     AuthModule,
     FilesModule,
     DatabasesModule,
-    SubscribersModule,
     HealthModule,
+    ShipmentsModule,
+    BranchesModule,
+    ServicesModule,
+    OrdersModule,
+    PaymentsModule,
+    PricingModule,
+    TrackingModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
