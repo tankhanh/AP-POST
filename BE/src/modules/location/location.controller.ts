@@ -1,27 +1,38 @@
 // locations/location.controller.ts
-import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Patch } from '@nestjs/common';
 import { LocationService } from './location.service';
+import { UpdateAddressDto } from './dto/update-location.dto';
 
 @Controller('locations')
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 
-  // Cấp 1: Tỉnh/Thành
   @Get('provinces')
   getProvinces() {
     return this.locationService.getProvinces();
   }
 
-  // Cấp 2: Quận/Huyện theo Tỉnh/Thành
   @Get('districts')
   getDistricts(@Query('provinceId') provinceId: string) {
     return this.locationService.getDistricts(provinceId);
   }
+  @Get('addresses')
+  listAddresses(
+    @Query('current') current = '1',
+    @Query('pageSize') pageSize = '10',
+    @Query('q') q?: string,
+  ) {
+    return this.locationService.listAddresses(+current, +pageSize, q);
+  }
 
-  // === ĐỊA CHỈ (không còn ward/phường) ===
   @Post('addresses')
   createAddress(@Body() body: any) {
     return this.locationService.createAddress(body);
+  }
+
+  @Patch('addresses/:id')
+  updateAddress(@Param('id') id: string, @Body() dto: UpdateAddressDto) {
+    return this.locationService.updateAddress(id, dto);
   }
 
   @Get('addresses/:id')
