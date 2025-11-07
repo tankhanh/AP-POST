@@ -22,9 +22,9 @@ export class LocationController {
   }
 
   @Public()
-  @Get('districts')
-  getDistricts(@Query('provinceId') provinceId: string) {
-    return this.locationService.getDistricts(provinceId);
+  @Get('Communes')
+  getCommunes(@Query('provinceId') provinceId: string) {
+    return this.locationService.getCommunes(provinceId);
   }
 
   @Get('addresses')

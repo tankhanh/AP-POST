@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Address, AddressSchema } from '../location/schemas/address.schema';
-import { District, DistrictSchema } from '../location/schemas/district.schema';
+import { Commune, CommuneSchema } from './schemas/Commune.schema';
 import { Province, ProvinceSchema } from '../location/schemas/province.schema';
 import { LocationService } from './location.service';
 import { LocationController } from './location.controller';
@@ -10,7 +10,7 @@ import { LocationController } from './location.controller';
   imports: [
     MongooseModule.forFeature([
       { name: Address.name, schema: AddressSchema },
-      { name: District.name, schema: DistrictSchema },
+      { name: Commune.name, schema: CommuneSchema },
       { name: Province.name, schema: ProvinceSchema },
     ]),
   ],
