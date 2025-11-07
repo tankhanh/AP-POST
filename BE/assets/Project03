@@ -44,6 +44,16 @@
 				{
 					"name": "List Branches",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwYzZlNGRjMjRhMDdmOGVjZGFjNmRjIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0MjM5NTksImV4cCI6MTc2MjQ4Mzk1OX0._7au1ySIMDiPKTuNOgAZiE5zfU1v3qsf-peuYlY05_E",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -82,6 +92,16 @@
 				{
 					"name": "Get Branch by ID",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwYzZlNGRjMjRhMDdmOGVjZGFjNmRjIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0MjM5NTksImV4cCI6MTc2MjQ4Mzk1OX0._7au1ySIMDiPKTuNOgAZiE5zfU1v3qsf-peuYlY05_E",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -96,19 +116,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/branches/:id",
+							"raw": "{{baseUrl}}/branches/690c6e4ec24a07f8ecdac705",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"branches",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "REPLACE_ID"
-								}
+								"690c6e4ec24a07f8ecdac705"
 							]
 						}
 					},
@@ -264,6 +278,16 @@
 				{
 					"name": "List Services",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwYzZlNGRjMjRhMDdmOGVjZGFjNmRjIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDAwMzEsImV4cCI6MTc2MjUwMDAzMX0.Ayrq--paxkMijtv8Dba6K8sMh7kS1vJ3ScvPSYp4dAM",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -447,6 +471,16 @@
 				{
 					"name": "List Pricing",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwYzZlNGRjMjRhMDdmOGVjZGFjNmRjIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDAwMzEsImV4cCI6MTc2MjUwMDAzMX0.Ayrq--paxkMijtv8Dba6K8sMh7kS1vJ3ScvPSYp4dAM",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -641,6 +675,16 @@
 				{
 					"name": "List Provinces",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwY2Q0ZTE2OGQ2N2YwNWQwMjEwODYwIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDg4MzUsImV4cCI6MTc2MjUwODgzNX0.FDcseDcoqLs-VXtY_PPynG58c4X597i06cloyQ3FZNE",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -655,23 +699,17 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/location/provinces?current=1&pageSize=50",
+							"raw": "http://localhost:8000/api/v1/locations/provinces",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "8000",
 							"path": [
-								"location",
+								"api",
+								"v1",
+								"locations",
 								"provinces"
-							],
-							"query": [
-								{
-									"key": "current",
-									"value": "1"
-								},
-								{
-									"key": "pageSize",
-									"value": "50"
-								}
 							]
 						}
 					},
@@ -680,6 +718,16 @@
 				{
 					"name": "List Districts by Province",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwY2Q0ZTE2OGQ2N2YwNWQwMjEwODYwIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDg4MzUsImV4cCI6MTc2MjUwODgzNX0.FDcseDcoqLs-VXtY_PPynG58c4X597i06cloyQ3FZNE",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -694,53 +742,22 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/location/districts?provinceId=REPLACE_PROVINCE_ID",
+							"raw": "http://localhost:8000/api/v1/locations/districts?provinceId=690cd4e168d67f05d0210881",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "8000",
 							"path": [
-								"location",
+								"api",
+								"v1",
+								"locations",
 								"districts"
 							],
 							"query": [
 								{
 									"key": "provinceId",
-									"value": "REPLACE_PROVINCE_ID"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "List Wards by District",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/location/wards?districtId=REPLACE_DISTRICT_ID",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"location",
-								"wards"
-							],
-							"query": [
-								{
-									"key": "districtId",
-									"value": "REPLACE_DISTRICT_ID"
+									"value": "690cd4e168d67f05d0210881"
 								}
 							]
 						}
@@ -750,6 +767,16 @@
 				{
 					"name": "Create Address",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwY2Q0ZTE2OGQ2N2YwNWQwMjEwODYwIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDg4MzUsImV4cCI6MTc2MjUwODgzNX0.FDcseDcoqLs-VXtY_PPynG58c4X597i06cloyQ3FZNE",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -765,15 +792,19 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"line1\": \"123 Tràng Tiền\",\n  \"provinceId\": \"REPLACE_PROVINCE_ID\",\n  \"districtId\": \"REPLACE_DISTRICT_ID\",\n  \"wardId\": \"REPLACE_WARD_ID\",\n  \"lat\": 21.027763,\n  \"lng\": 105.83416,\n  \"contactName\": \"Khách A\",\n  \"contactPhone\": \"0909009009\"\n}"
+							"raw": "{\n  \"line1\": \"123/b Tràng Tiền\",\n  \"provinceId\": \"690cd4e168d67f05d0210881\",\n  \"districtId\": \"690cd4e168d67f05d021095e\",\n  \"lat\": 21.027763,\n  \"lng\": 105.83416,\n  \"contactName\": \"Khách A\",\n  \"contactPhone\": \"0909009009\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/location/addresses",
+							"raw": "http://localhost:8000/api/v1/locations/addresses",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "8000",
 							"path": [
-								"location",
+								"api",
+								"v1",
+								"locations",
 								"addresses"
 							]
 						}
@@ -783,6 +814,16 @@
 				{
 					"name": "List Addresses",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwY2Q0ZTE2OGQ2N2YwNWQwMjEwODYwIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDg4MzUsImV4cCI6MTc2MjUwODgzNX0.FDcseDcoqLs-VXtY_PPynG58c4X597i06cloyQ3FZNE",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -797,12 +838,16 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/location/addresses?current=1&pageSize=10",
+							"raw": "http://localhost:8000/api/v1/locations/addresses?current=1&pageSize=10",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "8000",
 							"path": [
-								"location",
+								"api",
+								"v1",
+								"locations",
 								"addresses"
 							],
 							"query": [
@@ -822,6 +867,16 @@
 				{
 					"name": "Get Address by ID",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwY2Q0ZTE2OGQ2N2YwNWQwMjEwODYwIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDg4MzUsImV4cCI6MTc2MjUwODgzNX0.FDcseDcoqLs-VXtY_PPynG58c4X597i06cloyQ3FZNE",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -836,19 +891,18 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/location/addresses/:id",
+							"raw": "http://localhost:8000/api/v1/locations/addresses/690cd864e3cbf6ffc89c5183",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "8000",
 							"path": [
-								"location",
+								"api",
+								"v1",
+								"locations",
 								"addresses",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id"
-								}
+								"690cd864e3cbf6ffc89c5183"
 							]
 						}
 					},
@@ -857,6 +911,16 @@
 				{
 					"name": "Update Address",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwY2Q0ZTE2OGQ2N2YwNWQwMjEwODYwIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDg4MzUsImV4cCI6MTc2MjUwODgzNX0.FDcseDcoqLs-VXtY_PPynG58c4X597i06cloyQ3FZNE",
+									"type": "string"
+								}
+							]
+						},
 						"method": "PATCH",
 						"header": [
 							{
@@ -875,20 +939,18 @@
 							"raw": "{\n  \"contactName\": \"Khách B\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/location/addresses/:id",
+							"raw": "http://localhost:8000/api/v1/locations/addresses/690cd864e3cbf6ffc89c5183",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "8000",
 							"path": [
-								"location",
+								"api",
+								"v1",
+								"locations",
 								"addresses",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "REPLACE_ID"
-								}
+								"690cd864e3cbf6ffc89c5183"
 							]
 						}
 					},
@@ -970,6 +1032,16 @@
 				{
 					"name": "List Orders",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwYzZlNGRjMjRhMDdmOGVjZGFjNmRjIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDAwMzEsImV4cCI6MTc2MjUwMDAzMX0.Ayrq--paxkMijtv8Dba6K8sMh7kS1vJ3ScvPSYp4dAM",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -1153,6 +1225,16 @@
 				{
 					"name": "List Shipments",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwY2Q0ZTE2OGQ2N2YwNWQwMjEwODYwIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDg4MzUsImV4cCI6MTc2MjUwODgzNX0.FDcseDcoqLs-VXtY_PPynG58c4X597i06cloyQ3FZNE",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -1372,6 +1454,16 @@
 				{
 					"name": "List Tracking Logs",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwYzZlNGRjMjRhMDdmOGVjZGFjNmRjIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDAwMzEsImV4cCI6MTc2MjUwMDAzMX0.Ayrq--paxkMijtv8Dba6K8sMh7kS1vJ3ScvPSYp4dAM",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -1627,6 +1719,16 @@
 				{
 					"name": "List Notifications",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwYzZlNGRjMjRhMDdmOGVjZGFjNmRjIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDAwMzEsImV4cCI6MTc2MjUwMDAzMX0.Ayrq--paxkMijtv8Dba6K8sMh7kS1vJ3ScvPSYp4dAM",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -1810,6 +1912,16 @@
 				{
 					"name": "List Payments",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkwYzZlNGRjMjRhMDdmOGVjZGFjNmRjIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkB2dHBvc3QubG9jYWwiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI0NDAwMzEsImV4cCI6MTc2MjUwMDAzMX0.Ayrq--paxkMijtv8Dba6K8sMh7kS1vJ3ScvPSYp4dAM",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [
 							{
@@ -2244,7 +2356,7 @@
 								},
 								{
 									"key": "password",
-									"value": "123456",
+									"value": "123",
 									"type": "text"
 								}
 							]
