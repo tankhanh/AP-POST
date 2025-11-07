@@ -93,4 +93,9 @@ export class AuthService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+
+  getUser() {
+  return JSON.parse(localStorage.getItem('user') || '{}');
+}
+
 }
