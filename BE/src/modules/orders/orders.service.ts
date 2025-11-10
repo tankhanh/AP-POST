@@ -13,10 +13,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { Order, OrderDocument, OrderStatus } from './schemas/order.schemas';
 import { Address, AddressDocument } from '../location/schemas/address.schema';
-import {
-  District,
-  DistrictDocument,
-} from '../location/schemas/district.schema';
+import { Commune, CommuneDocument } from '../location/schemas/commune.schema';
 import {
   Province,
   ProvinceDocument,
@@ -27,18 +24,13 @@ export class OrdersService {
   constructor(
     @InjectModel(Order.name)
     private readonly orderModel: SoftDeleteModel<OrderDocument>,
-
     @InjectModel(Address.name)
     private readonly addressModel: SoftDeleteModel<AddressDocument>,
-
-    @InjectModel(District.name)
-    private readonly districtModel: SoftDeleteModel<DistrictDocument>,
-
+    @InjectModel(Commune.name)
+    private readonly communeModel: SoftDeleteModel<CommuneDocument>,
     @InjectModel(Province.name)
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
   ) {}
-
-  /* ---------------- CREATE ---------------- */
   async create(dto: CreateOrderDto, user: IUser) {
     if (!dto.pickupAddressId || !dto.deliveryAddressId) {
       throw new BadRequestException(
@@ -51,12 +43,10 @@ export class OrdersService {
     });
   }
 
-  /* ---------------- LIST ---------------- */
   async findAll(currentPage = 1, limit = 10, queryObj: any = {}) {
     const { filter, sort, population } = aqp(queryObj);
     delete (filter as any).current;
     delete (filter as any).pageSize;
-
     if (filter.isDeleted === undefined) (filter as any).isDeleted = false;
 
     const page = Number(currentPage) > 0 ? Number(currentPage) : 1;
@@ -76,7 +66,7 @@ export class OrdersService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'districtId', model: District.name },
+          { path: 'communeId', model: Commune.name }, // <-- communeId
         ],
       })
       .populate({
@@ -84,20 +74,15 @@ export class OrdersService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'districtId', model: District.name },
+          { path: 'communeId', model: Commune.name }, // <-- communeId
         ],
       });
 
     if (population) q.populate(population as any);
     const results = await q.exec();
-
-    return {
-      meta: { current: page, pageSize: size, pages, total },
-      results,
-    };
+    return { meta: { current: page, pageSize: size, pages, total }, results };
   }
 
-  /* ---------------- DETAIL ---------------- */
   async findOne(id: string) {
     const order = await this.orderModel
       .findById(id)
@@ -106,7 +91,7 @@ export class OrdersService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'districtId', model: District.name },
+          { path: 'communeId', model: Commune.name },
         ],
       })
       .populate({
@@ -114,7 +99,7 @@ export class OrdersService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'districtId', model: District.name },
+          { path: 'communeId', model: Commune.name },
         ],
       });
 
@@ -122,8 +107,6 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     return order;
   }
-
-  /* ---------------- UPDATE ---------------- */
   async update(id: string, dto: UpdateOrderDto) {
     const order = await this.orderModel.findByIdAndUpdate(id, dto, {
       new: true,
@@ -133,20 +116,16 @@ export class OrdersService {
     return order;
   }
 
-  /* ---------------- SOFT DELETE ---------------- */
   async remove(id: string, user: IUser) {
     const res = await this.orderModel.softDelete({
       _id: id,
       deletedBy: { _id: new Types.ObjectId(user._id), email: user.email },
     } as any);
-
     if (!res || (res as any).modifiedCount === 0)
       throw new NotFoundException('Order not found');
-
     return { message: 'Order soft-deleted' };
   }
 
-  /* ---------------- STATUS UPDATE ---------------- */
   async updateStatus(id: string, status: OrderStatus) {
     const order = await this.orderModel.findByIdAndUpdate(
       id,

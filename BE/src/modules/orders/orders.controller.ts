@@ -42,7 +42,6 @@ export class OrdersController {
     const size = limit ? Number(limit) : 10;
     return this.ordersService.findAll(page, size, query || {});
   }
-
   @Get('statistics')
   @ResponseMessage('Thống kê đơn hàng')
   async getStatistics(
@@ -72,7 +71,6 @@ export class OrdersController {
   updateStatus(@Param('id') id: string, @Param('status') status: OrderStatus) {
     return this.ordersService.updateStatus(id, status);
   }
-
   @Delete(':id')
   @ResponseMessage('Xóa đơn hàng (soft)')
   remove(@Param('id') id: string, @Users() user: IUser) {

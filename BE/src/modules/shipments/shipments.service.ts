@@ -20,8 +20,8 @@ import { customAlphabet } from 'nanoid';
 import { Address } from '../location/schemas/address.schema';
 import { Branch } from '../branches/schemas/branch.schemas';
 import { Service } from '../services/schemas/service.schemas';
-import { District } from '../location/schemas/district.schema';
 import { Province } from '../location/schemas/province.schema';
+import { Commune } from '../location/schemas/Commune.schema';
 
 // ===== Lean types =====
 interface AddressLean {
@@ -121,14 +121,20 @@ export class ShipmentsService {
       maxWeightKg: { $gte: chargeableWeightKg },
       minKm: { $lte: km },
       maxKm: { $gte: km },
-      $or: [
-        { effectiveFrom: { $exists: false } },
-        { effectiveFrom: { $lte: now } },
-      ],
-      $or_2: [
-        { effectiveTo: null },
-        { effectiveTo: { $exists: false } },
-        { effectiveTo: { $gte: now } },
+      $and: [
+        {
+          $or: [
+            { effectiveFrom: { $exists: false } },
+            { effectiveFrom: { $lte: now } },
+          ],
+        },
+        {
+          $or: [
+            { effectiveTo: null },
+            { effectiveTo: { $exists: false } },
+            { effectiveTo: { $gte: now } },
+          ],
+        },
       ],
     }).lean<PricingSlabLean>();
 
@@ -191,7 +197,7 @@ export class ShipmentsService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'districtId', model: District.name },
+          { path: 'communeId', model: Commune.name },
         ],
       })
       .populate({
@@ -199,7 +205,7 @@ export class ShipmentsService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'districtId', model: District.name },
+          { path: 'communeId', model: Commune.name },
         ],
       })
       .populate({ path: 'originBranchId', model: Branch.name })
@@ -221,7 +227,7 @@ export class ShipmentsService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'districtId', model: District.name },
+          { path: 'communeId', model: Commune.name },
         ],
       })
       .populate({
@@ -229,7 +235,7 @@ export class ShipmentsService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'districtId', model: District.name },
+          { path: 'communeId', model: Commune.name },
         ],
       })
       .populate({ path: 'originBranchId', model: Branch.name })
