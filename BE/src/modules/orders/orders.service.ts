@@ -31,34 +31,107 @@ export class OrdersService {
     @InjectModel(Province.name)
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
   ) {}
+
   async create(dto: CreateOrderDto, user: IUser) {
-    if (!dto.pickupAddressId || !dto.deliveryAddressId) {
-      throw new BadRequestException(
-        'Both pickup and delivery addresses required',
-      );
-    }
+    const pickupAddressDoc = await this.addressModel.create({
+      provinceId: dto.pickupAddress.provinceId,
+      communeId: dto.pickupAddress.communeId,
+      address: dto.pickupAddress.address,
+    });
+
+    const deliveryAddressDoc = await this.addressModel.create({
+      provinceId: dto.deliveryAddress.provinceId,
+      communeId: dto.deliveryAddress.communeId,
+      address: dto.deliveryAddress.address,
+    });
+
     return this.orderModel.create({
       ...dto,
+      pickupAddressId: pickupAddressDoc._id,
+      deliveryAddressId: deliveryAddressDoc._id,
       userId: new Types.ObjectId(user._id),
     });
   }
 
-  async findAll(currentPage = 1, limit = 10, queryObj: any = {}) {
-    const { filter, sort, population } = aqp(queryObj);
+  async findAll(user: IUser, currentPage = 1, limit = 10, queryObj: any = {}) {
+    const { filter, sort } = aqp(queryObj);
+
+    // Loại bỏ params không cần thiết
     delete (filter as any).current;
     delete (filter as any).pageSize;
-    if (filter.isDeleted === undefined) (filter as any).isDeleted = false;
 
+    // Luôn loại bỏ các đơn đã xóa
+    filter.isDeleted = false;
+
+    // Ép filter theo user
+    if (user?._id) {
+      filter.userId = new Types.ObjectId(user._id);
+    }
+
+    // --- Filter nâng cao ---
+
+    // Trạng thái: hỗ trợ multi-status
+    if (filter.status) {
+      if (typeof filter.status === 'string' && filter.status.includes(',')) {
+        filter.status = { $in: filter.status.split(',') };
+      }
+    }
+
+    // Ngày tạo
+    if (filter.fromDate || filter.toDate) {
+      filter.createdAt = {};
+      if (filter.fromDate) filter.createdAt.$gte = new Date(filter.fromDate);
+      if (filter.toDate) filter.createdAt.$lte = new Date(filter.toDate);
+    }
+
+    // Khoảng giá
+    if (filter.minPrice || filter.maxPrice) {
+      filter.totalPrice = {};
+      if (filter.minPrice) filter.totalPrice.$gte = Number(filter.minPrice);
+      if (filter.maxPrice) filter.totalPrice.$lte = Number(filter.maxPrice);
+    }
+
+    // Người gửi
+    if (filter.senderName)
+      filter.senderName = new RegExp(filter.senderName, 'i');
+
+    // Người nhận
+    if (filter.receiverName)
+      filter.receiverName = new RegExp(filter.receiverName, 'i');
+
+    // Số điện thoại người nhận
+    if (filter.receiverPhone)
+      filter.receiverPhone = new RegExp(filter.receiverPhone, 'i');
+
+    // Tên sản phẩm
+    if (filter.productName)
+      filter['items.productName'] = new RegExp(filter.productName, 'i');
+
+    // Search tổng hợp
+    if (filter.search) {
+      const regex = new RegExp(filter.search, 'i');
+      filter.$or = [
+        { _id: regex },
+        { receiverName: regex },
+        { receiverPhone: regex },
+        { senderName: regex },
+        { 'items.productName': regex },
+      ];
+    }
+
+    // --- Pagination ---
     const page = Number(currentPage) > 0 ? Number(currentPage) : 1;
     const size = Number(limit) > 0 ? Number(limit) : 10;
     const skip = (page - 1) * size;
 
+    // --- Tổng số và phân trang ---
     const total = await this.orderModel.countDocuments(filter);
     const pages = Math.ceil(total / size);
 
-    const q = this.orderModel
+    // --- Truy vấn chính ---
+    const results = await this.orderModel
       .find(filter)
-      .sort(sort as any)
+      .sort((sort as any) || { createdAt: -1 }) // default: mới nhất trước
       .skip(skip)
       .limit(size)
       .populate({
@@ -66,7 +139,7 @@ export class OrdersService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'communeId', model: Commune.name }, // <-- communeId
+          { path: 'communeId', model: Commune.name },
         ],
       })
       .populate({
@@ -74,12 +147,11 @@ export class OrdersService {
         model: Address.name,
         populate: [
           { path: 'provinceId', model: Province.name },
-          { path: 'communeId', model: Commune.name }, // <-- communeId
+          { path: 'communeId', model: Commune.name },
         ],
-      });
+      })
+      .exec();
 
-    if (population) q.populate(population as any);
-    const results = await q.exec();
     return { meta: { current: page, pageSize: size, pages, total }, results };
   }
 
@@ -108,12 +180,42 @@ export class OrdersService {
     return order;
   }
   async update(id: string, dto: UpdateOrderDto) {
-    const order = await this.orderModel.findByIdAndUpdate(id, dto, {
-      new: true,
-    });
+    const order = await this.orderModel.findById(id);
     if (!order || order.isDeleted)
       throw new NotFoundException('Order not found');
-    return order;
+
+    // Update pickup address
+    if (dto.pickupAddress) {
+      await this.addressModel.findByIdAndUpdate(order.pickupAddressId, {
+        provinceId: dto.pickupAddress.provinceId,
+        communeId: dto.pickupAddress.communeId,
+        address: dto.pickupAddress.address,
+      });
+    }
+
+    // Update delivery address
+    if (dto.deliveryAddress) {
+      await this.addressModel.findByIdAndUpdate(order.deliveryAddressId, {
+        provinceId: dto.deliveryAddress.provinceId,
+        communeId: dto.deliveryAddress.communeId,
+        address: dto.deliveryAddress.address,
+      });
+    }
+
+    // Update order fields (không bao gồm address)
+    const updateData = { ...dto };
+    delete (updateData as any).pickupAddress;
+    delete (updateData as any).deliveryAddress;
+
+    const updatedOrder = await this.orderModel.findByIdAndUpdate(
+      id,
+      updateData,
+      {
+        new: true,
+      },
+    );
+
+    return updatedOrder;
   }
 
   async remove(id: string, user: IUser) {

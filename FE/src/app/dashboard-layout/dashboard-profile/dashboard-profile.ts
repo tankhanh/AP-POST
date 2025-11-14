@@ -10,7 +10,7 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './dashboard-profile.html',
 })
-export class Profile implements OnInit {
+export class DashboardProfile implements OnInit {
   user: any = {};
   isBrowser = false;
 

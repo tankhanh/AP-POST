@@ -1,11 +1,29 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsString,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class AddressDto {
+  @ApiProperty({ example: '65f2a2bb70f7a1f4fa11111' })
+  @IsNotEmpty()
+  @IsString()
+  provinceId: string;
+
+  @ApiProperty({ example: '65f2a2bb70f7a1f4fa22222' })
+  @IsNotEmpty()
+  @IsString()
+  communeId: string;
+
+  @ApiProperty({ example: '123 Nguyễn Văn Cừ, Q.5' })
+  @IsNotEmpty()
+  @IsString()
+  address: string;
+}
 
 export class CreateOrderDto {
   @ApiProperty({ example: 'Nguyễn Văn A' })
@@ -23,15 +41,15 @@ export class CreateOrderDto {
   @IsString()
   receiverPhone: string;
 
-  @ApiProperty({ example: '653f2a2bb70f7a1f4fa11111' })
-  @IsNotEmpty()
-  @IsMongoId()
-  pickupAddressId: string;
+  @ApiProperty({ type: AddressDto })
+  @ValidateNested()
+  @Type(() => AddressDto)
+  pickupAddress: AddressDto;
 
-  @ApiProperty({ example: '653f2a2bb70f7a1f4fa22222' })
-  @IsNotEmpty()
-  @IsMongoId()
-  deliveryAddressId: string;
+  @ApiProperty({ type: AddressDto })
+  @ValidateNested()
+  @Type(() => AddressDto)
+  deliveryAddress: AddressDto;
 
   @ApiProperty({ example: 100000 })
   @IsNumber()

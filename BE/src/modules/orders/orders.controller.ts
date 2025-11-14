@@ -8,6 +8,8 @@ import {
   Delete,
   Query,
   UseGuards,
+  BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -34,14 +36,22 @@ export class OrdersController {
   @Get()
   @ResponseMessage('Danh sách đơn hàng')
   findAll(
+    @Req() req, // lấy request
     @Query('current') current?: string,
     @Query('pageSize') limit?: string,
     @Query() query?: any,
   ) {
     const page = current ? Number(current) : 1;
     const size = limit ? Number(limit) : 10;
-    return this.ordersService.findAll(page, size, query || {});
+
+    const user = req.user; // middleware JWT phải giải mã token ra user
+    if (!user?._id) {
+      throw new BadRequestException('User không hợp lệ');
+    }
+
+    return this.ordersService.findAll(user, page, size, query || {});
   }
+
   @Get('statistics')
   @ResponseMessage('Thống kê đơn hàng')
   async getStatistics(
@@ -51,7 +61,7 @@ export class OrdersController {
   ) {
     const m = month ? Number(month) : undefined;
     const y = year ? Number(year) : undefined;
-    return this.ordersService.getStatistics(m, y, user); 
+    return this.ordersService.getStatistics(m, y, user);
   }
 
   @Get(':id')

@@ -38,30 +38,31 @@ export class UserLayout implements OnInit, OnDestroy {
     this.isBrowser = isPlatformBrowser(this.platformId);
 
     if (this.isBrowser) {
-      this.userSubscription = this.authService.currentUser$.subscribe((user: any) => {
-        if (user) {
-          this.user = user;
-          this.balance = user.balance ?? 0;
-        } else {
-          this.user = null;
-          this.balance = 0;
-        }
+      this.userSubscription = this.authService.currentUser$.subscribe((user) => {
+        this.user = user || null;
       });
     }
 
-    this.routerSubscription = this.router.events.subscribe((evt: Event) => {
+    this.checkUrl(this.router.url);
+
+    this.routerSubscription = this.router.events.subscribe((evt) => {
       if (evt instanceof NavigationEnd) {
-        const url = evt.urlAfterRedirects;
-        // Trang không muốn hiện header/footer
-        this.isAuthPage =
-          url.startsWith('/login') ||
-          url.startsWith('/register') ||
-          url.startsWith('/forget-password') ||
-          url.startsWith('/verify') ||
-          url.startsWith('/reset-password') ||
-          url.startsWith('/dashboard'); // ẩn header/footer trong khu dashboard nếu bạn muốn
+        this.checkUrl(evt.urlAfterRedirects);
       }
     });
+  }
+
+  private checkUrl(url: string) {
+    this.isAuthPage =
+      url.startsWith('/login') ||
+      url.startsWith('/register') ||
+      url.startsWith('/forget-password') ||
+      url.startsWith('/verify') ||
+      url.startsWith('/reset-password') ||
+      url.startsWith('/dashboard') ||
+      url.startsWith('/dashboard/home') ||
+      url.startsWith('/dashboard/order') ||
+      url.startsWith('/dashboard/profile');
   }
 
   logout() {

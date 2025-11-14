@@ -1,0 +1,75 @@
+<div class="container mt-4">
+  <h4 class="fw-bold mb-3">🧾 Tạo đơn hàng mới</h4>
+
+  <form [formGroup]="orderForm" (ngSubmit)="submit()">
+    <div class="row g-3">
+
+      <!-- Người gửi -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Người gửi</label>
+        <input type="text" class="form-control" formControlName="senderName" placeholder="Nhập tên người gửi">
+      </div>
+
+      <!-- Người nhận -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Người nhận</label>
+        <input type="text" class="form-control" formControlName="receiverName" placeholder="Nhập tên người nhận">
+      </div>
+
+      <!-- SĐT -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">SĐT người nhận</label>
+        <input type="text" class="form-control" formControlName="receiverPhone" placeholder="Nhập số điện thoại">
+      </div>
+
+      <!-- Pickup -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Địa chỉ lấy hàng</label>
+
+        <select class="form-select mb-2" formControlName="pickupProvinceId" (change)="onPickupProvinceChange()">
+          <option value="">-- Chọn tỉnh/thành phố --</option>
+          <option *ngFor="let p of provinces" [value]="p._id">{{ p.name }}</option>
+        </select>
+
+        <select class="form-select mb-2" formControlName="pickupCommuneId">
+          <option value="">-- Chọn quận/huyện --</option>
+          <option *ngFor="let c of pickupCommunes" [value]="c._id">{{ c.name }}</option>
+        </select>
+
+        <input type="text" class="form-control" formControlName="pickupDetailAddress" placeholder="Nhập địa chỉ chi tiết">
+      </div>
+
+      <!-- Delivery -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Địa chỉ giao hàng</label>
+
+        <select class="form-select mb-2" formControlName="deliveryProvinceId" (change)="onDeliveryProvinceChange()">
+          <option value="">-- Chọn tỉnh/thành phố --</option>
+          <option *ngFor="let p of provinces" [value]="p._id">{{ p.name }}</option>
+        </select>
+
+        <select class="form-select mb-2" formControlName="deliveryCommuneId">
+          <option value="">-- Chọn quận/huyện --</option>
+          <option *ngFor="let c of deliveryCommunes" [value]="c._id">{{ c.name }}</option>
+        </select>
+
+        <input type="text" class="form-control" formControlName="deliveryDetailAddress" placeholder="Nhập địa chỉ chi tiết">
+      </div>
+
+      <!-- Tổng giá trị -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Tổng giá trị (VNĐ)</label>
+        <input type="number" class="form-control" formControlName="totalPrice" placeholder="Nhập tổng giá trị">
+      </div>
+
+      <!-- Submit -->
+      <div class="col-12 mt-3">
+        <button class="btn btn-primary" [disabled]="loading || orderForm.invalid">
+          <span *ngIf="!loading">Tạo đơn hàng</span>
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>
