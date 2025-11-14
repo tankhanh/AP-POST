@@ -1,17 +1,24 @@
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import aqp from 'api-query-params';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
-import { Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { IUser } from 'src/types/user.interface';
 import { Pricing, PricingDocument } from './schemas/pricing.schemas';
+import { Branch, BranchDocument } from '../branches/schemas/branch.schemas';
+import { Province } from '../location/schemas/province.schema';
+import { Commune } from '../location/schemas/Commune.schema';
+import { Address } from '../location/schemas/address.schema';
 
 @Injectable()
 export class PricingService {
   constructor(
     @InjectModel(Pricing.name)
     private pricingModel: SoftDeleteModel<PricingDocument>,
+    @InjectModel(Branch.name) private branchModel: Model<BranchDocument>,
+    @InjectModel(Province.name) private provinceModel: Model<Province>,
+    @InjectModel(Commune.name) private communeModel: Model<Commune>,
+    @InjectModel(Address.name) private addressModel: Model<Address>,
   ) {}
 
   create(dto: any) {
@@ -74,37 +81,39 @@ export class PricingService {
   }
 
   // Tính phí theo km + cân nặng
-  async calculate(serviceId: string, km: number, weightKg: number) {
-    const now = new Date();
+  // Tính phí theo khoảng cách và cân nặng
+  async calculateShipping(branchCode: string, km: number, weightKg: number) {
+    // Kiểm tra các điều kiện miễn phí giao hàng
+    if (weightKg < 5 || this.isInCity(branchCode, km)) {
+      return 0; // Miễn phí ship nếu cân nặng dưới 5kg hoặc đơn hàng gần chi nhánh
+    }
 
-    const slab = await this.pricingModel.findOne({
-      serviceId,
-      isActive: true,
-      isDeleted: false,
-      minWeightKg: { $lte: weightKg },
-      maxWeightKg: { $gte: weightKg },
-      minKm: { $lte: km },
-      maxKm: { $gte: km },
-      effectiveFrom: { $lte: now },
-      $or: [
-        { effectiveTo: null },
-        { effectiveTo: { $exists: false } },
-        { effectiveTo: { $gte: now } },
-      ],
-    });
+    // Tính phí theo bảng giá
+    const serviceId = 'serviceId123'; // ID dịch vụ (có thể thay đổi tùy vào yêu cầu)
+    const fee = await this.calculateShipping(serviceId, km, weightKg);
+    return fee;
+  }
 
-    if (!slab)
-      throw new NotFoundException(
-        'No pricing slab found for given km & weight',
-      );
+  // Kiểm tra xem đơn hàng có thuộc nội thành hoặc gần chi nhánh không
+  isInCity(branchCode: string, km: number): boolean {
+    const branchesNearby = [
+      'HN01',
+      'HCM01',
+      'DN01',
+      'HP01',
+      'CT01',
+      'KH01',
+      'DN02',
+      'TH01',
+      'NA01',
+      'HU01',
+      'QN01',
+    ]; // Các chi nhánh thuộc nội thành hoặc gần
 
-    if (slab.flatFee != null) return slab.flatFee;
+    // Giả sử khoảng cách nhỏ hơn 10km được coi là gần
+    const nearbyDistance = 10;
 
-    const fee =
-      (slab.baseFee ?? 0) +
-      (slab.perKm ?? 0) * km +
-      (slab.perKg ?? 0) * weightKg;
-    // nếu cần làm tròn:
-    return Math.round(fee);
+    // Nếu chi nhánh gần và khoảng cách nhỏ hơn giới hạn, miễn phí ship
+    return branchesNearby.includes(branchCode) && km <= nearbyDistance;
   }
 }

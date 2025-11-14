@@ -1,0 +1,53 @@
+HN   → Hà Nội
+HCM  → TP Hồ Chí Minh (mới, gồm HCM + Bình Dương + BR-VT)
+HP   → Hải Phòng
+DN   → Đà Nẵng
+CT   → Cần Thơ
+TN   → Tây Ninh
+GL   → Gia Lai
+QN   → Quảng Ninh
+KH   → Khánh Hòa
+LD   → Lâm Đồng
+DLK  → Đắk Lắk
+DNA  → Đồng Nai
+DT   → Đồng Tháp
+KG   → Kiên Giang
+BT   → Bến Tre
+BL   → Bạc Liêu
+CM   → Cà Mau
+TH   → Thanh Hóa
+NA   → Nghệ An
+HT   → Hà Tĩnh
+QT   → Quảng Trị (mới, gồm Quảng Bình + Quảng Trị)
+HUE  → Thừa Thiên Huế (Thành phố Huế mở rộng)
+NB   → Ninh Bình
+TB   → Thái Bình
+ND   → Nam Định
+VP   → Vĩnh Phúc
+BG   → Bắc Giang
+BN   → Bắc Ninh
+LC   → Lào Cai
+LS   → Lạng Sơn
+CB   → Cao Bằng
+HG   → Hà Giang
+TQ   → Tuyên Quang
+
+////
+'HN','HCM','HP','DN','CT','TN','GL','QN','KH','LD',
+'DLK','DNA','DT','KG','BT','BL','CM','TH','NA','HT',
+'QT','HUE','NB','TB','ND','VP','BG','BN','LC','LS',
+'CB','HG','TQ'
+
+/// branch
+
+HN01,
+HCM01,
+DN01,
+HP01,
+CT01,
+KH01,
+DN02,
+TH01,
+NA01,
+HU01,
+QN01

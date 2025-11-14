@@ -60,7 +60,6 @@ export class DatabasesService implements OnModuleInit {
     private readonly CommuneModel: SoftDeleteModel<CommuneDocument>,
     @InjectModel(Address.name)
     private readonly addressModel: SoftDeleteModel<AddressDocument>,
-
     @InjectModel(Branch.name)
     private readonly branchModel: SoftDeleteModel<BranchDocument>,
     @InjectModel(Service.name)
@@ -300,6 +299,7 @@ export class DatabasesService implements OnModuleInit {
 
       {
         code: 'HCM',
+
         name: 'Thành phố Hồ Chí Minh',
         communes: [
           { code: 'HCM-BN', name: 'Phường Bến Nghé' },
@@ -731,6 +731,44 @@ export class DatabasesService implements OnModuleInit {
           { code: 'DN-HV-NT', name: 'Xã Hòa Ninh' },
           { code: 'DN-HV-P', name: 'Xã Hòa Phước' },
           { code: 'DN-HV-SA', name: 'Xã Hòa Sơn A' },
+        ],
+      },
+      {
+        code: 'HUE',
+        name: 'Thành phố Huế',
+        communes: [
+          // --- Các phường trung tâm ---
+          { code: 'HUE-H', name: 'Phường Huế' },
+          { code: 'HUE-HT', name: 'Phường Hương Thủy' },
+          { code: 'HUE-HTr', name: 'Phường Hương Trà' },
+
+          // --- Các phường mới sau sáp nhập ---
+          { code: 'HUE-PT', name: 'Phường Phú Thượng' },
+          { code: 'HUE-TH', name: 'Phường Thuận Hóa' },
+          { code: 'HUE-VY', name: 'Phường Vỹ Dạ' },
+          { code: 'HUE-PX', name: 'Phường Phú Xuân' },
+
+          // --- Một số xã tiêu biểu ---
+          { code: 'HUE-PD', name: 'Xã Phong Điền' },
+          { code: 'HUE-QD', name: 'Xã Quảng Điền' },
+          { code: 'HUE-PV', name: 'Xã Phú Vang' },
+          { code: 'HUE-AL', name: 'Xã A Lưới' },
+          { code: 'HUE-PL', name: 'Xã Phú Lộc' },
+          { code: 'HUE-ND', name: 'Xã Nam Đông' },
+          { code: 'HUE-BD', name: 'Xã Bình Điền' },
+          // --- Bổ sung thêm các phường và xã để đạt tổng cộng 21 phường và 19 xã ---
+          { code: 'HUE-TX', name: 'Phường Tây Lộc' },
+          { code: 'HUE-DV', name: 'Phường Đông Ba' },
+          { code: 'HUE-NL', name: 'Phường Nguyễn Hoàng' },
+          { code: 'HUE-BQ', name: 'Phường Bến Nghé' },
+          { code: 'HUE-TH2', name: 'Phường Thủy Xuân' },
+          { code: 'HUE-VT', name: 'Phường Vỹ Lạc' },
+          { code: 'HUE-TX2', name: 'Phường Tân Định' },
+          { code: 'HUE-AL2', name: 'Xã An Tây' },
+          { code: 'HUE-LX', name: 'Xã Lộc Bình' },
+          { code: 'HUE-LV', name: 'Xã Lộc Thủy' },
+          { code: 'HUE-BX', name: 'Xã Bình Minh' },
+          { code: 'HUE-MN', name: 'Xã Mỹ Hưng' },
         ],
       },
       {
@@ -1989,43 +2027,124 @@ export class DatabasesService implements OnModuleInit {
           { code: 'QT-TT', name: 'Xã Tân Thành' },
         ],
       },
-
       {
-        code: 'HUE',
-        name: 'Thành phố Huế',
+        code: 'NB',
+        name: 'Tỉnh Ninh Bình',
         communes: [
-          // --- Các phường trung tâm ---
-          { code: 'HUE-H', name: 'Phường Huế' },
-          { code: 'HUE-HT', name: 'Phường Hương Thủy' },
-          { code: 'HUE-HTr', name: 'Phường Hương Trà' },
-
-          // --- Các phường mới sau sáp nhập ---
-          { code: 'HUE-PT', name: 'Phường Phú Thượng' },
-          { code: 'HUE-TH', name: 'Phường Thuận Hóa' },
-          { code: 'HUE-VY', name: 'Phường Vỹ Dạ' },
-          { code: 'HUE-PX', name: 'Phường Phú Xuân' },
-
-          // --- Một số xã tiêu biểu ---
-          { code: 'HUE-PD', name: 'Xã Phong Điền' },
-          { code: 'HUE-QD', name: 'Xã Quảng Điền' },
-          { code: 'HUE-PV', name: 'Xã Phú Vang' },
-          { code: 'HUE-AL', name: 'Xã A Lưới' },
-          { code: 'HUE-PL', name: 'Xã Phú Lộc' },
-          { code: 'HUE-ND', name: 'Xã Nam Đông' },
-          { code: 'HUE-BD', name: 'Xã Bình Điền' },
-          // --- Bổ sung thêm các phường và xã để đạt tổng cộng 21 phường và 19 xã ---
-          { code: 'HUE-TX', name: 'Phường Tây Lộc' },
-          { code: 'HUE-DV', name: 'Phường Đông Ba' },
-          { code: 'HUE-NL', name: 'Phường Nguyễn Hoàng' },
-          { code: 'HUE-BQ', name: 'Phường Bến Nghé' },
-          { code: 'HUE-TH2', name: 'Phường Thủy Xuân' },
-          { code: 'HUE-VT', name: 'Phường Vỹ Lạc' },
-          { code: 'HUE-TX2', name: 'Phường Tân Định' },
-          { code: 'HUE-AL2', name: 'Xã An Tây' },
-          { code: 'HUE-LX', name: 'Xã Lộc Bình' },
-          { code: 'HUE-LV', name: 'Xã Lộc Thủy' },
-          { code: 'HUE-BX', name: 'Xã Bình Minh' },
-          { code: 'HUE-MN', name: 'Xã Mỹ Hưng' },
+          { code: 'NB-NB', name: 'Phường Ninh Bình' },
+          { code: 'NB-GV', name: 'Xã Gia Viễn' },
+          { code: 'NB-HL', name: 'Xã Hoa Lư' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'TB',
+        name: 'Tỉnh Thái Bình',
+        communes: [
+          { code: 'TB-TB', name: 'Phường Thái Bình' },
+          { code: 'TB-QP', name: 'Xã Quỳnh Phụ' },
+          { code: 'TB-HH', name: 'Xã Hưng Hà' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'ND',
+        name: 'Tỉnh Nam Định',
+        communes: [
+          { code: 'ND-ND', name: 'Phường Nam Định' },
+          { code: 'ND-HY', name: 'Xã Hải Hậu' },
+          { code: 'ND-YN', name: 'Xã Ý Yên' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'VP',
+        name: 'Tỉnh Vĩnh Phúc',
+        communes: [
+          { code: 'VP-VP', name: 'Phường Vĩnh Yên' },
+          { code: 'VP-PL', name: 'Xã Phúc Lộc' },
+          { code: 'VP-BT', name: 'Xã Bình Tường' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'BG',
+        name: 'Tỉnh Bắc Giang',
+        communes: [
+          { code: 'BG-BG', name: 'Phường Bắc Giang' },
+          { code: 'BG-LX', name: 'Xã Lục Ngạn' },
+          { code: 'BG-LA', name: 'Xã Lạng Giang' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'BN',
+        name: 'Tỉnh Bắc Ninh',
+        communes: [
+          { code: 'BN-BN', name: 'Phường Bắc Ninh' },
+          { code: 'BN-TT', name: 'Xã Từ Sơn' },
+          { code: 'BN-QV', name: 'Xã Quế Võ' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'LC',
+        name: 'Tỉnh Lào Cai',
+        communes: [
+          { code: 'LC-LC', name: 'Phường Lào Cai' },
+          { code: 'LC-SL', name: 'Xã Sa Pa' },
+          { code: 'LC-BH', name: 'Xã Bảo Hà' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'LS',
+        name: 'Tỉnh Lạng Sơn',
+        communes: [
+          { code: 'LS-LS', name: 'Phường Lạng Sơn' },
+          { code: 'LS-CL', name: 'Xã Chi Lăng' },
+          { code: 'LS-HB', name: 'Xã Hữu Lũng' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'CB',
+        name: 'Tỉnh Cao Bằng',
+        communes: [
+          { code: 'CB-CB', name: 'Phường Cao Bằng' },
+          { code: 'CB-HQ', name: 'Xã Hòa Quang' },
+          { code: 'CB-TT', name: 'Xã Trùng Khánh' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'HG',
+        name: 'Tỉnh Hà Giang',
+        communes: [
+          { code: 'HG-HG', name: 'Phường Hà Giang' },
+          { code: 'HG-DM', name: 'Xã Đồng Văn' },
+          { code: 'HG-MH', name: 'Xã Mèo Vạc' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'TQ',
+        name: 'Tỉnh Tuyên Quang',
+        communes: [
+          { code: 'TQ-TQ', name: 'Phường Tuyên Quang' },
+          { code: 'TQ-SN', name: 'Xã Sơn Nam' },
+          { code: 'TQ-HH', name: 'Xã Hàm Yên' },
+          // … bổ sung đầy đủ xã/phường
+        ],
+      },
+      {
+        code: 'HD',
+        name: 'Tỉnh Hải Dương',
+        communes: [
+          { code: 'HD-HD', name: 'Phường Hải Dương' },
+          { code: 'HD-TT', name: 'Xã Thanh Trì' },
+          { code: 'HD-KS', name: 'Xã Kinh Môn' },
+          // … bổ sung đầy đủ xã/phường
         ],
       },
     ];

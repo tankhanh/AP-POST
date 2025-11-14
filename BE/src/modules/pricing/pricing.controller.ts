@@ -69,7 +69,7 @@ export class PricingController {
     @Query('km') km: string,
     @Query('weightKg') weightKg: string,
   ) {
-    return this.pricingService.calculate(
+    return this.pricingService.calculateShipping(
       serviceId,
       Number(km),
       Number(weightKg),
