@@ -44,7 +44,7 @@ export class OrdersController {
     const page = current ? Number(current) : 1;
     const size = limit ? Number(limit) : 10;
 
-    const user = req.user; // middleware JWT phải giải mã token ra user
+    const user = req.user;
     if (!user?._id) {
       throw new BadRequestException('User không hợp lệ');
     }

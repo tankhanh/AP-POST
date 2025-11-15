@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -6,14 +6,19 @@ import { OrdersService } from '../../services/dashboard/orders.service';
 import { LocationService } from '../../services/location.service';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import { MapPickerComponent } from '../../shared/map-picker/map-picker';
+import { GeocodingService } from '../../services/geocoding.service';
 
 @Component({
   selector: 'app-create-order',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule, MapPickerComponent],
   templateUrl: './createOrder.html',
 })
 export class CreateOrder implements OnInit {
+  @ViewChild('pickupMap') pickupMap!: MapPickerComponent;
+  @ViewChild('deliveryMap') deliveryMap!: MapPickerComponent;
+
   orderForm!: FormGroup;
   loading = false;
 
@@ -25,7 +30,8 @@ export class CreateOrder implements OnInit {
     private fb: FormBuilder,
     private ordersService: OrdersService,
     private locationService: LocationService,
-    private router: Router
+    private router: Router,
+    private geocoding: GeocodingService
   ) {}
 
   ngOnInit(): void {
@@ -45,6 +51,10 @@ export class CreateOrder implements OnInit {
       deliveryCommuneId: ['', Validators.required],
       deliveryDetailAddress: ['', Validators.required],
       totalPrice: [0, [Validators.required, Validators.min(0)]],
+      pickupLat: [''],
+      pickupLng: [''],
+      deliveryLat: [''],
+      deliveryLng: [''],
     });
   }
 
@@ -101,12 +111,16 @@ export class CreateOrder implements OnInit {
       provinceId: f.pickupProvinceId,
       communeId: f.pickupCommuneId,
       address: f.pickupDetailAddress,
+      lat: f.pickupLat,
+      lng: f.pickupLng,
     };
 
     const deliveryAddress = {
       provinceId: f.deliveryProvinceId,
       communeId: f.deliveryCommuneId,
       address: f.deliveryDetailAddress,
+      lat: f.deliveryLat,
+      lng: f.deliveryLng,
     };
 
     const data = {
@@ -138,5 +152,63 @@ export class CreateOrder implements OnInit {
         });
       },
     });
+  }
+
+  setPickupLocation(pos: { lat: number; lng: number }) {
+    this.orderForm.patchValue({
+      pickupLat: pos.lat,
+      pickupLng: pos.lng,
+    });
+  }
+
+  setDeliveryLocation(pos: { lat: number; lng: number }) {
+    this.orderForm.patchValue({
+      deliveryLat: pos.lat,
+      deliveryLng: pos.lng,
+    });
+  }
+
+  updatePickupMap() {
+    const f = this.orderForm.value;
+
+    // phải có đủ tỉnh + huyện + địa chỉ chi tiết mới geocode
+    if (!f.pickupDetailAddress || !f.pickupProvinceId || !f.pickupCommuneId) {
+      return;
+    }
+
+    const fullAddress =
+      `${this.getCommuneName(f.pickupCommuneId)}, ` +
+      `${this.getProvinceName(f.pickupProvinceId)}, ` +
+      f.pickupDetailAddress;
+
+    this.geocoding.search(fullAddress).subscribe((res) => {
+      if (!res || res.length === 0) return;
+
+      const lat = parseFloat(res[0].lat);
+      const lng = parseFloat(res[0].lon);
+
+      // cập nhật vào form
+      this.orderForm.patchValue({
+        pickupLat: lat,
+        pickupLng: lng,
+      });
+
+      // cập nhật map
+      if (this.pickupMap) {
+        this.pickupMap.setMarker(lat, lng);
+      }
+    });
+  }
+
+  getProvinceName(id: string) {
+    return this.provinces.find((p) => p._id === id)?.name || '';
+  }
+
+  getCommuneName(id: string) {
+    return (
+      this.pickupCommunes.find((c) => c._id === id)?.name ||
+      this.deliveryCommunes.find((c) => c._id === id)?.name ||
+      ''
+    );
   }
 }
