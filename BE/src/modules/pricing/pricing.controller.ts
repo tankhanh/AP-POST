@@ -60,19 +60,23 @@ export class PricingController {
     return this.pricingService.remove(id, user);
   }
 
-  // ✅ Tính phí theo km & cân nặng
-  // Ví dụ: GET /pricing/calculate?serviceId=...&km=12.5&weightKg=1.8
-  @Get('calculate')
-  @ResponseMessage('Tính giá cước vận chuyển')
-  calculate(
-    @Query('serviceId') serviceId: string,
-    @Query('km') km: string,
-    @Query('weightKg') weightKg: string,
-  ) {
-    return this.pricingService.calculateShipping(
-      serviceId,
-      Number(km),
-      Number(weightKg),
-    );
-  }
+  // @Get('calculate')
+  // @ResponseMessage('Tính giá cước vận chuyển')
+  // calculate(
+  //   @Query('serviceId') serviceId: string,
+  //   @Query('km') km: string,
+  //   @Query('weightKg') weightKg: string,
+  //   @Query('originRegion') originRegion: 'North' | 'Central' | 'South',
+  //   @Query('destRegion') destRegion: 'North' | 'Central' | 'South',
+  //   @Query('isLocal') isLocal?: string,
+  // ) {
+  //   return this.pricingService.calculateShipping(
+  //     serviceId,
+  //     Number(km),
+  //     Number(weightKg),
+  //     originRegion,
+  //     destRegion,
+  //     isLocal === 'true',
+  //   );
+  // }
 }

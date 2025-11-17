@@ -1,61 +1,66 @@
-HN   → Hà Nội
-HCM  → TP Hồ Chí Minh (mới, gồm HCM + Bình Dương + BR-VT)
-HP   → Hải Phòng
-DN   → Đà Nẵng
-CT   → Cần Thơ
-TN   → Tây Ninh
-GL   → Gia Lai
-QN   → Quảng Ninh
-KH   → Khánh Hòa
-LD   → Lâm Đồng
-DLK  → Đắk Lắk
-DNA  → Đồng Nai
-DT   → Đồng Tháp
-KG   → Kiên Giang
-BT   → Bến Tre
-BL   → Bạc Liêu
-CM   → Cà Mau
-TH   → Thanh Hóa
-NA   → Nghệ An
-HT   → Hà Tĩnh
-QT   → Quảng Trị (mới, gồm Quảng Bình + Quảng Trị)
-HUE  → Thừa Thiên Huế (Thành phố Huế mở rộng)
-NB   → Ninh Bình
-TB   → Thái Bình
-ND   → Nam Định
-VP   → Vĩnh Phúc
-BG   → Bắc Giang
-BN   → Bắc Ninh
-LC   → Lào Cai
-LS   → Lạng Sơn
-CB   → Cao Bằng
-HG   → Hà Giang
-TQ   → Tuyên Quang
-AG    => An Giang
+const PROVINCES = {
+  HN:  'Hà Nội',
+  HCM: 'Hồ Chí Minh',
+  HP:  'Hải Phòng',
+  DNA: 'Đà Nẵng',
+  CT:  'Cần Thơ',
+  TN:  'Tây Ninh',
+  GL:  'Gia Lai',
+  QNN: 'Quảng Ninh',
+  KH:  'Khánh Hòa',
+  LD:  'Lâm Đồng',
+  DL:  'Đắk Lắk',
+  DN:  'Đồng Nai',
+  DT:  'Đồng Tháp',
+  KG:  'Kiên Giang',
+  BT:  'Bến Tre',
+  BL:  'Bạc Liêu',
+  CM:  'Cà Mau',
+  TH:  'Thanh Hóa',
+  NA:  'Nghệ An',
+  HT:  'Hà Tĩnh',
+  QT:  'Quảng Trị',
+  HUE: 'Thừa Thiên Huế',
+  NB:  'Ninh Bình',
+  TB:  'Thái Bình',
+  ND:  'Nam Định',
+  VP:  'Vĩnh Phúc',
+  BG:  'Bắc Giang',
+  BNH: 'Bắc Ninh',
+  LCI: 'Lào Cai',
+  LSN: 'Lạng Sơn',
+  CB:  'Cao Bằng',
+  HG:  'Hà Giang',
+  TQ:  'Tuyên Quang',
+  AG:  'An Giang',
+};
 
-////
-'HN','HCM','HP','DN','CT','TN','GL','QN','KH','LD',
-'DLK','DNA','DT','KG','BT','BL','CM','TH','NA','HT',
-'QT','HUE','NB','TB','ND','VP','BG','BN','LC','LS',
-'CB','HG','TQ','AG',
 
-/// region
-North:'HN','HP','NB','TB','ND','VP','BG','BN','LC','LS','CB','HG','TQ'
-Central:'HUE','TH','NA','HT','QT','DN','GL','KH','LD','DLK','BT'
-South:'HCM','DNA','CT','TN','DT','KG','BT','BL','CM','AG'
+
+const REGIONS = {
+  North: [
+    'HN','HP','NB','TB','ND','VP','BG','BNH',
+    'LCI','LSN','CB','HG','TQ'
+  ],
+  Central: [
+    'HUE','TH','NA','HT','QT','DNA',
+    'GL','KH','LD','DL'
+  ],
+  South: [
+    'HCM','DN','CT','TN','DT','KG','BT','BL','CM','AG'
+  ]
+};
+
 
 /// branch
 HN01,
 HCM01,
-DN01,
+DNA01,
 HP01,
 CT01,
 KH01,
-DN02,
-TH01,
-NA01,
-HU01,
-QN01
+HUE01,
+
 
 /// service
  {
@@ -73,7 +78,6 @@ QN01
         basePrice: 40000,
         isActive: true,
       },
-      
 
 //// cal
 North   <= | => center = 10k + service  + 5k  neu  > 5 kg

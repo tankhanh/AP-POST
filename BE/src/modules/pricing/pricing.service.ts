@@ -80,40 +80,53 @@ export class PricingService {
     return { message: 'Pricing soft-deleted' };
   }
 
-  // Tính phí theo km + cân nặng
-  // Tính phí theo khoảng cách và cân nặng
-  async calculateShipping(branchCode: string, km: number, weightKg: number) {
-    // Kiểm tra các điều kiện miễn phí giao hàng
-    if (weightKg < 5 || this.isInCity(branchCode, km)) {
-      return 0; // Miễn phí ship nếu cân nặng dưới 5kg hoặc đơn hàng gần chi nhánh
-    }
+  // async calculateShipping(
+  //   originRegion: 'North' | 'Central' | 'South',
+  //   destRegion: 'North' | 'Central' | 'South',
+  //   serviceCode: 'STD' | 'EXP',
+  //   weightKg: number,
+  //   isLocal: boolean,
+  // ) {
+  //   // Nếu nội thành hoặc gần kho => free ship
+  //   if (isLocal) {
+  //     return { totalPrice: 0, description: 'Free ship (nội thành/gần kho)' };
+  //   }
 
-    // Tính phí theo bảng giá
-    const serviceId = 'serviceId123'; // ID dịch vụ (có thể thay đổi tùy vào yêu cầu)
-    const fee = await this.calculateShipping(serviceId, km, weightKg);
-    return fee;
-  }
+  //   // Lấy thông tin dịch vụ
+  //   const service = await this.pricingModel.findOne({
+  //     code: serviceCode,
+  //     isActive: true,
+  //   });
+  //   if (!service) throw new NotFoundException('Service not found');
 
-  // Kiểm tra xem đơn hàng có thuộc nội thành hoặc gần chi nhánh không
-  isInCity(branchCode: string, km: number): boolean {
-    const branchesNearby = [
-      'HN01',
-      'HCM01',
-      'DN01',
-      'HP01',
-      'CT01',
-      'KH01',
-      'DN02',
-      'TH01',
-      'NA01',
-      'HU01',
-      'QN01',
-    ]; // Các chi nhánh thuộc nội thành hoặc gần
+  //   let baseFee = 0;
 
-    // Giả sử khoảng cách nhỏ hơn 10km được coi là gần
-    const nearbyDistance = 10;
+  //   // Logic theo vùng
+  //   if (
+  //     (originRegion === 'North' && destRegion === 'Central') ||
+  //     (originRegion === 'Central' && destRegion === 'North')
+  //   ) {
+  //     baseFee = 10000;
+  //   } else if (
+  //     (originRegion === 'North' && destRegion === 'South') ||
+  //     (originRegion === 'South' && destRegion === 'North')
+  //   ) {
+  //     baseFee = 15000;
+  //   } else if (
+  //     (originRegion === 'South' && destRegion === 'Central') ||
+  //     (originRegion === 'Central' && destRegion === 'South')
+  //   ) {
+  //     baseFee = 10000;
+  //   }
 
-    // Nếu chi nhánh gần và khoảng cách nhỏ hơn giới hạn, miễn phí ship
-    return branchesNearby.includes(branchCode) && km <= nearbyDistance;
-  }
+  //   // Phụ phí > 5kg
+  //   const extra = weightKg > 5 ? 5000 : 0;
+
+  //   const totalPrice = baseFee + service.basePrice + extra;
+
+  //   return {
+  //     totalPrice,
+  //     serviceDescription: service.description,
+  //   };
+  // }
 }
