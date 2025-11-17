@@ -4254,7 +4254,7 @@ export class DatabasesService implements OnModuleInit {
       {
         shipmentId: shipment._id,
         status: TrackingStatus.CREATED,
-        location: 'Hà Nội Center',
+        location: 'HN01',
         note: 'Khởi tạo',
         branchId: shipment.originBranchId,
         timestamp: new Date(),
@@ -4263,7 +4263,7 @@ export class DatabasesService implements OnModuleInit {
       {
         shipmentId: shipment._id,
         status: TrackingStatus.IN_TRANSIT,
-        location: 'Kho trung chuyển',
+        location: 'HUE01',
         note: 'Đang trung chuyển',
         branchId: shipment.originBranchId,
         timestamp: new Date(),
