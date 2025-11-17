@@ -66,6 +66,7 @@ export class Login implements OnInit {
         console.log('user role raw:', data.user.role);
         console.log('roles chuẩn hóa:', (this.authService as any)['normalizeRoles']?.(data.user));
         console.log('isAdmin:', this.authService.isAdmin(data.user));
+        console.log('isEmployee:', this.authService.isEmployee(data.user));
 
         this.toastr.success('Đăng nhập thành công!');
 

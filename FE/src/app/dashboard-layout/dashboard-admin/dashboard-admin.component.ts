@@ -7,7 +7,7 @@ import Chart from 'chart.js/auto';
 @Component({
   selector: 'app-dashboard-admin',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './dashboard-admin.component.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

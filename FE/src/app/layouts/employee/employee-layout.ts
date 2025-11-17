@@ -13,13 +13,13 @@ import { AuthService } from '../../services/auth.service';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
-  selector: 'user-layout',
+  selector: 'employee-layout',
   standalone: true,
   imports: [RouterOutlet, RouterLink, CurrencyPipe],
-  templateUrl: './user-layout.html',
+  templateUrl: './employee-layout.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class UserLayout implements OnInit, OnDestroy {
+export class EmployeeLayout implements OnInit, OnDestroy {
   isAuthPage = false;
   user: any = null;
   balance = 0;
@@ -59,10 +59,10 @@ export class UserLayout implements OnInit, OnDestroy {
       url.startsWith('/forget-password') ||
       url.startsWith('/verify') ||
       url.startsWith('/reset-password') ||
-      url.startsWith('/dashboard') ||
-      url.startsWith('/dashboard/home') ||
-      url.startsWith('/dashboard/order') ||
-      url.startsWith('/dashboard/profile');
+      url.startsWith('/employee/dashboard') ||
+      url.startsWith('/employee/dashboard/home') ||
+      url.startsWith('/employee/dashboard/order') ||
+      url.startsWith('/employee/dashboard/profile');
   }
 
   logout() {

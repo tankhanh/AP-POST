@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, ViewChild, NgZone, AfterViewInit, OnDestroy } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import Chart from 'chart.js/auto';
-import { DashboardService } from '../../services/dashboard/dashboard.service';
+import { DashboardService } from '../../../services/dashboard/dashboard.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({

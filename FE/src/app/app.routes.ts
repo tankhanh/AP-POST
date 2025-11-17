@@ -9,18 +9,18 @@ import { Verify } from './account/verify/verify';
 import { VerifyReset } from './account/verify-reset/verify-reset';
 import { ResetPassword } from './account/reset-password/reset-password';
 import { DashboardLayout } from './dashboard-layout/dashboard-layout';
-import { DashboardHome } from './dashboard-layout/dashboard-home/dashboard-home';
+import { DashboardHome } from './dashboard-layout/dashboard-emoloyee/dashboard-home/dashboard-home';
 
 // Guards
 import { AuthGuard } from './guard/auth.guard';
 // (tùy chọn) AdminGuard nếu có
 import { AdminGuard } from './guard/admin.guard';
 // Layouts mới
-import { UserLayout } from './layouts/user/user-layout';
-import { DashboardProfile } from './dashboard-layout/dashboard-profile/dashboard-profile';
-import { CreateOrder } from './dashboard-layout/dashboard-orders/createOrder';
-import { ListOrder } from './dashboard-layout/dashboard-orders/listOrder';
-import { EditOrder } from './dashboard-layout/dashboard-orders/editOrder';
+import { EmployeeLayout } from './layouts/employee/employee-layout';
+import { DashboardProfile } from './dashboard-layout/dashboard-emoloyee/dashboard-profile/dashboard-profile';
+import { CreateOrder } from './dashboard-layout/dashboard-emoloyee/dashboard-orders/createOrder';
+import { ListOrder } from './dashboard-layout/dashboard-emoloyee/dashboard-orders/listOrder';
+import { EditOrder } from './dashboard-layout/dashboard-emoloyee/dashboard-orders/editOrder';
 import { AdminLayout } from './layouts/admin/admin-layout.component';
 import { DashboardAdmin } from './dashboard-layout/dashboard-admin/dashboard-admin.component';
 import { BranchListComponent } from './branches/branch-list/branch-list.component';
@@ -29,7 +29,7 @@ export const routes: Routes = [
   // ----- USER LAYOUT -----
   {
     path: '',
-    component: UserLayout,
+    component: EmployeeLayout,
     children: [
       { path: '', component: Home },
       { path: 'home', redirectTo: '', pathMatch: 'full' },
@@ -41,7 +41,7 @@ export const routes: Routes = [
       { path: 'verify-reset', component: VerifyReset },
       { path: 'reset-password', component: ResetPassword },
       {
-        path: 'dashboard',
+        path: 'employee/dashboard',
         canActivate: [AuthGuard],
         component: DashboardLayout,
         children: [

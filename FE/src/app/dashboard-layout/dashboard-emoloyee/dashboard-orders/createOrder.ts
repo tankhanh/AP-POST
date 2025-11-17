@@ -2,12 +2,12 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { OrdersService } from '../../services/dashboard/orders.service';
-import { LocationService } from '../../services/location.service';
+import { OrdersService } from '../../../services/dashboard/orders.service';
+import { LocationService } from '../../../services/location.service';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
-import { MapPickerComponent } from '../../shared/map-picker/map-picker';
-import { GeocodingService } from '../../services/geocoding.service';
+import { MapPickerComponent } from '../../../shared/map-picker/map-picker';
+import { GeocodingService } from '../../../services/geocoding.service';
 import { debounceTime } from 'rxjs/operators';
 
 @Component({

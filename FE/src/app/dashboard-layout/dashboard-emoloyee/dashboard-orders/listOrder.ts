@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { OrdersService } from '../../services/dashboard/orders.service';
+import { OrdersService } from '../../../services/dashboard/orders.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({

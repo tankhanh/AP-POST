@@ -121,4 +121,12 @@ export class AuthService {
   isAdmin(user?: any): boolean {
     return this.hasRole('admin', user);
   }
+
+  isEmployee(user?: any): boolean {
+    return this.hasRole('staff', user);
+  }
+
+  isCustomer(user?: any): boolean {
+    return this.hasRole('customer', user);
+  }
 }
