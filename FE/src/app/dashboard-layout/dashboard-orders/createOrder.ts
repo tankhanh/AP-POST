@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { MapPickerComponent } from '../../shared/map-picker/map-picker';
 import { GeocodingService } from '../../services/geocoding.service';
+import { debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-create-order',
@@ -37,6 +38,18 @@ export class CreateOrder implements OnInit {
   ngOnInit(): void {
     this.initForm();
     this.loadProvinces();
+
+    // Debounce input địa chỉ pickup
+    this.orderForm
+      .get('pickupDetailAddress')!
+      .valueChanges.pipe(debounceTime(500))
+      .subscribe(() => this.updatePickupMap());
+
+    // Debounce input địa chỉ delivery
+    this.orderForm
+      .get('deliveryDetailAddress')!
+      .valueChanges.pipe(debounceTime(500))
+      .subscribe(() => this.updateDeliveryMap());
   }
 
   initForm() {
@@ -61,7 +74,6 @@ export class CreateOrder implements OnInit {
   loadProvinces() {
     this.locationService.getProvinces().subscribe({
       next: (res) => {
-        console.log('Provinces API:', res);
         this.provinces = res.data || [];
       },
       error: (err) => console.error('Load provinces failed', err),
@@ -171,10 +183,7 @@ export class CreateOrder implements OnInit {
   updatePickupMap() {
     const f = this.orderForm.value;
 
-    // phải có đủ tỉnh + huyện + địa chỉ chi tiết mới geocode
-    if (!f.pickupDetailAddress || !f.pickupProvinceId || !f.pickupCommuneId) {
-      return;
-    }
+    if (!f.pickupDetailAddress || !f.pickupProvinceId || !f.pickupCommuneId) return;
 
     const fullAddress =
       `${this.getCommuneName(f.pickupCommuneId)}, ` +
@@ -187,16 +196,30 @@ export class CreateOrder implements OnInit {
       const lat = parseFloat(res[0].lat);
       const lng = parseFloat(res[0].lon);
 
-      // cập nhật vào form
-      this.orderForm.patchValue({
-        pickupLat: lat,
-        pickupLng: lng,
-      });
+      this.orderForm.patchValue({ pickupLat: lat, pickupLng: lng });
+      if (this.pickupMap) this.pickupMap.setMarker(lat, lng);
+    });
+  }
 
-      // cập nhật map
-      if (this.pickupMap) {
-        this.pickupMap.setMarker(lat, lng);
-      }
+  updateDeliveryMap() {
+    const f = this.orderForm.value;
+
+    if (!f.deliveryDetailAddress || !f.deliveryProvinceId || !f.deliveryCommuneId) return;
+
+    const fullAddress =
+      `${this.getCommuneName(f.deliveryCommuneId)}, ` +
+      `${this.getProvinceName(f.deliveryProvinceId)}, ` +
+      f.deliveryDetailAddress;
+
+    this.geocoding.search(fullAddress).subscribe((res) => {
+      if (!res || res.length === 0) return;
+
+      const lat = parseFloat(res[0].lat);
+      const lng = parseFloat(res[0].lon);
+
+      this.orderForm.patchValue({ deliveryLat: lat, deliveryLng: lng });
+
+      if (this.deliveryMap) this.deliveryMap.setMarker(lat, lng);
     });
   }
 

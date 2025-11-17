@@ -1,4 +1,13 @@
-import { Component, Inject, PLATFORM_ID, AfterViewInit, ViewChild, ElementRef, Output, EventEmitter } from '@angular/core';
+import {
+  Component,
+  Inject,
+  PLATFORM_ID,
+  AfterViewInit,
+  ViewChild,
+  ElementRef,
+  Output,
+  EventEmitter,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 @Component({
@@ -7,7 +16,6 @@ import { isPlatformBrowser } from '@angular/common';
   templateUrl: './map-picker.html',
 })
 export class MapPickerComponent implements AfterViewInit {
-
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
   @Output() locationSelect = new EventEmitter<{ lat: number; lng: number }>();
 
@@ -26,7 +34,7 @@ export class MapPickerComponent implements AfterViewInit {
     this.map = L.map(this.mapContainer.nativeElement).setView([10.76, 106.66], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19
+      maxZoom: 19,
     }).addTo(this.map);
 
     this.map.on('click', (e: any) => {
@@ -39,7 +47,16 @@ export class MapPickerComponent implements AfterViewInit {
     if (this.marker) this.marker.remove();
 
     const L = (window as any).L;
-    this.marker = L.marker([lat, lng]).addTo(this.map);
+
+    // Tạo DivIcon với HTML của iconify
+    const icon = L.divIcon({
+      className: '', // để không dùng CSS mặc định
+      html: '<iconify-icon icon="mdi:map-marker" width="32" height="32" style="color:red;"></iconify-icon>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+    });
+
+    this.marker = L.marker([lat, lng], { icon }).addTo(this.map);
     this.map.setView([lat, lng], 15);
   }
 }

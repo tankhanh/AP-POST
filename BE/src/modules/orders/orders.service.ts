@@ -219,12 +219,17 @@ export class OrdersService {
   }
 
   async remove(id: string, user: IUser) {
-    const res = await this.orderModel.softDelete({
-      _id: id,
-      deletedBy: { _id: new Types.ObjectId(user._id), email: user.email },
-    } as any);
-    if (!res || (res as any).modifiedCount === 0)
+    const order = await this.orderModel.findById(id);
+    if (!order || order.isDeleted)
       throw new NotFoundException('Order not found');
+
+    // Gọi softDelete chỉ với _id
+    await this.orderModel.softDelete({ _id: id });
+
+    // Nếu muốn lưu thông tin deletedBy
+    order.deletedBy = { _id: new Types.ObjectId(user._id), email: user.email };
+    await order.save();
+
     return { message: 'Order soft-deleted' };
   }
 
