@@ -11,8 +11,11 @@ export class BranchService {
 
   // GET /branches?current=&pageSize=&...
   findAll() {
-    return lastValueFrom(this.httpClient.get(env.baseUrl + '/branches'));
-  }
+  const params = new HttpParams().set('pageSize', '9999');
+  return lastValueFrom(
+    this.httpClient.get(env.baseUrl + '/branches', { params })
+  );
+}
 
   // GET /branches/:id
   findById(id: string) {

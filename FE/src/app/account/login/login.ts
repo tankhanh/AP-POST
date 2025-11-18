@@ -63,10 +63,6 @@ export class Login implements OnInit {
         localStorage.setItem('userId', data.user._id);
         this.authService.setUser(data.user);
 
-        console.log('user role raw:', data.user.role);
-        console.log('roles chuẩn hóa:', (this.authService as any)['normalizeRoles']?.(data.user));
-        console.log('isAdmin:', this.authService.isAdmin(data.user));
-
         this.toastr.success('Đăng nhập thành công!');
 
         // Điều hướng
