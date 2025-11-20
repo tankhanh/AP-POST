@@ -43,7 +43,6 @@ export class BranchesController {
   }
 
   @Public()
-  @Public()
   @Get(':id')
   @ResponseMessage('Chi tiết chi nhánh')
   findOne(@Param('id') id: string) {
