@@ -20,7 +20,11 @@ export class User {
   @Prop({ enum: ['MALE', 'FEMALE', 'OTHER'], required: false })
   gender: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: false,
+  })
   BranchId: Types.ObjectId;
 
   @Prop()
@@ -34,13 +38,6 @@ export class User {
     enum: ['USER', 'ADMIN', 'STAFF', 'COURIER', 'CUSTOMER'],
   })
   role: string;
-
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Branch',
-    required: false,
-  })
-  branchId?: mongoose.Types.ObjectId;
 
   @Prop()
   avatar: string;

@@ -10,6 +10,7 @@ import {
   Min,
   IsEnum,
   Matches,
+  IsMongoId,
 } from 'class-validator';
 
 export enum GenderEnum {
@@ -55,9 +56,6 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(GenderEnum, { message: 'Giới tính không hợp lệ' })
   gender?: GenderEnum;
-
-  @IsOptional()
-  BranchId: string;
 
   @ApiProperty({
     required: false,

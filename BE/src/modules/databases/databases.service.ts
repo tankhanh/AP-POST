@@ -3878,7 +3878,7 @@ export class DatabasesService implements OnModuleInit {
       contactPhone: '0987654321',
       line1: '45 Lê Lợi',
       provinceCode: 'HCM',
-      CommuneCode: 'HCM-Q1',
+      CommuneCode: 'HCM-SG',
       lat: 10.776889,
       lng: 106.700806,
     });
