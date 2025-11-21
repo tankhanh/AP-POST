@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "173c6512-6f54-4246-b0fe-0e8cf2bd1729",
+		"_postman_id": "7d57f1b8-185d-4760-be8a-492d8a0f86ef",
 		"name": "Project03",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "36629533"
@@ -627,7 +627,10 @@
 				{
 					"name": "Calculate Quote",
 					"request": {
-						"method": "GET",
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
@@ -640,28 +643,27 @@
 								"type": "text"
 							}
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"originProvinceCode\": \"HN\",\r\n  \"destProvinceCode\": \"DNA\",\r\n  \"serviceCode\": \"STD\",\r\n  \"weightKg\": 8,\r\n  \"isLocal\": false\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{baseUrl}}/pricing/calculate?serviceId=REPLACE_SERVICE_ID&km=12.5&weightKg=1.8",
+							"raw": "http://localhost:8000/api/v1/pricing/calculate",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "8000",
 							"path": [
+								"api",
+								"v1",
 								"pricing",
 								"calculate"
-							],
-							"query": [
-								{
-									"key": "serviceId",
-									"value": "REPLACE_SERVICE_ID"
-								},
-								{
-									"key": "km",
-									"value": "12.5"
-								},
-								{
-									"key": "weightKg",
-									"value": "1.8"
-								}
 							]
 						}
 					},
@@ -728,7 +730,7 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:8000/api/v1/locations/Communes?provinceId=690e2dde619ed1207f0a3031",
+							"raw": "http://localhost:8000/api/v1/locations/Communes?provinceId=691b605a33175b83fcbd791f",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -743,7 +745,7 @@
 							"query": [
 								{
 									"key": "provinceId",
-									"value": "690e2dde619ed1207f0a3031"
+									"value": "691b605a33175b83fcbd791f"
 								}
 							]
 						}
@@ -986,6 +988,16 @@
 				{
 					"name": "Create Order",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkxODc1MmYxNDg0M2ZmYTM4NTNmOGZiIiwibmFtZSI6IkN1c3RvbWVyIiwiZW1haWwiOiJjdXNAdnRwb3N0LmxvY2FsIiwicm9sZSI6IkNVU1RPTUVSIiwiaWF0IjoxNzYzMjEwNzQyLCJleHAiOjE3NjMyNzA3NDJ9.JXndeA2e02-7cbPnd6UXiyevm1zkWYBivKzHN69j2S8",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -2212,7 +2224,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjhjYjExZWZmNjc0YTZjMDBkOGQyYmYxIiwibmFtZSI6IkknbSBhZG1pbiIsImVtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzU4MzkzOTM2LCJleHAiOjE3NTg0NTM5MzZ9.OyksC7efWIlcN39HM7YgPA5OcF9QXF5SGr4o7-p2tUg",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkxODc3NmFlOTA0YmZhMDRiMGIzOGMwIiwibmFtZSI6IkN1c3RvbWVyIiwiZW1haWwiOiJjdXNAdnRwb3N0LmxvY2FsIiwicm9sZSI6IkNVU1RPTUVSIiwiaWF0IjoxNzYzMjE0Mjc3LCJleHAiOjE3NjMyNzQyNzd9.1jgjWVENJBd2yHACdvuFOcivGJ4817L9NW_WoRzVipQ",
 									"type": "string"
 								}
 							]
@@ -2337,7 +2349,7 @@
 							"urlencoded": [
 								{
 									"key": "username",
-									"value": "admin@vtpost.local",
+									"value": "cus@vtpost.local",
 									"type": "text"
 								},
 								{
