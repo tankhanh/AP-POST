@@ -22,19 +22,11 @@ export class Branch {
   @Prop()
   phone: string;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: Province.name,
-    required: false,
-  })
-  provinceId?: mongoose.Types.ObjectId;
+  @Prop()
+  provinceName?: string;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: Commune.name,
-    required: false,
-  })
-  communeId?: mongoose.Types.ObjectId;
+  @Prop()
+  communeName?: string;
 
   @Prop({ default: true })
   isActive: boolean;
