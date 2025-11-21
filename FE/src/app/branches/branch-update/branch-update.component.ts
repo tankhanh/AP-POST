@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import {
   FormBuilder,
@@ -6,43 +7,52 @@ import {
   ReactiveFormsModule,
   FormsModule,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { BranchService } from '../../services/branch.service';
 import { LocationService } from '../../services/location.service';
-import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-branch-create',
+  selector: 'app-branch-update',
   standalone: true,
-  templateUrl: './branch-create.component.html',
+  templateUrl: './branch-update.component.html',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
 })
-export class BranchCreateComponent implements OnInit {
+export class BranchUpdateComponent implements OnInit {
   provinces: any[] = [];
   wards: any[] = [];
 
-  addForm: FormGroup;
+  editForm: FormGroup;
   loading = false;
   msg = '';
+
+  branchId = '';
 
   constructor(
     private branchService: BranchService,
     private locationService: LocationService,
     private formBuilder: FormBuilder,
     private router: Router,
+    private route: ActivatedRoute,
     private toastr: ToastrService
   ) {}
 
   async ngOnInit() {
-    // Khởi tạo form
-    this.addForm = this.formBuilder.group({
+    // Lấy id từ url
+    this.branchId = this.route.snapshot.paramMap.get('id') || '';
+
+    // Khởi tạo form (giống create)
+    this.editForm = this.formBuilder.group({
       code: ['', Validators.required],
       name: ['', Validators.required],
       address: ['', Validators.required],
+
       phone: ['', Validators.required],
+      // không có email
+
       province: ['', Validators.required],
       ward: ['', Validators.required],
+
       note: [''],
       isActive: [true],
     });
@@ -52,15 +62,58 @@ export class BranchCreateComponent implements OnInit {
     this.provinces = provinceRes?.data || provinceRes || [];
 
     // Khi province thay đổi → load phường
-    this.addForm.get('province')?.valueChanges.subscribe((provinceId) => {
+    this.editForm.get('province')?.valueChanges.subscribe((provinceId) => {
       this.onProvinceChange(provinceId);
     });
+
+    // Load thông tin chi nhánh cần sửa
+    await this.loadBranch();
+  }
+
+  /** Load data chi nhánh theo id rồi patch vào form */
+  private async loadBranch() {
+    if (!this.branchId) return;
+
+    try {
+      this.loading = true;
+      const branch: any = await this.branchService.findById(this.branchId);
+      console.log('BRANCH FROM API = ', branch);
+
+      // province / ward có thể là object hoặc id
+      const provinceId =
+        typeof branch.province === 'string' ? branch.province : branch.province?._id;
+      const wardId = typeof branch.ward === 'string' ? branch.ward : branch.ward?._id;
+
+      // Patch các field cơ bản + province trước
+      this.editForm.patchValue({
+        code: branch.code,
+        name: branch.name,
+        address: branch.address,
+        phone: branch.phone,
+        province: provinceId,
+        note: branch.note,
+        isActive: branch.isActive ?? true,
+      });
+
+      // Nếu có province → load wards rồi set ward
+      if (provinceId) {
+        await this.onProvinceChange(provinceId);
+        if (wardId) {
+          this.editForm.patchValue({ ward: wardId });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      this.toastr.error('Không tải được thông tin chi nhánh');
+    } finally {
+      this.loading = false;
+    }
   }
 
   /** Khi đổi tỉnh: reset ward + load API phường */
   async onProvinceChange(provinceId: string) {
     this.wards = [];
-    this.addForm.get('ward')?.setValue('');
+    this.editForm.get('ward')?.setValue('');
 
     if (!provinceId) return;
 
@@ -73,18 +126,18 @@ export class BranchCreateComponent implements OnInit {
     }
   }
 
-  /** Lưu chi nhánh */
-  async save() {
-    if (this.addForm.invalid || this.loading) {
+  /** Cập nhật chi nhánh */
+  async update() {
+    if (this.editForm.invalid || this.loading) {
       this.msg = 'Vui lòng nhập đầy đủ các trường bắt buộc!';
-      this.addForm.markAllAsTouched();
+      this.editForm.markAllAsTouched();
       return;
     }
 
     this.loading = true;
     this.msg = '';
 
-    const formValue = this.addForm.value;
+    const formValue = this.editForm.value;
 
     const payload: any = {
       code: formValue.code?.trim(),
@@ -97,7 +150,7 @@ export class BranchCreateComponent implements OnInit {
       isActive: formValue.isActive,
     };
 
-    // Remove undefined
+    // Remove undefined / ''
     Object.keys(payload).forEach((key) => {
       if (payload[key] === undefined || payload[key] === '') {
         delete payload[key];
@@ -105,14 +158,14 @@ export class BranchCreateComponent implements OnInit {
     });
 
     try {
-      const res: any = await this.branchService.create(payload);
+      const res: any = await this.branchService.update(this.branchId, payload);
 
-      this.toastr.success(res?.message || 'Tạo chi nhánh mới thành công');
+      this.toastr.success(res?.message || 'Cập nhật chi nhánh thành công');
       this.router.navigate(['/admin/branch']);
     } catch (err: any) {
       console.error(err);
 
-      let msg = 'Thêm chi nhánh thất bại';
+      let msg = 'Cập nhật chi nhánh thất bại';
       const raw = err?.error?.message || err?.message;
 
       msg = Array.isArray(raw) ? raw.join('\n') : raw;

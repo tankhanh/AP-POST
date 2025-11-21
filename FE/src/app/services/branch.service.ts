@@ -16,8 +16,11 @@ export class BranchService {
   }
 
   // GET /branches/:id
+  // BranchService
   findById(id: string) {
-    return lastValueFrom(this.httpClient.get(env.baseUrl + '/branches/' + id));
+    return lastValueFrom(this.httpClient.get<any>(env.baseUrl + '/branches/' + id)).then(
+      (res) => res.data
+    ); // chỉ trả về data
   }
 
   // POST /branches
@@ -43,5 +46,12 @@ export class BranchService {
   // DELETE /branches/:id/force  (hard delete)
   hardDelete(id: string) {
     return lastValueFrom(this.httpClient.delete(env.baseUrl + '/branches/' + id + '/force'));
+  }
+
+  // GET /branches/trash – lấy tất cả chi nhánh đã xoá mềm
+  findTrash() {
+    return lastValueFrom(this.httpClient.get<any>(env.baseUrl + '/branches/trash')).then(
+      (res) => res.data
+    ); // <-- lấy đúng mảng data
   }
 }

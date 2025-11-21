@@ -1,12 +1,11 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import Chart from 'chart.js/auto';
 
 @Component({
   selector: 'app-dashboard-admin',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './dashboard-admin.component.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

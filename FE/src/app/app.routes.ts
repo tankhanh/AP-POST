@@ -8,7 +8,6 @@ import { ForgetPassword } from './account/forgetpassword/forgetpassword';
 import { Verify } from './account/verify/verify';
 import { VerifyReset } from './account/verify-reset/verify-reset';
 import { ResetPassword } from './account/reset-password/reset-password';
-import { Transaction } from './transaction/transaction';
 import { DashboardLayout } from './dashboard-layout/dashboard-layout';
 import { DashboardHome } from './dashboard-layout/dashboard-home/dashboard-home';
 import { Profile } from './dashboard-layout/dashboard-profile/dashboard-profile';
@@ -23,6 +22,9 @@ import { AdminLayout } from './layouts/admin/admin-layout.component';
 import { DashboardAdmin } from './dashboard-layout/dashboard-admin/dashboard-admin.component';
 import { BranchListComponent } from './branches/branch-list/branch-list.component';
 import { BranchCreateComponent } from './branches/branch-create/branch-create.component';
+import { BranchDetailComponent } from './branches/branch-detail/branch-detail.component';
+import { BranchUpdateComponent } from './branches/branch-update/branch-update.component';
+import { BranchTrashComponent } from './branches/branch-trash/branch-trash.component';
 
 export const routes: Routes = [
   // ----- USER LAYOUT -----
@@ -39,8 +41,6 @@ export const routes: Routes = [
       { path: 'verify', component: Verify },
       { path: 'verify-reset', component: VerifyReset },
       { path: 'reset-password', component: ResetPassword },
-
-      { path: 'transaction', canActivate: [AuthGuard], component: Transaction },
 
       // dashboard của user (giữ nguyên thư mục/dashboard-layout)
       {
@@ -66,8 +66,11 @@ export const routes: Routes = [
       {
         path: 'branch',
         children: [
-          { path: '', component: BranchListComponent }, // /admin/branch
-          { path: 'create', component: BranchCreateComponent }, // /admin/branch/create
+          { path: '', component: BranchListComponent },
+          { path: 'create', component: BranchCreateComponent },
+          { path: 'detail/:id', component: BranchDetailComponent },
+          { path: 'update/:id', component: BranchUpdateComponent },
+          { path: 'trash', component: BranchTrashComponent },
         ],
       },
     ],

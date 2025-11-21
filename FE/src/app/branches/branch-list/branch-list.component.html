@@ -6,8 +6,10 @@
       <small class="text-muted">Danh sách chi nhánh / điểm giao dịch trên toàn hệ thống.</small>
     </div>
 
-    <a class="btn btn-outline-secondary" [routerLink]="['/admin/branch/create']"> + Thêm chi nhánh </a>
-    
+    <a class="btn btn-outline-secondary" [routerLink]="['/admin/branch/create']">
+      + Thêm chi nhánh
+    </a>
+
     <a class="btn btn-outline-secondary" [routerLink]="['/admin/branch/trash']">
       <i class="bi bi-trash"></i> Thùng rác
     </a>
@@ -116,8 +118,12 @@
 
               <td class="text-end col-actions">
                 <div class="table-actions">
-                  <a class="btn-sm btn-info" [routerLink]="['/admin/branches', b._id]"> Xem </a>
-                  <a class="btn-sm btn-edit" [routerLink]="['/admin/branches', b._id]"> Sửa </a>
+                  <a class="btn-sm btn-info" [routerLink]="['/admin/branch/detail', b._id]">
+                    Xem
+                  </a>
+                  <a class="btn-sm btn-edit" [routerLink]="['/admin/branch/update', b._id]">
+                    Sửa
+                  </a>
                   <button class="btn-sm btn-delete" (click)="delete(b._id)">Xoá</button>
                 </div>
               </td>
