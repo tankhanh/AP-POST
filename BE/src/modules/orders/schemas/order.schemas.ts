@@ -46,6 +46,18 @@ export class Order {
   @Prop({ default: false }) isDeleted: boolean;
   @Prop() deletedAt?: Date;
   @Prop({ type: Object }) deletedBy?: { _id: Types.ObjectId; email: string };
+
+  @Prop({ required: true, min: 0 })
+  codValue: number;
+
+  @Prop({ required: true, min: 0 })
+  shippingFee: number;
+
+  @Prop({ default: 'STD' })
+  serviceCode: 'STD' | 'EXP';
+
+  @Prop({ required: true, min: 0.01 })
+  weightKg: number;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
