@@ -21,7 +21,7 @@ export class PricingService {
     @InjectModel(Province.name) private provinceModel: Model<Province>,
     @InjectModel(Commune.name) private communeModel: Model<Commune>,
     @InjectModel(Address.name) private addressModel: Model<Address>,
-  ) {}
+  ) { }
 
   create(dto: any) {
     return this.pricingModel.create({
@@ -91,6 +91,12 @@ export class PricingService {
     weightKg: number,
     isLocal: boolean,
   ) {
+    console.log('Region check:', {
+      originCode: originProvinceCode,
+      originRegion: getRegionByProvinceCode(originProvinceCode),
+      destCode: destProvinceCode,
+      destRegion: getRegionByProvinceCode(destProvinceCode)
+    });
     // 1) Nội thành + gần kho
     if (isLocal) {
       return {

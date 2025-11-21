@@ -1,13 +1,15 @@
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { LocationService } from '../../../services/location.service';
-import Swal from 'sweetalert2';
-import { CommonModule } from '@angular/common';
-import { MapPickerComponent } from '../../../shared/map-picker/map-picker';
 import { GeocodingService } from '../../../services/geocoding.service';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
+import Swal from 'sweetalert2';
+import { MapPickerComponent } from '../../../shared/map-picker/map-picker';
 
 @Component({
   selector: 'app-edit-order',
@@ -15,11 +17,12 @@ import { debounceTime } from 'rxjs/operators';
   imports: [CommonModule, ReactiveFormsModule, MapPickerComponent],
   templateUrl: './editOrder.html',
 })
-export class EditOrder implements OnInit, AfterViewInit {
+export class EditOrder implements OnInit {
   @ViewChild('pickupMap') pickupMap!: MapPickerComponent;
   @ViewChild('deliveryMap') deliveryMap!: MapPickerComponent;
 
-  orderForm: FormGroup;
+  orderForm!: FormGroup;
+  order: any = null;                    
   orderId: string = '';
   loading = false;
 
@@ -27,18 +30,45 @@ export class EditOrder implements OnInit, AfterViewInit {
   pickupCommunes: any[] = [];
   deliveryCommunes: any[] = [];
 
-  pickupMarker?: { lat: number; lng: number };
-  deliveryMarker?: { lat: number; lng: number };
+  currentShippingFee = 0;               
+  recalculated = false;                 
 
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
+    public router: Router,
     private ordersService: OrdersService,
     private locationService: LocationService,
-    private geocoding: GeocodingService,
-    private router: Router
+    private geocoding: GeocodingService
   ) {
-    // Khởi tạo form ngay từ đầu để tránh null
+    this.createForm();
+  }
+
+  ngOnInit(): void {
+    this.orderId = this.route.snapshot.params['id'];
+    if (!this.orderId) {
+      Swal.fire('Lỗi', 'Không tìm thấy ID đơn hàng', 'error');
+      this.router.navigate(['/employee/dashboard/order/list']);
+      return;
+    }
+
+    this.loadProvinces();
+    this.loadOrderDetail();
+
+    // Debounce địa chỉ để update map realtime
+    this.orderForm.get('pickupDetailAddress')?.valueChanges.pipe(debounceTime(500))
+      .subscribe(() => this.updatePickupMap());
+
+    this.orderForm.get('deliveryDetailAddress')?.valueChanges.pipe(debounceTime(500))
+      .subscribe(() => this.updateDeliveryMap());
+
+    // Tự động tính lại phí nếu CONFIRMED
+    this.orderForm.valueChanges.pipe(debounceTime(600)).subscribe(() => {
+      if (this.order?.status === 'CONFIRMED') this.recalculateIfAllowed();
+    });
+  }
+
+  createForm() {
     this.orderForm = this.fb.group({
       senderName: ['', Validators.required],
       receiverName: ['', Validators.required],
@@ -56,109 +86,133 @@ export class EditOrder implements OnInit, AfterViewInit {
       deliveryLat: [''],
       deliveryLng: [''],
 
-      totalPrice: [0, [Validators.required, Validators.min(0)]],
+      serviceCode: ['STD'],
+      weightKg: [1, [Validators.required, Validators.min(0.01)]],
+
+      status: ['PENDING'],
     });
   }
 
-  ngOnInit(): void {
-    const id = this.route.snapshot?.params?.['id'];
-    if (!id) {
-      console.error('No orderId found in route params');
-      return;
-    }
-    this.orderId = id;
-
-    this.loadProvinces();
-    this.loadOrderDetail();
-
-    // Debounce địa chỉ để update map
-    this.orderForm
-      .get('pickupDetailAddress')
-      ?.valueChanges.pipe(debounceTime(500))
-      .subscribe(() => this.updatePickupMap());
-
-    this.orderForm
-      .get('deliveryDetailAddress')
-      ?.valueChanges.pipe(debounceTime(500))
-      .subscribe(() => this.updateDeliveryMap());
-  }
-
-  ngAfterViewInit() {
-    // Sau khi view render xong, set marker nếu đã có dữ liệu
-    if (this.pickupMarker) this.pickupMap.setMarker(this.pickupMarker.lat, this.pickupMarker.lng);
-    if (this.deliveryMarker)
-      this.deliveryMap.setMarker(this.deliveryMarker.lat, this.deliveryMarker.lng);
-  }
+  orderStatusOptions = [
+    { value: 'PENDING', label: 'Chờ xác nhận' },
+    { value: 'CONFIRMED', label: 'Đã xác nhận' },
+    { value: 'SHIPPING', label: 'Đang giao' },
+    { value: 'COMPLETED', label: 'Hoàn tất' },
+    { value: 'CANCELED', label: 'Đã hủy' },
+  ];
 
   loadProvinces() {
-    this.locationService.getProvinces().subscribe((res) => {
+    this.locationService.getProvinces().subscribe(res => {
       this.provinces = res.data || [];
     });
   }
 
   loadOrderDetail() {
-    if (!this.orderId) return;
+    this.ordersService.getOrderById(this.orderId).subscribe(res => {
+      this.order = res.data;
+      this.currentShippingFee = this.order.shippingFee || 0;
 
-    this.ordersService.getOrderById(this.orderId).subscribe((res) => {
-      const o = res.data;
-      if (!o) return;
-
-      // Patch dữ liệu vào form
       this.orderForm.patchValue({
-        senderName: o.senderName,
-        receiverName: o.receiverName,
-        receiverPhone: o.receiverPhone,
+        senderName: this.order.senderName,
+        receiverName: this.order.receiverName,
+        receiverPhone: this.order.receiverPhone,
 
-        pickupProvinceId: o.pickupAddressId?.provinceId?._id || '',
-        pickupCommuneId: o.pickupAddressId?.communeId?._id || '',
-        pickupDetailAddress: o.pickupAddressId?.address || '',
-        pickupLat: o.pickupAddressId?.lat || null,
-        pickupLng: o.pickupAddressId?.lng || null,
+        pickupProvinceId: this.order.pickupAddressId?.provinceId?._id || '',
+        pickupCommuneId: this.order.pickupAddressId?.communeId?._id || '',
+        pickupDetailAddress: this.order.pickupAddressId?.address || '',
+        pickupLat: this.order.pickupAddressId?.lat || null,
+        pickupLng: this.order.pickupAddressId?.lng || null,
 
-        deliveryProvinceId: o.deliveryAddressId?.provinceId?._id || '',
-        deliveryCommuneId: o.deliveryAddressId?.communeId?._id || '',
-        deliveryDetailAddress: o.deliveryAddressId?.address || '',
-        deliveryLat: o.deliveryAddressId?.lat || null,
-        deliveryLng: o.deliveryAddressId?.lng || null,
+        deliveryProvinceId: this.order.deliveryAddressId?.provinceId?._id || '',
+        deliveryCommuneId: this.order.deliveryAddressId?.communeId?._id || '',
+        deliveryDetailAddress: this.order.deliveryAddressId?.address || '',
+        deliveryLat: this.order.deliveryAddressId?.lat || null,
+        deliveryLng: this.order.deliveryAddressId?.lng || null,
 
-        totalPrice: o.totalPrice || 0,
+        serviceCode: this.order.serviceCode || 'STD',
+        weightKg: this.order.weightKg || 1,
       });
+
+      // Set marker map sau khi patchValue xong
+      setTimeout(() => {
+        if (this.pickupMap && this.orderForm.value.pickupLat && this.orderForm.value.pickupLng) {
+          this.pickupMap.setMarker(this.orderForm.value.pickupLat, this.orderForm.value.pickupLng);
+        }
+        if (this.deliveryMap && this.orderForm.value.deliveryLat && this.orderForm.value.deliveryLng) {
+          this.deliveryMap.setMarker(this.orderForm.value.deliveryLat, this.orderForm.value.deliveryLng);
+        }
+      }, 100);
 
       this.onPickupProvinceChange(false);
       this.onDeliveryProvinceChange(false);
-
-      // Lưu tạm marker
-      if (o.pickupAddressId?.lat && o.pickupAddressId?.lng)
-        this.pickupMarker = { lat: o.pickupAddressId.lat, lng: o.pickupAddressId.lng };
-      if (o.deliveryAddressId?.lat && o.deliveryAddressId?.lng)
-        this.deliveryMarker = { lat: o.deliveryAddressId.lat, lng: o.deliveryAddressId.lng };
     });
   }
 
-  onPickupProvinceChange(reset = true): void {
-    const id = this.orderForm.get('pickupProvinceId')?.value;
-    if (!id) {
-      this.pickupCommunes = [];
-      return;
-    }
+  // ================== QUYỀN SỬA THEO TRẠNG THÁI ==================
+  canEditSender() { return this.order?.status === 'PENDING'; }
+  canEditReceiver() { return ['PENDING', 'CONFIRMED'].includes(this.order?.status); }
+  canEditPhone() { return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status); }
+  canEditPickupAddress() { return this.order?.status === 'PENDING'; }
+  canEditDeliveryAddress() { return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status); }
+  canSubmit() { return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status); }
+  canEditStatus() { return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status); }
+  canEditService() { return ['PENDING', 'CONFIRMED'].includes(this.order?.status); }
 
-    this.locationService.getCommunes(id).subscribe((res) => {
+  statusText(status: string): string {
+    const map: Record<string, string> = {
+      PENDING: 'Chờ xác nhận',
+      CONFIRMED: 'Đã xác nhận',
+      SHIPPING: 'Đang giao',
+      COMPLETED: 'Hoàn tất',
+      CANCELED: 'Đã hủy',
+    };
+    return map[status] || status;
+  }
+
+  // ================== TÍNH PHÍ ==================
+  async recalculateIfAllowed() {
+    const f = this.orderForm.value;
+    if (!f.pickupProvinceId || !f.deliveryProvinceId) return;
+
+    const origin = this.provinces.find(p => p._id === f.pickupProvinceId);
+    const dest = this.provinces.find(p => p._id === f.deliveryProvinceId);
+    if (!origin?.code || !dest?.code) return;
+
+    try {
+      const res: any = await firstValueFrom(
+        this.ordersService.calculateShippingFee({
+          originProvinceCode: origin.code,
+          destProvinceCode: dest.code,
+          serviceCode: f.serviceCode || 'STD',
+          weightKg: Number(f.weightKg) || 1,
+          isLocal: f.pickupProvinceId === f.deliveryProvinceId,
+        })
+      );
+      this.currentShippingFee = res.data?.totalPrice || 0;
+      this.recalculated = true;
+    } catch (err) {
+      console.warn('Tính phí lỗi:', err);
+    }
+  }
+
+  // ================== MAP & LOCATION ==================
+  onPickupProvinceChange(reset = true) {
+    const id = this.orderForm.get('pickupProvinceId')?.value;
+    if (!id) { this.pickupCommunes = []; return; }
+    this.locationService.getCommunes(id).subscribe(res => {
       this.pickupCommunes = res.data || [];
       if (reset) this.orderForm.get('pickupCommuneId')?.setValue('');
     });
   }
 
-  onDeliveryProvinceChange(reset = true): void {
+  onDeliveryProvinceChange(reset = true) {
     const id = this.orderForm.get('deliveryProvinceId')?.value;
-    if (!id) {
-      this.deliveryCommunes = [];
-      return;
-    }
-
-    this.locationService.getCommunes(id).subscribe((res) => {
+    if (!id) { this.deliveryCommunes = []; return; }
+    this.locationService.getCommunes(id).subscribe(res => {
       this.deliveryCommunes = res.data || [];
       if (reset) this.orderForm.get('deliveryCommuneId')?.setValue('');
     });
+    if (this.order?.status === 'CONFIRMED') this.recalculateIfAllowed();
   }
 
   setPickupLocation(pos: { lat: number; lng: number }) {
@@ -172,93 +226,98 @@ export class EditOrder implements OnInit, AfterViewInit {
   updatePickupMap() {
     const f = this.orderForm.value;
     if (!f.pickupDetailAddress || !f.pickupProvinceId || !f.pickupCommuneId) return;
-
-    const fullAddress = `${this.getCommuneName(f.pickupCommuneId)}, ${this.getProvinceName(
-      f.pickupProvinceId
-    )}, ${f.pickupDetailAddress}`;
-
-    this.geocoding.search(fullAddress).subscribe((res) => {
-      if (!res?.length) return;
-      const lat = parseFloat(res[0].lat);
-      const lng = parseFloat(res[0].lon);
-      this.orderForm.patchValue({ pickupLat: lat, pickupLng: lng });
-      this.pickupMap?.setMarker(lat, lng);
+    const full = `${this.getCommuneName(f.pickupCommuneId)}, ${this.getProvinceName(f.pickupProvinceId)}, ${f.pickupDetailAddress}`;
+    this.geocoding.search(full).subscribe(res => {
+      if (res?.length) {
+        const lat = parseFloat(res[0].lat);
+        const lng = parseFloat(res[0].lon);
+        this.orderForm.patchValue({ pickupLat: lat, pickupLng: lng });
+        this.pickupMap?.setMarker(lat, lng);
+      }
     });
   }
 
   updateDeliveryMap() {
     const f = this.orderForm.value;
     if (!f.deliveryDetailAddress || !f.deliveryProvinceId || !f.deliveryCommuneId) return;
-
-    const fullAddress = `${this.getCommuneName(f.deliveryCommuneId)}, ${this.getProvinceName(
-      f.deliveryProvinceId
-    )}, ${f.deliveryDetailAddress}`;
-
-    this.geocoding.search(fullAddress).subscribe((res) => {
-      if (!res?.length) return;
-      const lat = parseFloat(res[0].lat);
-      const lng = parseFloat(res[0].lon);
-      this.orderForm.patchValue({ deliveryLat: lat, deliveryLng: lng });
-      this.deliveryMap?.setMarker(lat, lng);
+    const full = `${this.getCommuneName(f.deliveryCommuneId)}, ${this.getProvinceName(f.deliveryProvinceId)}, ${f.deliveryDetailAddress}`;
+    this.geocoding.search(full).subscribe(res => {
+      if (res?.length) {
+        const lat = parseFloat(res[0].lat);
+        const lng = parseFloat(res[0].lon);
+        this.orderForm.patchValue({ deliveryLat: lat, deliveryLng: lng });
+        this.deliveryMap?.setMarker(lat, lng);
+      }
     });
   }
 
   getProvinceName(id: string) {
-    return this.provinces.find((p) => p._id === id)?.name || '';
+    return this.provinces.find(p => p._id === id)?.name || '';
   }
 
   getCommuneName(id: string) {
-    return (
-      this.pickupCommunes.find((c) => c._id === id)?.name ||
-      this.deliveryCommunes.find((c) => c._id === id)?.name ||
-      ''
-    );
+    return this.pickupCommunes.find(c => c._id === id)?.name ||
+           this.deliveryCommunes.find(c => c._id === id)?.name || '';
   }
 
+  // ================== SUBMIT ==================
   submit() {
-    if (this.orderForm.invalid) {
+    if (this.orderForm.invalid || !this.canSubmit()) {
       this.orderForm.markAllAsTouched();
       return;
     }
 
     this.loading = true;
     const f = this.orderForm.value;
+    const payload: any = {};
 
-    const pickupAddress = {
-      provinceId: f.pickupProvinceId,
-      communeId: f.pickupCommuneId,
-      address: f.pickupDetailAddress,
-      lat: f.pickupLat,
-      lng: f.pickupLng,
-    };
+    if (this.canEditSender()) payload.senderName = f.senderName;
+    if (this.canEditReceiver()) payload.receiverName = f.receiverName;
+    if (this.canEditPhone()) payload.receiverPhone = f.receiverPhone;
+    if (this.canEditService()) {
+      payload.serviceCode = f.serviceCode;
+      payload.weightKg = Number(f.weightKg);
+    }
+    payload.status = f.status;
 
-    const deliveryAddress = {
-      provinceId: f.deliveryProvinceId,
-      communeId: f.deliveryCommuneId,
-      address: f.deliveryDetailAddress,
-      lat: f.deliveryLat,
-      lng: f.deliveryLng,
-    };
+    if (this.canEditPickupAddress()) {
+      payload.pickupAddress = {
+        provinceId: f.pickupProvinceId,
+        communeId: f.pickupCommuneId,
+        address: f.pickupDetailAddress,
+        lat: f.pickupLat || null,
+        lng: f.pickupLng || null,
+      };
+    }
 
-    const payload = {
-      senderName: f.senderName,
-      receiverName: f.receiverName,
-      receiverPhone: f.receiverPhone,
-      pickupAddress,
-      deliveryAddress,
-      totalPrice: f.totalPrice,
-    };
+    if (this.canEditDeliveryAddress()) {
+      payload.deliveryAddress = {
+        provinceId: f.deliveryProvinceId,
+        communeId: f.deliveryCommuneId,
+        address: f.deliveryDetailAddress,
+        lat: f.deliveryLat || null,
+        lng: f.deliveryLng || null,
+      };
+    }
 
     this.ordersService.updateOrder(this.orderId, payload).subscribe({
       next: () => {
-        this.loading = false;
-        Swal.fire({ icon: 'success', title: 'Cập nhật thành công!', timer: 1500, showConfirmButton: false });
-        this.router.navigate(['/dashboard/order/list']);
+        Swal.fire('Thành công!', 'Cập nhật đơn hàng thành công', 'success');
+        this.router.navigate(['/employee/dashboard/order/list']);
       },
       error: (err) => {
+        Swal.fire('Lỗi!', err.error?.message || 'Cập nhật thất bại', 'error');
         this.loading = false;
-        Swal.fire({ icon: 'error', title: 'Cập nhật thất bại', text: err.error?.message || 'Vui lòng thử lại.' });
       },
     });
+  }
+
+  // ================== KHÔI PHỤC ĐƠN HỦY ==================
+  restoreOrder() {
+    if (confirm('Khôi phục đơn hàng về trạng thái Chờ xác nhận?')) {
+      this.ordersService.updateStatus(this.orderId, 'PENDING').subscribe(() => {
+        location.reload();
+      });
+    }
   }
 }

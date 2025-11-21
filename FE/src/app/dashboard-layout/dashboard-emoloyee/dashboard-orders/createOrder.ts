@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { LocationService } from '../../../services/location.service';
@@ -8,7 +8,8 @@ import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { MapPickerComponent } from '../../../shared/map-picker/map-picker';
 import { GeocodingService } from '../../../services/geocoding.service';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-create-order',
@@ -27,13 +28,17 @@ export class CreateOrder implements OnInit {
   pickupCommunes: any[] = [];
   deliveryCommunes: any[] = [];
 
+  shippingFee = 0;
+  totalPrice = 0;
+
   constructor(
     private fb: FormBuilder,
     private ordersService: OrdersService,
     private locationService: LocationService,
     private router: Router,
-    private geocoding: GeocodingService
-  ) {}
+    private geocoding: GeocodingService,
+    private http: HttpClient,
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -50,6 +55,11 @@ export class CreateOrder implements OnInit {
       .get('deliveryDetailAddress')!
       .valueChanges.pipe(debounceTime(500))
       .subscribe(() => this.updateDeliveryMap());
+
+    this.orderForm.valueChanges.pipe(
+      debounceTime(600),
+      distinctUntilChanged()
+    ).subscribe(() => this.calculateShippingFee());
   }
 
   initForm() {
@@ -63,11 +73,10 @@ export class CreateOrder implements OnInit {
       deliveryProvinceId: ['', Validators.required],
       deliveryCommuneId: ['', Validators.required],
       deliveryDetailAddress: ['', Validators.required],
-      totalPrice: [0, [Validators.required, Validators.min(0)]],
-      pickupLat: [''],
-      pickupLng: [''],
-      deliveryLat: [''],
-      deliveryLng: [''],
+
+      serviceCode: ['STD'],
+      weightKg: [1, [Validators.required, Validators.min(0.01)]],
+      codValue: [0, [Validators.required, Validators.min(0)]],
     });
   }
 
@@ -141,7 +150,9 @@ export class CreateOrder implements OnInit {
       receiverPhone: f.receiverPhone,
       pickupAddress,
       deliveryAddress,
-      totalPrice: f.totalPrice,
+      codValue: Number(f.codValue) || 0,
+      weightKg: Number(f.weightKg) || 1,
+      serviceCode: f.serviceCode || 'STD',
     };
 
     this.ordersService.createOrder(data).subscribe({
@@ -153,7 +164,7 @@ export class CreateOrder implements OnInit {
           timer: 1500,
           showConfirmButton: false,
         });
-        this.router.navigate(['/dashboard/order/list']);
+        this.router.navigate(['/employee/dashboard/order/list']);
       },
       error: (err) => {
         this.loading = false;
@@ -233,5 +244,50 @@ export class CreateOrder implements OnInit {
       this.deliveryCommunes.find((c) => c._id === id)?.name ||
       ''
     );
+  }
+
+  async calculateShippingFee() {
+    const f = this.orderForm.value;
+
+    // Kiểm tra đủ dữ liệu
+    if (!f.pickupProvinceId || !f.deliveryProvinceId || !f.weightKg) {
+      this.shippingFee = 0;
+      this.totalPrice = Number(f.codValue || 0);
+      return;
+    }
+
+    const originProv = this.provinces.find(p => p._id === f.pickupProvinceId);
+    const destProv = this.provinces.find(p => p._id === f.deliveryProvinceId);
+
+    if (!originProv?.code || !destProv?.code) {
+      this.shippingFee = 0;
+      this.totalPrice = Number(f.codValue || 0);
+      return;
+    }
+
+    try {
+      const isSameProvince = f.pickupProvinceId && f.deliveryProvinceId
+        ? f.pickupProvinceId === f.deliveryProvinceId
+        : false;
+      const res: any = await firstValueFrom(
+        this.ordersService.calculateShippingFee({
+          originProvinceCode: originProv.code,
+          destProvinceCode: destProv.code,
+          serviceCode: f.serviceCode,
+          weightKg: Number(f.weightKg),
+          // isLocal: f.pickupProvinceId === f.deliveryProvinceId
+          isLocal: isSameProvince
+        })
+      );
+
+      console.log('RESPONSE FROM PRICING:', res);
+
+      this.shippingFee = res.data?.totalPrice ?? 0;
+      this.totalPrice = this.shippingFee + Number(f.codValue || 0);
+    } catch (err) {
+      console.warn('Lỗi tính phí:', err);
+      this.shippingFee = 0;
+      this.totalPrice = Number(f.codValue || 0);
+    }
   }
 }

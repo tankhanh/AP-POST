@@ -7,6 +7,7 @@ import { env } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   private readonly API_URL = `${env.baseUrl}/orders`;
+  private readonly PRICING_URL = `${env.baseUrl}/pricing/calculate`;
 
   constructor(private http: HttpClient) {}
 
@@ -70,5 +71,15 @@ export class OrdersService {
       {},
       { headers: this.getHeaders() }
     );
+  }
+
+  calculateShippingFee(payload: {
+    originProvinceCode: string;
+    destProvinceCode: string;
+    serviceCode: 'STD' | 'EXP';
+    weightKg: number;
+    isLocal: boolean;
+  }): Observable<any> {
+    return this.http.post(this.PRICING_URL, payload, { headers: this.getHeaders() });
   }
 }

@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Min,
   ValidateNested,
@@ -51,8 +52,15 @@ export class CreateOrderDto {
   @Type(() => AddressDto)
   deliveryAddress: AddressDto;
 
-  @ApiProperty({ example: 100000 })
-  @IsNumber()
-  @Min(0)
-  totalPrice: number;
+  @ApiProperty({ example: 350000, description: 'Giá trị hàng hóa (COD)' })
+  @IsNumber() @Min(0)
+  codValue: number;                                      // ← mới
+
+  @ApiProperty({ example: 'STD', enum: ['STD', 'EXP'], default: 'STD' })
+  @IsOptional() @IsString()
+  serviceCode?: 'STD' | 'EXP' = 'STD';                   // ← mới (mặc định STD)
+
+  @ApiProperty({ example: 2.5, description: 'Khối lượng (kg)' })
+  @IsNumber() @Min(0.01)
+  weightKg: number = 0;                                  // ← mới
 }

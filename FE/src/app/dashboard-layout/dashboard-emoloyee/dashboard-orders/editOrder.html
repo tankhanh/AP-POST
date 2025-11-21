@@ -1,75 +1,126 @@
-<div class="container mt-4" *ngIf="orderForm">
-  <h4 class="fw-bold mb-3">✏️ Chỉnh sửa đơn hàng</h4>
+<div class="container mt-4" *ngIf="order">
+  <h4 class="fw-bold mb-3">Chỉnh sửa đơn hàng #{{ order._id }}</h4>
+
+  <!-- Trạng thái hiện tại -->
+  <div class="alert alert-info d-flex justify-content-between align-items-center">
+    <div>
+      <strong>Trạng thái:</strong>
+      <span class="badge bg-primary fs-5 ms-2">{{ statusText(order.status) }}</span>
+    </div>
+    <div *ngIf="order.status === 'CANCELED'">
+      <button class="btn btn-warning btn-sm" (click)="restoreOrder()">Khôi phục đơn</button>
+    </div>
+  </div>
+
+  <!-- Giá trị hàng và phí -->
+  <div class="row mb-4 g-3">
+    <div class="col-md-4">
+      <div class="alert alert-success mb-0">
+        <strong>Giá trị hàng (COD):</strong><br>
+        <span class="fs-4">{{ order.codValue | number }} ₫</span>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="alert alert-warning mb-0">
+        <strong>Phí vận chuyển:</strong><br>
+        <span class="fs-4">{{ currentShippingFee | number }} ₫</span>
+        <small class="d-block text-success" *ngIf="recalculated">Đã tính lại tự động</small>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="alert alert-danger mb-0 text-center">
+        <strong class="fs-5">TỔNG KHÁCH TRẢ</strong><br>
+        <span class="fs-3 fw-bold">{{ (order.codValue + currentShippingFee) | number }} ₫</span>
+        <small class="d-block text-white-50 mt-1">= COD + Phí vận chuyển</small>
+      </div>
+    </div>
+  </div>
 
   <form [formGroup]="orderForm" (ngSubmit)="submit()">
     <div class="row g-4">
-      <!-- Người gửi + Pickup -->
+
+      <!-- Cột trái: Người gửi + Pickup -->
       <div class="col-md-6">
         <div class="mb-3">
           <label class="form-label fw-semibold">Người gửi</label>
-          <input type="text" class="form-control" formControlName="senderName" placeholder="Nhập tên người gửi" />
+          <input type="text" class="form-control" formControlName="senderName" [readonly]="!canEditSender()" />
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3" [class.opacity-50]="!canEditPickupAddress()">
           <label class="form-label fw-semibold">Địa chỉ lấy hàng</label>
-          <select class="form-select mb-2" formControlName="pickupProvinceId" (change)="onPickupProvinceChange()">
-            <option value="">-- Chọn tỉnh/thành phố --</option>
+          <select class="form-select mb-2" formControlName="pickupProvinceId" (change)="onPickupProvinceChange()" [disabled]="!canEditPickupAddress()">
+            <option value="">-- Chọn tỉnh/thành --</option>
             <option *ngFor="let p of provinces" [value]="p._id">{{ p.name }}</option>
           </select>
-
-          <select class="form-select mb-2" formControlName="pickupCommuneId">
+          <select class="form-select mb-2" formControlName="pickupCommuneId" [disabled]="!canEditPickupAddress()">
             <option value="">-- Chọn quận/huyện --</option>
             <option *ngFor="let c of pickupCommunes" [value]="c._id">{{ c.name }}</option>
           </select>
+          <input type="text" class="form-control" formControlName="pickupDetailAddress" [readonly]="!canEditPickupAddress()" />
 
-          <input type="text" class="form-control" formControlName="pickupDetailAddress" (input)="updatePickupMap()" placeholder="Nhập địa chỉ chi tiết" />
-
-          <label class="form-label fw-semibold mt-3">📍 Chọn vị trí lấy hàng trên bản đồ</label>
-          <app-map-picker #pickupMap (locationSelect)="setPickupLocation($event)"></app-map-picker>
+          <div class="mt-3" *ngIf="canEditPickupAddress()">
+            <label class="form-label fw-semibold">Vị trí lấy hàng</label>
+            <app-map-picker #pickupMap (locationSelect)="setPickupLocation($event)"></app-map-picker>
+          </div>
         </div>
       </div>
 
-      <!-- Người nhận + Delivery -->
+      <!-- Cột phải: Người nhận + Delivery -->
       <div class="col-md-6">
         <div class="mb-3">
           <label class="form-label fw-semibold">Người nhận</label>
-          <input type="text" class="form-control" formControlName="receiverName" placeholder="Nhập tên người nhận" />
+          <input type="text" class="form-control" formControlName="receiverName" [readonly]="!canEditReceiver()" />
         </div>
-
         <div class="mb-3">
           <label class="form-label fw-semibold">SĐT người nhận</label>
-          <input type="text" class="form-control" formControlName="receiverPhone" placeholder="Nhập số điện thoại" />
+          <input type="text" class="form-control" formControlName="receiverPhone" [readonly]="!canEditPhone()" />
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3" [class.opacity-50]="!canEditDeliveryAddress()">
           <label class="form-label fw-semibold">Địa chỉ giao hàng</label>
-          <select class="form-select mb-2" formControlName="deliveryProvinceId" (change)="onDeliveryProvinceChange()">
-            <option value="">-- Chọn tỉnh/thành phố --</option>
+          <select class="form-select mb-2" formControlName="deliveryProvinceId" (change)="onDeliveryProvinceChange(); recalculateIfAllowed()" [disabled]="!canEditDeliveryAddress()">
+            <option value="">-- Chọn tỉnh/thành --</option>
             <option *ngFor="let p of provinces" [value]="p._id">{{ p.name }}</option>
           </select>
-
-          <select class="form-select mb-2" formControlName="deliveryCommuneId">
+          <select class="form-select mb-2" formControlName="deliveryCommuneId" [disabled]="!canEditDeliveryAddress()">
             <option value="">-- Chọn quận/huyện --</option>
             <option *ngFor="let c of deliveryCommunes" [value]="c._id">{{ c.name }}</option>
           </select>
+          <input type="text" class="form-control" formControlName="deliveryDetailAddress" [readonly]="!canEditDeliveryAddress()" />
 
-          <input type="text" class="form-control" formControlName="deliveryDetailAddress" (input)="updateDeliveryMap()" placeholder="Nhập địa chỉ chi tiết" />
-
-          <label class="form-label fw-semibold mt-3">📍 Chọn vị trí giao hàng trên bản đồ</label>
-          <app-map-picker #deliveryMap (locationSelect)="setDeliveryLocation($event)"></app-map-picker>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Tổng giá trị (VNĐ)</label>
-          <input type="number" class="form-control" formControlName="totalPrice" placeholder="Nhập tổng giá trị" />
+          <div class="mt-3" *ngIf="canEditDeliveryAddress()">
+            <label class="form-label fw-semibold">Vị trí giao hàng</label>
+            <app-map-picker #deliveryMap (locationSelect)="setDeliveryLocation($event)"></app-map-picker>
+          </div>
         </div>
       </div>
 
-      <div class="col-12 mt-3">
-        <button class="btn btn-primary" [disabled]="loading || orderForm.invalid">
-          <span *ngIf="!loading">Cập nhật đơn hàng</span>
+      <!-- Cột dịch vụ, cân nặng và trạng thái -->
+      <div class="col-md-6 mt-3">
+        <label class="form-label fw-semibold">Dịch vụ giao hàng</label>
+        <select class="form-select" formControlName="serviceCode" [disabled]="!canEditService()" (change)="recalculateIfAllowed()">
+          <option value="STD">Tiêu chuẩn</option>
+          <option value="EXP">Hỏa tốc</option>
+        </select>
+      </div>
+      <div class="col-md-6 mt-3">
+        <label class="form-label fw-semibold">Cân nặng (kg)</label>
+        <input type="number" step="0.1" class="form-control" formControlName="weightKg" [readonly]="!canEditService()" (input)="recalculateIfAllowed()" />
+      </div>
+
+      <div class="col-md-6 mt-3">
+        <label class="form-label fw-semibold">Trạng thái</label>
+        <select class="form-select" formControlName="status" [disabled]="!canEditStatus()">
+          <option *ngFor="let s of orderStatusOptions" [value]="s.value">{{ s.label }}</option>
+        </select>
+      </div>
+
+      <div class="col-12 mt-4">
+        <button type="submit" class="btn btn-success btn-lg me-2" [disabled]="loading || orderForm.invalid || !canSubmit()">
+          <span *ngIf="!loading">Lưu thay đổi</span>
           <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
         </button>
+        <button type="button" class="btn btn-secondary btn-lg" (click)="router.navigate(['..'])">Quay lại</button>
       </div>
     </div>
   </form>

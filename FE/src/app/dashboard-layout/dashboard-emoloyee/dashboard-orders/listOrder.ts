@@ -36,7 +36,7 @@ export class ListOrder implements OnInit {
     { value: 'CANCELED', label: 'Đã hủy' },
   ];
 
-  constructor(private ordersService: OrdersService) {}
+  constructor(private ordersService: OrdersService) { }
 
   ngOnInit() {
     this.loadOrders();
@@ -76,10 +76,10 @@ export class ListOrder implements OnInit {
         : true;
       const searchMatch = this.filters.search
         ? (
-            order._id
-          )
-            .toLowerCase()
-            .includes(this.filters.search.toLowerCase())
+          order._id
+        )
+          .toLowerCase()
+          .includes(this.filters.search.toLowerCase())
         : true;
       const receiverNameMatch = this.filters.receiverName
         ? order.receiverName.toLowerCase().includes(this.filters.receiverName.toLowerCase())
@@ -131,12 +131,12 @@ export class ListOrder implements OnInit {
 
   /** Kiểm tra có thể sửa */
   canEdit(order: any) {
-    return order.status === 'PENDING';
+    return true;
   }
 
   /** Kiểm tra có thể xóa */
   canDelete(order: any) {
-    return order.status === 'PENDING' || order.status === 'CANCELED';
+    return ['PENDING', 'CANCELED'].includes(order.status);
   }
 
   /** Soft delete */

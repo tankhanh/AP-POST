@@ -18,6 +18,8 @@ import {
   Province,
   ProvinceDocument,
 } from '../location/schemas/province.schema';
+import { PricingService } from '../pricing/pricing.service';
+import { ProvinceCode } from 'src/types/location.type';
 
 @Injectable()
 export class OrdersService {
@@ -30,26 +32,50 @@ export class OrdersService {
     private readonly communeModel: SoftDeleteModel<CommuneDocument>,
     @InjectModel(Province.name)
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
-  ) {}
+    private pricingService: PricingService
+  ) { }
 
   async create(dto: CreateOrderDto, user: IUser) {
-    const pickupAddressDoc = await this.addressModel.create({
-      provinceId: dto.pickupAddress.provinceId,
-      communeId: dto.pickupAddress.communeId,
-      address: dto.pickupAddress.address,
-    });
+    // 1. Lấy province + code
+    const originProv = await this.provinceModel.findById(dto.pickupAddress.provinceId).lean();
+    const destProv = await this.provinceModel.findById(dto.deliveryAddress.provinceId).lean();
 
-    const deliveryAddressDoc = await this.addressModel.create({
-      provinceId: dto.deliveryAddress.provinceId,
-      communeId: dto.deliveryAddress.communeId,
-      address: dto.deliveryAddress.address,
-    });
+    if (!originProv?.code || !destProv?.code) {
+      throw new BadRequestException('Tỉnh/thành phố không hợp lệ');
+    }
 
+    // 2. Tính phí vận chuyển (dùng API đã có sẵn)
+    const calcResult = await this.pricingService.calculateShipping(
+      originProv.code as ProvinceCode,
+      destProv.code as ProvinceCode,
+      dto.serviceCode || 'STD',
+      dto.weightKg,
+      originProv.code === destProv.code  // cùng tỉnh → free ship nội thành
+    );
+
+    // Nếu cùng tỉnh & isLocal = true → pricing.service đã trả về 0
+    const shippingFee = typeof calcResult.totalPrice === 'number'
+      ? calcResult.totalPrice
+      : 0;
+
+    const totalPrice = dto.codValue + shippingFee;
+
+    // 3. Tạo địa chỉ
+    const pickupAddr = await this.addressModel.create(dto.pickupAddress);
+    const deliveryAddr = await this.addressModel.create(dto.deliveryAddress);
+
+    // 4. Tạo đơn hàng
     return this.orderModel.create({
       ...dto,
-      pickupAddressId: pickupAddressDoc._id,
-      deliveryAddressId: deliveryAddressDoc._id,
+      pickupAddressId: pickupAddr._id,
+      deliveryAddressId: deliveryAddr._id,
       userId: new Types.ObjectId(user._id),
+
+      codValue: dto.codValue,
+      shippingFee,
+      totalPrice,
+      serviceCode: dto.serviceCode || 'STD',
+      weightKg: dto.weightKg,
     });
   }
 
@@ -183,6 +209,8 @@ export class OrdersService {
     const order = await this.orderModel.findById(id);
     if (!order || order.isDeleted)
       throw new NotFoundException('Order not found');
+
+    if (dto.status) order.status = dto.status
 
     // Update pickup address
     if (dto.pickupAddress) {
