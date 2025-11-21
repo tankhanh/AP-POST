@@ -24,6 +24,7 @@ import { EditOrder } from './dashboard-layout/dashboard-emoloyee/dashboard-order
 import { AdminLayout } from './layouts/admin/admin-layout.component';
 import { DashboardAdmin } from './dashboard-layout/dashboard-admin/dashboard-admin.component';
 import { BranchListComponent } from './branches/branch-list/branch-list.component';
+import { ListPricing } from './dashboard-layout/dashboard-emoloyee/dashboard-pricing/listPricing';
 
 export const routes: Routes = [
   // ----- USER LAYOUT -----
@@ -51,6 +52,7 @@ export const routes: Routes = [
           { path: 'order/create', component: CreateOrder },
           { path: 'order/list', component: ListOrder },
           { path: 'order/edit/:id', component: EditOrder },
+          { path: 'pricing', component: ListPricing },
         ],
       },
     ],
