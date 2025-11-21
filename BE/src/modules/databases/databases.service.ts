@@ -3908,15 +3908,17 @@ export class DatabasesService implements OnModuleInit {
         code: 'HN01',
         name: 'Hà Nội Center',
         address: '123 Tràng Tiền, Hoàn Kiếm , Thành phố Hà Nội',
-        province: 'Hà Nội',
+        provinceName: 'Thành phố Hà Nội',
+        communeName: 'Hoàn Kiếm',
         phone: '024-000-000',
         isActive: true,
       },
       {
         code: 'HCM01',
         name: 'HCM Center',
-        address: '456 Lê Lợi, Tân Thới Nhì,Thành phố HCM ',
-        province: 'Hồ Chí Minh',
+        address: '456 Lê Lợi, Sài Gòn ,Thành phố HCM ',
+        provinceName: 'Thành phố Hồ Chí Minh',
+        communeName: 'Sài Gòn',
         phone: '028-000-000',
         isActive: true,
       },
@@ -3925,6 +3927,8 @@ export class DatabasesService implements OnModuleInit {
         name: 'Đà Nẵng Center',
         address: '99 Hùng Vương, phường Hải Châu ,Thành phố Đà Nẵng',
         province: 'Đà Nẵng',
+        provinceName: 'Thành phố Đà Nẵng',
+        communeName: 'Hải Châu',
         phone: '0236-000-000',
         isActive: true,
       },
@@ -3932,8 +3936,8 @@ export class DatabasesService implements OnModuleInit {
         code: 'HP01',
         name: 'Hải Phòng Hub',
         address: '88 Điện Biên Phủ, phường Ngô Quyền ,Thành phố Hải Phòng',
-        province: 'Hải Phòng ',
-        postalCode: '180000',
+        provinceName: 'Thành phố  Hải Phòng',
+        communeName: ' Ngô Quyền',
         phone: '0225-000-000',
         isActive: true,
       },
@@ -3941,24 +3945,17 @@ export class DatabasesService implements OnModuleInit {
         code: 'CT01',
         name: 'Cần Thơ Hub',
         address: '77 Hòa Bình, Ninh Kiều , Thành phố Cần Thơ ',
-        province: 'Cần Thơ',
+        provinceName: 'Thành phố Cần Thơ',
+        communeName: 'Ninh Kiều',
         phone: '0292-000-000',
-        isActive: true,
-      },
-      {
-        code: 'KH01',
-        name: 'Nha Trang Hub',
-        address: '66 Trần Phú , Lộc Thọ, Nha Trang,',
-        province: 'Khánh Hòa',
-        phone: '0258-000-000',
         isActive: true,
       },
       {
         code: 'HUE01',
         name: 'Huế Center',
-        address: '45 Hùng Vương, Phú Hội, Huế, Thành phố Huế ',
-        province: 'Thừa Thiên Huế',
-        postalCode: '530000',
+        address: '45 Hùng Vương, Phú Xuân , Thành phố Huế ',
+        provinceName: 'Thành phố Huế',
+        communeName: 'Phú Xuân',
         phone: '0234-000-000',
         isActive: true,
       },
@@ -3981,7 +3978,7 @@ export class DatabasesService implements OnModuleInit {
       return { svcSTD, svcEXP };
     }
 
-    const [svcSTD] = await this.serviceModel.insertMany([
+    const [svcSTD, svcEXP] = await this.serviceModel.insertMany([
       {
         code: 'STD',
         name: 'Tiêu chuẩn',
@@ -3989,9 +3986,6 @@ export class DatabasesService implements OnModuleInit {
         basePrice: 20000,
         isActive: true,
       },
-    ]);
-
-    const [svcEXP] = await this.serviceModel.insertMany([
       {
         code: 'EXP',
         name: 'Nhanh',
@@ -4010,74 +4004,33 @@ export class DatabasesService implements OnModuleInit {
     svcSTDId: Types.ObjectId,
     svcEXPId: Types.ObjectId,
   ) {
-    if (await this.pricingModel.countDocuments()) return;
+    if (await this.pricingModel.countDocuments()) {
+      this.logger.log('>>> PRICING already exists, skip seeding');
+      return;
+    }
 
     await this.pricingModel.insertMany([
       // STD
       {
         serviceId: svcSTDId,
-        minWeightKg: 0,
-        maxWeightKg: 2,
-        minKm: 0,
-        maxKm: 5,
-        baseFee: 15000,
-        perKm: 1000,
-        perKg: 2000,
-      },
-      {
-        serviceId: svcSTDId,
-        minWeightKg: 0,
-        maxWeightKg: 2,
-        minKm: 5,
-        maxKm: 30,
-        baseFee: 20000,
-        perKm: 1200,
-        perKg: 2500,
-      },
-      {
-        serviceId: svcSTDId,
-        minWeightKg: 2,
-        maxWeightKg: 10,
-        minKm: 0,
-        maxKm: 30,
-        baseFee: 30000,
-        perKm: 1500,
-        perKg: 2500,
+        basePrice: 20000, // Giá base cho dịch vụ Tiêu chuẩn
+        overweightThresholdKg: 5, // > 5kg bắt đầu tính phụ phí
+        overweightFee: 5000, // +5k nếu > 5kg
+        isActive: true,
+        effectiveFrom: new Date(),
       },
       // EXP
       {
         serviceId: svcEXPId,
-        minWeightKg: 0,
-        maxWeightKg: 2,
-        minKm: 0,
-        maxKm: 5,
-        baseFee: 25000,
-        perKm: 1500,
-        perKg: 3000,
-      },
-      {
-        serviceId: svcEXPId,
-        minWeightKg: 0,
-        maxWeightKg: 2,
-        minKm: 5,
-        maxKm: 30,
-        baseFee: 35000,
-        perKm: 1800,
-        perKg: 3500,
-      },
-      {
-        serviceId: svcEXPId,
-        minWeightKg: 2,
-        maxWeightKg: 10,
-        minKm: 0,
-        maxKm: 30,
-        baseFee: 45000,
-        perKm: 2000,
-        perKg: 3500,
+        basePrice: 40000, // Giá base cho dịch vụ Nhanh
+        overweightThresholdKg: 5,
+        overweightFee: 5000,
+        isActive: true,
+        effectiveFrom: new Date(),
       },
     ]);
 
-    this.logger.log('>>> INIT PRICING DONE');
+    this.logger.log('>>> INIT PRICING DONE (STD & EXP theo logic mới)');
   }
 
   /* ---------------- ORDERS (no embedded address) ---------------- */
@@ -4135,7 +4088,7 @@ export class DatabasesService implements OnModuleInit {
   ) {
     if (await this.shipmentModel.countDocuments()) return;
 
-    // 1) Tính khoảng cách
+    // 1) Vẫn tính khoảng cách cho vui, lưu vào shipment (không dùng để tính tiền)
     const km = this.haversineKm(
       pickupAddr.lat ?? 0,
       pickupAddr.lng ?? 0,
@@ -4143,42 +4096,8 @@ export class DatabasesService implements OnModuleInit {
       deliveryAddr.lng ?? 0,
     );
 
-    // 2) Chọn bảng giá phù hợp
-    const now = new Date();
-    const slab = await this.pricingModel
-      .findOne({
-        serviceId: svcSTD._id,
-        isActive: true,
-        isDeleted: false,
-        minWeightKg: { $lte: 1.5 },
-        maxWeightKg: { $gte: 1.5 },
-        minKm: { $lte: km },
-        maxKm: { $gte: km },
-        $and: [
-          {
-            $or: [
-              { effectiveFrom: { $exists: false } },
-              { effectiveFrom: { $lte: now } },
-            ],
-          },
-          {
-            $or: [
-              { effectiveTo: null },
-              { effectiveTo: { $exists: false } },
-              { effectiveTo: { $gte: now } },
-            ],
-          },
-        ],
-      })
-      .lean();
-
-    const fee = slab
-      ? Math.round(
-          (slab.baseFee ?? 0) +
-            (slab.perKm ?? 0) * km +
-            (slab.perKg ?? 0) * 1.5,
-        )
-      : 30000;
+    // 2) Fee theo công thức mới – ở đây đơn seed cố định HN -> HCM, STD, 1.5kg
+    const fee = 35000; // 20k (STD) + 15k (North <-> South), không overweight
 
     // 3) Tạo shipment
     const [shipment] = await this.shipmentModel.insertMany([
