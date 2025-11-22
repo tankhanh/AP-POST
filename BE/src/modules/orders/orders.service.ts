@@ -394,4 +394,20 @@ export class OrdersService {
       topProducts,
     };
   }
+
+  async getStatusById(id: string) {
+    const order = await this.orderModel
+      .findById(id)
+      .select('_id status isDeleted')
+      .lean();
+
+    if (!order || order.isDeleted) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return {
+      id: order._id.toString(),
+      status: order.status as OrderStatus,
+    };
+  }
 }

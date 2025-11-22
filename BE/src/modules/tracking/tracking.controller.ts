@@ -15,7 +15,7 @@ import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { ResponseMessage, Users } from 'src/health/decorator/customize';
+import { Public, ResponseMessage, Users } from 'src/health/decorator/customize';
 import { IUser } from 'src/types/user.interface';
 
 @ApiTags('tracking')
@@ -32,6 +32,7 @@ export class TrackingController {
 
   @Get()
   @ResponseMessage('Danh sách log tracking')
+  @Public()
   findAll(
     @Query('current') current?: string,
     @Query('pageSize') pageSize?: string,
@@ -41,13 +42,14 @@ export class TrackingController {
     const size = pageSize ? Number(pageSize) : 10;
     return this.trackingService.findAll(page, size, query || {});
   }
-
+  @Public()
   @Get('shipment/:shipmentId')
   @ResponseMessage('Lấy timeline tracking theo shipment')
   findByShipment(@Param('shipmentId') shipmentId: string) {
     return this.trackingService.findByShipment(shipmentId);
   }
 
+  @Public()
   @Get(':id')
   @ResponseMessage('Chi tiết tracking')
   findOne(@Param('id') id: string) {

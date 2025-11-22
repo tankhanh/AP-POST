@@ -90,4 +90,11 @@ export class OrdersController {
   remove(@Param('id') id: string, @Users() user: IUser) {
     return this.ordersService.remove(id, user);
   }
+
+  @Public()
+  @Get(':id/status')
+  @ResponseMessage('Lấy trạng thái đơn hàng theo ID')
+  getStatusById(@Param('id') id: string) {
+    return this.ordersService.getStatusById(id);
+  }
 }
