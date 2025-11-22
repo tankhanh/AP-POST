@@ -37,15 +37,15 @@ export class Home {
   }
 
   // ✅ Xử lý nút "Bắt đầu ngay"
-  onStartClick() {
-    const token = localStorage.getItem('access_token');
+  // onStartClick() {
+  //   const token = localStorage.getItem('access_token');
 
-    if (token) {
-      // 🔑 Nếu đã đăng nhập
-      this.router.navigate(['/dashboard']);
-    } else {
-      // 🚪 Nếu chưa đăng nhập
-      this.router.navigate(['/login']);
-    }
-  }
+  //   if (token) {
+  //     // 🔑 Nếu đã đăng nhập
+  //     this.router.navigate(['/dashboard']);
+  //   } else {
+  //     // 🚪 Nếu chưa đăng nhập
+  //     this.router.navigate(['/login']);
+  //   }
+  // }
 }
