@@ -1,0 +1,34 @@
+<div class="stepper">
+  <div
+    class="step"
+    *ngFor="let step of items; let i = index"
+    [class.active]="i === activeIndex"
+    [class.completed]="i < activeIndex"
+    (click)="onActiveIndexChange(i)"
+  >
+    <div class="circle">{{ i + 1 }}</div>
+    <div class="label">{{ step.label }}</div>
+  </div>
+
+  <div
+    class="line"
+    *ngFor="let step of items; let i = index"
+    [class.completed]="i < activeIndex - 1"
+  ></div>
+</div>
+
+<div class="step-content mt-4">
+  <h3>{{ items[activeIndex].label }}</h3>
+
+  @switch (activeIndex) { @case (0) {
+  <p>This is the Login step. Enter your account to continue.</p>
+  } @case (1) {
+  <p>Choose your shipping method to proceed.</p>
+  } @case (2) {
+  <p>Select your preferred payment method.</p>
+  } @case (3) {
+  <p>Review and confirm your order.</p>
+  } @default {
+  <p>Invalid step</p>
+  } }
+</div>

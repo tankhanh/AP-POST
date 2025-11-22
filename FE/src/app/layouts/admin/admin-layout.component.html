@@ -8,13 +8,14 @@
     <div class="header-wrapper d-flex align-items-center justify-content-between">
       <div class="logo">
         <a [routerLink]="['/']" class="logo-white">
-          <img src="assets/images/logos/logo.png" style="width: 100px" />
+          <img title="logo" src="assets/images/logos/logo.png" style="width: 100px" />
         </a>
       </div>
 
       <div class="d-flex align-items-center gap-4">
         <div class="btn-group">
           <button
+            title="select"
             class="btn btn-secondary toggle-menu p-2 bg-white rounded-circle"
             type="button"
             data-bs-toggle="dropdown"
@@ -58,34 +59,66 @@
         <span>Tổng quan</span>
       </a>
 
-      <a routerLink="/admin/orders/list" routerLinkActive="active" class="nav-link d-flex align-items-center gap-2">
+      <a
+        routerLink="/admin/orders/list"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-2"
+      >
         <iconify-icon icon="mdi:clipboard-text" width="22" class="text-primary"></iconify-icon>
         <span>Đơn hàng</span>
       </a>
 
-      <a routerLink="/admin/branch" routerLinkActive="active" class="nav-link d-flex align-items-center gap-2">
+      <a
+        routerLink="/admin/branch"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-2"
+      >
         <iconify-icon icon="mdi:home-group" width="22" class="text-primary"></iconify-icon>
         <span>Chi nhánh</span>
       </a>
 
-      <a routerLink="/admin/users" routerLinkActive="active" class="nav-link d-flex align-items-center gap-2">
+      <a
+        routerLink="/admin/users"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-2"
+      >
         <iconify-icon icon="mdi:account-group" width="22" class="text-primary"></iconify-icon>
         <span>Người dùng</span>
       </a>
 
-      <a routerLink="/admin/settings" routerLinkActive="active" class="nav-link d-flex align-items-center gap-2">
+      <a
+        routerLink="/admin/settings"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-2"
+      >
         <iconify-icon icon="mdi:cog-outline" width="22" class="text-primary"></iconify-icon>
         <span>Cấu hình</span>
       </a>
 
-      <a routerLink="/admin/reports" routerLinkActive="active" class="nav-link d-flex align-items-center gap-2">
+      <a
+        routerLink="/admin/reports"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-2"
+      >
         <iconify-icon icon="mdi:chart-line" width="22" class="text-primary"></iconify-icon>
         <span>Báo cáo</span>
       </a>
 
-      <a routerLink="/admin/support" routerLinkActive="active" class="nav-link d-flex align-items-center gap-2">
+      <a
+        routerLink="/admin/support"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-2"
+      >
         <iconify-icon icon="mdi:headset" width="22" class="text-primary"></iconify-icon>
         <span>Hỗ trợ</span>
+      </a>
+      <a
+        routerLink="/admin/tracking"
+        routerLinkActive="active"
+        class="nav-link d-flex align-items-center gap-2"
+      >
+        <iconify-icon icon="mdi:headset" width="22" class="text-primary"></iconify-icon>
+        <span>Đơn vận</span>
       </a>
     </nav>
   </aside>

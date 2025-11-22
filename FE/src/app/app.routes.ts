@@ -33,6 +33,7 @@ import { AdminListOrder } from './dashboard-layout/dashboard-admin/dashboard-ord
 import { AdmninCreateOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminCreateOrder';
 import { AdminEditOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminEditOrder';
 import { ListBranch } from './dashboard-layout/dashboard-emoloyee/dashboard-branches/dashboard-branch';
+import { TrackingComponent } from './dashboard-layout/dashboard-tracking/dashboard-tracking';
 
 export const routes: Routes = [
   // ----- USER LAYOUT -----
@@ -80,6 +81,7 @@ export const routes: Routes = [
       { path: 'order/create', component: AdmninCreateOrder },
       { path: 'orders/list', component: AdminListOrder },
       { path: 'order/edit/:id', component: AdminEditOrder },
+      { path: 'tracking', component: TrackingComponent },
       {
         path: 'branch',
         children: [
