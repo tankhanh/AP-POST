@@ -25,6 +25,10 @@ import { AdminLayout } from './layouts/admin/admin-layout.component';
 import { DashboardAdmin } from './dashboard-layout/dashboard-admin/dashboard-admin.component';
 import { BranchListComponent } from './branches/branch-list/branch-list.component';
 import { ListPricing } from './dashboard-layout/dashboard-emoloyee/dashboard-pricing/listPricing';
+import { BranchCreateComponent } from './branches/branch-create/branch-create.component';
+import { BranchDetailComponent } from './branches/branch-detail/branch-detail.component';
+import { BranchUpdateComponent } from './branches/branch-update/branch-update.component';
+import { BranchTrashComponent } from './branches/branch-trash/branch-trash.component';
 
 export const routes: Routes = [
   // ----- USER LAYOUT -----
@@ -41,6 +45,8 @@ export const routes: Routes = [
       { path: 'verify', component: Verify },
       { path: 'verify-reset', component: VerifyReset },
       { path: 'reset-password', component: ResetPassword },
+
+      // dashboard của user (giữ nguyên thư mục/dashboard-layout)
       {
         path: 'employee/dashboard',
         canActivate: [AuthGuard],
@@ -59,24 +65,24 @@ export const routes: Routes = [
   },
 
   {
-  path: 'admin',
-  component: AdminLayout,
-  canActivate: [AuthGuard, AdminGuard],
-  children: [
-    { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-    { path: 'dashboard', component: DashboardAdmin },
-
-    // Khi tạo các component này, thêm vào:
-    // { path: 'orders', component: AdminOrders },
-    { path: 'branch', component: BranchListComponent },
-    // { path: 'users', component: AdminUsers },
-    // { path: 'settings', component: AdminSettings },
-    // { path: 'reports', component: AdminReports },
-    // { path: 'support', component: AdminSupport },
-    // { path: 'activity-log', component: AdminActivityLog },
-  ],
-},
-
+    path: 'admin',
+    component: AdminLayout,
+    canActivate: [AuthGuard, AdminGuard],
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: DashboardAdmin },
+      {
+        path: 'branch',
+        children: [
+          { path: '', component: BranchListComponent },
+          { path: 'create', component: BranchCreateComponent },
+          { path: 'detail/:id', component: BranchDetailComponent },
+          { path: 'update/:id', component: BranchUpdateComponent },
+          { path: 'trash', component: BranchTrashComponent },
+        ],
+      },
+    ],
+  },
 
   // 404
   { path: '**', redirectTo: '' },
