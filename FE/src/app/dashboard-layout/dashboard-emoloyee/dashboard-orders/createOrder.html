@@ -21,7 +21,7 @@
           </select>
 
           <select class="form-select mb-2" formControlName="pickupCommuneId">
-            <option value="">-- Chọn quận/huyện --</option>
+            <option value="">-- Chọn phường/xã --</option>
             <option *ngFor="let c of pickupCommunes" [value]="c._id">{{ c.name }}</option>
           </select>
 
@@ -57,7 +57,7 @@
           </select>
 
           <select class="form-select mb-2" formControlName="deliveryCommuneId">
-            <option value="">-- Chọn quận/huyện --</option>
+            <option value="">-- Chọn phường/xã --</option>
             <option *ngFor="let c of deliveryCommunes" [value]="c._id">{{ c.name }}</option>
           </select>
 

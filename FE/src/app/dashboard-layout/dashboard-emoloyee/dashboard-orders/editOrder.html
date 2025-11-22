@@ -53,7 +53,7 @@
             <option *ngFor="let p of provinces" [value]="p._id">{{ p.name }}</option>
           </select>
           <select class="form-select mb-2" formControlName="pickupCommuneId" [disabled]="!canEditPickupAddress()">
-            <option value="">-- Chọn quận/huyện --</option>
+            <option value="">-- Chọn phường/xã --</option>
             <option *ngFor="let c of pickupCommunes" [value]="c._id">{{ c.name }}</option>
           </select>
           <input type="text" class="form-control" formControlName="pickupDetailAddress" [readonly]="!canEditPickupAddress()" />
@@ -83,7 +83,7 @@
             <option *ngFor="let p of provinces" [value]="p._id">{{ p.name }}</option>
           </select>
           <select class="form-select mb-2" formControlName="deliveryCommuneId" [disabled]="!canEditDeliveryAddress()">
-            <option value="">-- Chọn quận/huyện --</option>
+            <option value="">-- Chọn phường/xã --</option>
             <option *ngFor="let c of deliveryCommunes" [value]="c._id">{{ c.name }}</option>
           </select>
           <input type="text" class="form-control" formControlName="deliveryDetailAddress" [readonly]="!canEditDeliveryAddress()" />

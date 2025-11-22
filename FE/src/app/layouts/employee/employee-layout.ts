@@ -15,7 +15,7 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'employee-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CurrencyPipe],
+  imports: [RouterOutlet, RouterLink],
   templateUrl: './employee-layout.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

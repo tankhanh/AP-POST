@@ -43,9 +43,6 @@
                   <p class="mb-1 fw-semibold text-dark">
                     Xin chào {{ user?.name ?? user?.email ?? 'Guest' }}
                   </p>
-                  <p class="mb-0 text-secondary">
-                    Số dư: {{ balance | currency : 'VND' : 'symbol' : '1.0-0' }}
-                  </p>
                 </div>
                 <button type="button" class="btn-close opacity-75" aria-label="Close"></button>
               </div>
