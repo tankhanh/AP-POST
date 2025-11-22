@@ -20,7 +20,10 @@ export class Order {
   @Prop({ required: true }) senderName: string;
 
   @Prop({ required: true }) receiverName: string;
+
   @Prop({ required: true }) receiverPhone: string;
+
+  @Prop({ required: true }) email: string;
 
   // dùng Address chuẩn hoá
   @Prop({
