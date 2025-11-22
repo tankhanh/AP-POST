@@ -20,6 +20,7 @@ import { Public, ResponseMessage, Users } from 'src/health/decorator/customize';
 import { IUser } from 'src/types/user.interface';
 import { OrderStatus } from './schemas/order.schemas';
 import { OrdersService } from './orders.service';
+import { Roles } from 'src/health/decorator/roles.decorator';
 
 @ApiTags('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -52,6 +53,7 @@ export class OrdersController {
     return this.ordersService.findAll(user, page, size, query || {});
   }
 
+  @Roles('ADMIN', 'STAFF')
   @Get('statistics')
   @ResponseMessage('Thống kê đơn hàng')
   async getStatistics(
@@ -59,9 +61,10 @@ export class OrdersController {
     @Query('year') year?: string,
     @Users() user?: IUser,
   ) {
+    const isAdmin = user?.role === 'ADMIN';
     const m = month ? Number(month) : undefined;
     const y = year ? Number(year) : undefined;
-    return this.ordersService.getStatistics(m, y, user);
+    return this.ordersService.getStatistics(m, y, isAdmin ? null : user);
   }
 
   @Public()

@@ -15,9 +15,9 @@ import { firstValueFrom } from 'rxjs';
   selector: 'app-create-order',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, HttpClientModule, MapPickerComponent],
-  templateUrl: './createOrder.html',
+  templateUrl: './adminCreateOrder.html',
 })
-export class CreateOrder implements OnInit {
+export class AdmninCreateOrder implements OnInit {
   @ViewChild('pickupMap') pickupMap!: MapPickerComponent;
   @ViewChild('deliveryMap') deliveryMap!: MapPickerComponent;
 
@@ -164,7 +164,7 @@ export class CreateOrder implements OnInit {
           timer: 1500,
           showConfirmButton: false,
         });
-        this.router.navigate(['/employee/order/list']);
+        this.router.navigate(['/admin/orders/list']);
       },
       error: (err) => {
         this.loading = false;

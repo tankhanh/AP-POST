@@ -15,9 +15,9 @@ import { MapPickerComponent } from '../../../shared/map-picker/map-picker';
   selector: 'app-edit-order',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MapPickerComponent],
-  templateUrl: './editOrder.html',
+  templateUrl: './adminEditOrder.html',
 })
-export class EditOrder implements OnInit {
+export class AdminEditOrder implements OnInit {
   @ViewChild('pickupMap') pickupMap!: MapPickerComponent;
   @ViewChild('deliveryMap') deliveryMap!: MapPickerComponent;
 

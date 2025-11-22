@@ -24,11 +24,6 @@ export class Home {
   ) {}
 
   ngOnInit() {
-    // 🗺️ Lấy danh sách tỉnh/thành phố
-    // (Tuỳ chọn) Log dữ liệu hành chính chuẩn quốc gia
-    // this.locationService.getProvinces().subscribe((official) => {
-    //   console.log('📚 Dữ liệu hành chính quốc gia:', official);
-    // });
   }
 
   // Khi chọn tỉnh, lấy xã/phường trực thuộc

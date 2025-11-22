@@ -271,7 +271,7 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     return order;
   }
-  async getStatistics(month?: number, year?: number, user?: IUser) {
+  async getStatistics(month?: number, year?: number, user?: IUser | null) {
     const filter: any = { isDeleted: false };
 
     if (user?._id) {

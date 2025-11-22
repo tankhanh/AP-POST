@@ -29,6 +29,9 @@ import { BranchCreateComponent } from './branches/branch-create/branch-create.co
 import { BranchDetailComponent } from './branches/branch-detail/branch-detail.component';
 import { BranchUpdateComponent } from './branches/branch-update/branch-update.component';
 import { BranchTrashComponent } from './branches/branch-trash/branch-trash.component';
+import { AdminListOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminlistOrder';
+import { AdmninCreateOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminCreateOrder';
+import { AdminEditOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminEditOrder';
 
 export const routes: Routes = [
   // ----- USER LAYOUT -----
@@ -48,11 +51,12 @@ export const routes: Routes = [
 
       // dashboard của user (giữ nguyên thư mục/dashboard-layout)
       {
-        path: 'employee/dashboard',
+        path: 'employee',
         canActivate: [AuthGuard],
         component: DashboardLayout,
         children: [
-          { path: '', component: DashboardHome },
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          { path: 'dashboard', component: DashboardHome },
           { path: 'home', component: DashboardHome },
           { path: 'profile', component: DashboardProfile },
           { path: 'order/create', component: CreateOrder },
@@ -71,6 +75,9 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardAdmin },
+      { path: 'order/create', component: AdmninCreateOrder },
+      { path: 'orders/list', component: AdminListOrder },
+      { path: 'order/edit/:id', component: AdminEditOrder },
       {
         path: 'branch',
         children: [
