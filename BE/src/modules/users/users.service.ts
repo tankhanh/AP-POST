@@ -263,6 +263,11 @@ export class UsersService {
       .populate({ path: 'role', select: { name: 1, _id: 1 } });
   }
 
+  /* ------------ Find By role ------------ */
+  async findUserByRole(role: string) {
+    return this.userModel.find({ role }).select('-password');
+  }
+
   /* ------------ For login ------------ */
   findOneByUsername(username: string) {
     const emailNorm = this.normalizeEmail(username);

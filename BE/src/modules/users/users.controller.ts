@@ -52,6 +52,13 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Public() // bỏ qua JwtAuthGuard
+  @ResponseMessage('Fetch user by role')
+  @Post(':role')
+  async findUserByRole(@Param('role') role: string) {
+    return this.usersService.findUserByRole(role);
+  }
+
   @Patch(':id')
   @ResponseMessage('Update a User')
   async update(
