@@ -32,6 +32,7 @@ import { BranchTrashComponent } from './branches/branch-trash/branch-trash.compo
 import { AdminListOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminlistOrder';
 import { AdmninCreateOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminCreateOrder';
 import { AdminEditOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminEditOrder';
+import { ListBranch } from './dashboard-layout/dashboard-emoloyee/dashboard-branches/dashboard-branch';
 
 export const routes: Routes = [
   // ----- USER LAYOUT -----
@@ -63,6 +64,7 @@ export const routes: Routes = [
           { path: 'order/list', component: ListOrder },
           { path: 'order/edit/:id', component: EditOrder },
           { path: 'pricing', component: ListPricing },
+          { path: 'branch', component: ListBranch },
         ],
       },
     ],
