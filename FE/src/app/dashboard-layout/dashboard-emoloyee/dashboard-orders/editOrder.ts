@@ -56,10 +56,14 @@ export class EditOrder implements OnInit {
     this.loadOrderDetail();
 
     // Debounce địa chỉ để update map realtime
-    this.orderForm.get('pickupDetailAddress')?.valueChanges.pipe(debounceTime(500))
+    this.orderForm
+      .get('pickupDetailAddress')
+      ?.valueChanges.pipe(debounceTime(500))
       .subscribe(() => this.updatePickupMap());
 
-    this.orderForm.get('deliveryDetailAddress')?.valueChanges.pipe(debounceTime(500))
+    this.orderForm
+      .get('deliveryDetailAddress')
+      ?.valueChanges.pipe(debounceTime(500))
       .subscribe(() => this.updateDeliveryMap());
 
     // Tự động tính lại phí nếu CONFIRMED
@@ -102,13 +106,13 @@ export class EditOrder implements OnInit {
   ];
 
   loadProvinces() {
-    this.locationService.getProvinces().subscribe(res => {
+    this.locationService.getProvinces().subscribe((res) => {
       this.provinces = res.data || [];
     });
   }
 
   loadOrderDetail() {
-    this.ordersService.getOrderById(this.orderId).subscribe(res => {
+    this.ordersService.getOrderById(this.orderId).subscribe((res) => {
       this.order = res.data;
       this.currentShippingFee = this.order.shippingFee || 0;
 
@@ -131,7 +135,7 @@ export class EditOrder implements OnInit {
 
         serviceCode: this.order.serviceCode || 'STD',
         weightKg: this.order.weightKg || 1,
-        status: this.order.status
+        status: this.order.status,
       });
 
       // Set marker map sau khi patchValue xong
@@ -139,8 +143,15 @@ export class EditOrder implements OnInit {
         if (this.pickupMap && this.orderForm.value.pickupLat && this.orderForm.value.pickupLng) {
           this.pickupMap.setMarker(this.orderForm.value.pickupLat, this.orderForm.value.pickupLng);
         }
-        if (this.deliveryMap && this.orderForm.value.deliveryLat && this.orderForm.value.deliveryLng) {
-          this.deliveryMap.setMarker(this.orderForm.value.deliveryLat, this.orderForm.value.deliveryLng);
+        if (
+          this.deliveryMap &&
+          this.orderForm.value.deliveryLat &&
+          this.orderForm.value.deliveryLng
+        ) {
+          this.deliveryMap.setMarker(
+            this.orderForm.value.deliveryLat,
+            this.orderForm.value.deliveryLng
+          );
         }
       }, 100);
 
@@ -150,14 +161,30 @@ export class EditOrder implements OnInit {
   }
 
   // ================== QUYỀN SỬA THEO TRẠNG THÁI ==================
-  canEditSender() { return this.order?.status === 'PENDING'; }
-  canEditReceiver() { return ['PENDING', 'CONFIRMED'].includes(this.order?.status); }
-  canEditPhone() { return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status); }
-  canEditPickupAddress() { return this.order?.status === 'PENDING'; }
-  canEditDeliveryAddress() { return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status); }
-  canSubmit() { return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status); }
-  canEditStatus() { return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status); }
-  canEditService() { return ['PENDING', 'CONFIRMED'].includes(this.order?.status); }
+  canEditSender() {
+    return this.order?.status === 'PENDING';
+  }
+  canEditReceiver() {
+    return ['PENDING', 'CONFIRMED'].includes(this.order?.status);
+  }
+  canEditPhone() {
+    return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status);
+  }
+  canEditPickupAddress() {
+    return this.order?.status === 'PENDING';
+  }
+  canEditDeliveryAddress() {
+    return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status);
+  }
+  canSubmit() {
+    return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status);
+  }
+  canEditStatus() {
+    return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status);
+  }
+  canEditService() {
+    return ['PENDING', 'CONFIRMED'].includes(this.order?.status);
+  }
 
   statusText(status: string): string {
     const map: Record<string, string> = {
@@ -175,8 +202,8 @@ export class EditOrder implements OnInit {
     const f = this.orderForm.value;
     if (!f.pickupProvinceId || !f.deliveryProvinceId) return;
 
-    const origin = this.provinces.find(p => p._id === f.pickupProvinceId);
-    const dest = this.provinces.find(p => p._id === f.deliveryProvinceId);
+    const origin = this.provinces.find((p) => p._id === f.pickupProvinceId);
+    const dest = this.provinces.find((p) => p._id === f.deliveryProvinceId);
     if (!origin?.code || !dest?.code) return;
 
     try {
@@ -199,8 +226,11 @@ export class EditOrder implements OnInit {
   // ================== MAP & LOCATION ==================
   onPickupProvinceChange(reset = true) {
     const id = this.orderForm.get('pickupProvinceId')?.value;
-    if (!id) { this.pickupCommunes = []; return; }
-    this.locationService.getCommunes(id).subscribe(res => {
+    if (!id) {
+      this.pickupCommunes = [];
+      return;
+    }
+    this.locationService.getCommunes(id).subscribe((res) => {
       this.pickupCommunes = res.data || [];
       if (reset) this.orderForm.get('pickupCommuneId')?.setValue('');
     });
@@ -208,8 +238,11 @@ export class EditOrder implements OnInit {
 
   onDeliveryProvinceChange(reset = true) {
     const id = this.orderForm.get('deliveryProvinceId')?.value;
-    if (!id) { this.deliveryCommunes = []; return; }
-    this.locationService.getCommunes(id).subscribe(res => {
+    if (!id) {
+      this.deliveryCommunes = [];
+      return;
+    }
+    this.locationService.getCommunes(id).subscribe((res) => {
       this.deliveryCommunes = res.data || [];
       if (reset) this.orderForm.get('deliveryCommuneId')?.setValue('');
     });
@@ -227,8 +260,10 @@ export class EditOrder implements OnInit {
   updatePickupMap() {
     const f = this.orderForm.value;
     if (!f.pickupDetailAddress || !f.pickupProvinceId || !f.pickupCommuneId) return;
-    const full = `${this.getCommuneName(f.pickupCommuneId)}, ${this.getProvinceName(f.pickupProvinceId)}, ${f.pickupDetailAddress}`;
-    this.geocoding.search(full).subscribe(res => {
+    const full = `${this.getCommuneName(f.pickupCommuneId)}, ${this.getProvinceName(
+      f.pickupProvinceId
+    )}, ${f.pickupDetailAddress}`;
+    this.geocoding.search(full).subscribe((res) => {
       if (res?.length) {
         const lat = parseFloat(res[0].lat);
         const lng = parseFloat(res[0].lon);
@@ -241,8 +276,10 @@ export class EditOrder implements OnInit {
   updateDeliveryMap() {
     const f = this.orderForm.value;
     if (!f.deliveryDetailAddress || !f.deliveryProvinceId || !f.deliveryCommuneId) return;
-    const full = `${this.getCommuneName(f.deliveryCommuneId)}, ${this.getProvinceName(f.deliveryProvinceId)}, ${f.deliveryDetailAddress}`;
-    this.geocoding.search(full).subscribe(res => {
+    const full = `${this.getCommuneName(f.deliveryCommuneId)}, ${this.getProvinceName(
+      f.deliveryProvinceId
+    )}, ${f.deliveryDetailAddress}`;
+    this.geocoding.search(full).subscribe((res) => {
       if (res?.length) {
         const lat = parseFloat(res[0].lat);
         const lng = parseFloat(res[0].lon);
@@ -253,12 +290,15 @@ export class EditOrder implements OnInit {
   }
 
   getProvinceName(id: string) {
-    return this.provinces.find(p => p._id === id)?.name || '';
+    return this.provinces.find((p) => p._id === id)?.name || '';
   }
 
   getCommuneName(id: string) {
-    return this.pickupCommunes.find(c => c._id === id)?.name ||
-      this.deliveryCommunes.find(c => c._id === id)?.name || '';
+    return (
+      this.pickupCommunes.find((c) => c._id === id)?.name ||
+      this.deliveryCommunes.find((c) => c._id === id)?.name ||
+      ''
+    );
   }
 
   // ================== SUBMIT ==================
@@ -270,7 +310,28 @@ export class EditOrder implements OnInit {
 
     this.loading = true;
     const f = this.orderForm.value;
-    const payload: any = {};
+    const payload: any = {
+      senderName: f.senderName,
+      receiverName: f.receiverName,
+      receiverPhone: f.receiverPhone,
+      serviceCode: f.serviceCode,
+      weightKg: Number(f.weightKg),
+      status: f.status,
+      pickupAddress: {
+        provinceId: f.pickupProvinceId,
+        communeId: f.pickupCommuneId,
+        address: f.pickupDetailAddress,
+        lat: f.pickupLat || null,
+        lng: f.pickupLng || null,
+      },
+      deliveryAddress: {
+        provinceId: f.deliveryProvinceId,
+        communeId: f.deliveryCommuneId,
+        address: f.deliveryDetailAddress,
+        lat: f.deliveryLat || null,
+        lng: f.deliveryLng || null,
+      },
+    };
 
     if (this.canEditSender()) payload.senderName = f.senderName;
     if (this.canEditReceiver()) payload.receiverName = f.receiverName;

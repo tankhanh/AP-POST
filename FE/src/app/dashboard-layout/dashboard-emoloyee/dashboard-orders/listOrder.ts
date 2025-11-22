@@ -122,7 +122,7 @@ export class ListOrder implements OnInit {
   statusClass(status: string) {
     return {
       'text-info': status === 'PENDING',
-      'text-primary': status === 'CONFIRMED',
+      'text-light-emphasis': status === 'CONFIRMED',
       'text-warning': status === 'SHIPPING',
       'text-success': status === 'COMPLETED',
       'text-danger': status === 'CANCELED',

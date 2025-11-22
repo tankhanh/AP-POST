@@ -32,44 +32,76 @@ export class OrdersService {
     private readonly communeModel: SoftDeleteModel<CommuneDocument>,
     @InjectModel(Province.name)
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
-    private pricingService: PricingService
-  ) { }
+    private pricingService: PricingService,
+  ) {}
 
+  // orders.service.ts
   async create(dto: CreateOrderDto, user: IUser) {
     // 1. Lấy province + code
-    const originProv = await this.provinceModel.findById(dto.pickupAddress.provinceId).lean();
-    const destProv = await this.provinceModel.findById(dto.deliveryAddress.provinceId).lean();
+    const originProv = await this.provinceModel
+      .findById(dto.pickupAddress.provinceId)
+      .lean();
+    const destProv = await this.provinceModel
+      .findById(dto.deliveryAddress.provinceId)
+      .lean();
 
     if (!originProv?.code || !destProv?.code) {
       throw new BadRequestException('Tỉnh/thành phố không hợp lệ');
     }
 
-    // 2. Tính phí vận chuyển (dùng API đã có sẵn)
+    // 2. Tính phí vận chuyển
     const calcResult = await this.pricingService.calculateShipping(
       originProv.code as ProvinceCode,
       destProv.code as ProvinceCode,
       dto.serviceCode || 'STD',
       dto.weightKg,
-      originProv.code === destProv.code  // cùng tỉnh → free ship nội thành
+      originProv.code === destProv.code,
     );
 
-    // Nếu cùng tỉnh & isLocal = true → pricing.service đã trả về 0
-    const shippingFee = typeof calcResult.totalPrice === 'number'
-      ? calcResult.totalPrice
-      : 0;
-
+    const shippingFee =
+      typeof calcResult.totalPrice === 'number' ? calcResult.totalPrice : 0;
     const totalPrice = dto.codValue + shippingFee;
 
     // 3. Tạo địa chỉ
     const pickupAddr = await this.addressModel.create(dto.pickupAddress);
     const deliveryAddr = await this.addressModel.create(dto.deliveryAddress);
 
-    // 4. Tạo đơn hàng
+    // ===================================================================
+    // 4. XỬ LÝ BRANCHID – CHỈ BẮT BUỘC VỚI STAFF, ADMIN & USER ĐƯỢC QUA
+    // ===================================================================
+    let branchId: Types.ObjectId | null | undefined = undefined;
+
+    // Lấy branchId từ mọi nguồn có thể có (do JWT đôi khi đổi tên field)
+    const rawBranchId =
+      user.branchId ??
+      (user as any).branchId ??
+      user.BranchId ??
+      (user as any).BranchId ??
+      null;
+
+    if (user.role === 'STAFF') {
+      // STAFF bắt buộc phải có branchId
+      if (!rawBranchId) {
+        throw new BadRequestException(
+          'Nhân viên chưa được gắn bưu cục. Vui lòng liên hệ quản trị viên.',
+        );
+      }
+      branchId = new Types.ObjectId(rawBranchId);
+    } else if (user.role === 'ADMIN') {
+      branchId = rawBranchId ? new Types.ObjectId(rawBranchId) : null;
+    } else {
+      // USER (khách hàng): không cần branchId
+      branchId = undefined;
+    }
+
+    // 5. Tạo đơn hàng
     return this.orderModel.create({
       ...dto,
       pickupAddressId: pickupAddr._id,
       deliveryAddressId: deliveryAddr._id,
       userId: new Types.ObjectId(user._id),
+
+      branchId, // ← giờ đã xử lý hoàn hảo cho mọi role
 
       codValue: dto.codValue,
       shippingFee,
@@ -90,8 +122,12 @@ export class OrdersService {
     filter.isDeleted = false;
 
     // Ép filter theo user
-    if (user?._id) {
+    if (user?.role !== 'ADMIN') {
       filter.userId = new Types.ObjectId(user._id);
+    }
+
+    if (filter.userId) {
+      filter.userId = new Types.ObjectId(filter.userId);
     }
 
     // --- Filter nâng cao ---
@@ -210,7 +246,7 @@ export class OrdersService {
     if (!order || order.isDeleted)
       throw new NotFoundException('Order not found');
 
-    if (dto.status) order.status = dto.status
+    if (dto.status) order.status = dto.status;
 
     // Update pickup address
     if (dto.pickupAddress) {

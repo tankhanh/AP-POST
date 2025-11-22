@@ -20,13 +20,6 @@ export class User {
   @Prop({ enum: ['MALE', 'FEMALE', 'OTHER'], required: false })
   gender: string;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Branch',
-    required: false,
-  })
-  BranchId: Types.ObjectId;
-
   @Prop()
   address: string;
 

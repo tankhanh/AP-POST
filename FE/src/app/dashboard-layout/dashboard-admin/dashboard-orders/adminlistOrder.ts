@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { FormsModule } from '@angular/forms';
@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-list-order',
   templateUrl: './adminlistOrder.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
 })
 export class AdminListOrder implements OnInit {
   orders: any[] = []; // mảng gốc
@@ -44,9 +44,13 @@ export class AdminListOrder implements OnInit {
 
   /** Load orders từ API */
   loadOrders() {
-    const query = { ...this.filters };
-    if (query.status && Array.isArray(query.status)) {
+    const query: any = { ...this.filters };
+
+    // Chỉ gửi status nếu có ít nhất 1 giá trị
+    if (Array.isArray(query.status) && query.status.length > 0) {
       query.status = query.status.join(',');
+    } else {
+      delete query.status;
     }
 
     this.ordersService.getOrders(query).subscribe((res: any) => {
@@ -75,11 +79,7 @@ export class AdminListOrder implements OnInit {
         ? order.totalPrice <= +this.filters.maxPrice
         : true;
       const searchMatch = this.filters.search
-        ? (
-          order._id
-        )
-          .toLowerCase()
-          .includes(this.filters.search.toLowerCase())
+        ? order._id.toLowerCase().includes(this.filters.search.toLowerCase())
         : true;
       const receiverNameMatch = this.filters.receiverName
         ? order.receiverName.toLowerCase().includes(this.filters.receiverName.toLowerCase())
@@ -122,7 +122,7 @@ export class AdminListOrder implements OnInit {
   statusClass(status: string) {
     return {
       'text-info': status === 'PENDING',
-      'text-primary': status === 'CONFIRMED',
+      'text-light-emphasis': status === 'CONFIRMED',
       'text-warning': status === 'SHIPPING',
       'text-success': status === 'COMPLETED',
       'text-danger': status === 'CANCELED',
