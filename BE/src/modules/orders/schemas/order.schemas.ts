@@ -23,7 +23,7 @@ export class Order {
 
   @Prop({ required: true }) receiverPhone: string;
 
-  @Prop({ required: true }) email: string;
+  @Prop({ required: false }) email: string;
 
   // dùng Address chuẩn hoá
   @Prop({

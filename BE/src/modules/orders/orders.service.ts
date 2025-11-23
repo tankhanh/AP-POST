@@ -7,7 +7,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import aqp from 'api-query-params';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { Types } from 'mongoose';
-
 import { IUser } from 'src/types/user.interface';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -20,6 +19,7 @@ import {
 } from '../location/schemas/province.schema';
 import { PricingService } from '../pricing/pricing.service';
 import { ProvinceCode } from 'src/types/location.type';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class OrdersService {
@@ -33,9 +33,39 @@ export class OrdersService {
     @InjectModel(Province.name)
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
     private pricingService: PricingService,
+    private mailerService: MailerService,
   ) {}
 
-  // orders.service.ts
+  private normalizeEmail(email: string) {
+    return (email || '').trim().toLowerCase();
+  }
+
+  // Gửi email xác nhận đơn hàng
+  async sendVerificationMailOrder(params: {
+    email: string;
+    name?: string;
+    orderId: string;
+    totalPrice: number;
+    shippingFee: number;
+    codValue: number;
+  }) {
+    const { email, name, orderId, totalPrice, shippingFee, codValue } = params;
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Xác nhận đơn hàng của bạn',
+      template: 'ordersEmail.hbs',
+      context: {
+        name: name || email,
+        orderId,
+        totalPrice,
+        shippingFee,
+        codValue,
+      },
+    });
+  }
+
+  // Tạo order
   async create(dto: CreateOrderDto, user: IUser) {
     // 1. Lấy province + code
     const originProv = await this.provinceModel
@@ -66,21 +96,13 @@ export class OrdersService {
     const pickupAddr = await this.addressModel.create(dto.pickupAddress);
     const deliveryAddr = await this.addressModel.create(dto.deliveryAddress);
 
-    // ===================================================================
-    // 4. XỬ LÝ BRANCHID – CHỈ BẮT BUỘC VỚI STAFF, ADMIN & USER ĐƯỢC QUA
-    // ===================================================================
+    // 4. Xử lý branchId
     let branchId: Types.ObjectId | null | undefined = undefined;
 
-    // Lấy branchId từ mọi nguồn có thể có (do JWT đôi khi đổi tên field)
     const rawBranchId =
-      user.branchId ??
-      (user as any).branchId ??
-      user.BranchId ??
-      (user as any).BranchId ??
-      null;
+      (user as any).branchId ?? (user as any).BranchId ?? null;
 
     if (user.role === 'STAFF') {
-      // STAFF bắt buộc phải có branchId
       if (!rawBranchId) {
         throw new BadRequestException(
           'Nhân viên chưa được gắn bưu cục. Vui lòng liên hệ quản trị viên.',
@@ -90,27 +112,40 @@ export class OrdersService {
     } else if (user.role === 'ADMIN') {
       branchId = rawBranchId ? new Types.ObjectId(rawBranchId) : null;
     } else {
-      // USER (khách hàng): không cần branchId
-      branchId = undefined;
+      branchId = undefined; // USER
     }
 
     // 5. Tạo đơn hàng
-    return this.orderModel.create({
+    const order = await this.orderModel.create({
       ...dto,
       pickupAddressId: pickupAddr._id,
       deliveryAddressId: deliveryAddr._id,
       userId: new Types.ObjectId(user._id),
-
-      branchId, // ← giờ đã xử lý hoàn hảo cho mọi role
-
+      branchId,
       codValue: dto.codValue,
       shippingFee,
       totalPrice,
       serviceCode: dto.serviceCode || 'STD',
       weightKg: dto.weightKg,
     });
+
+    try {
+      await this.sendVerificationMailOrder({
+        email: user.email,
+        name: user.name,
+        orderId: order._id.toString(),
+        totalPrice,
+        shippingFee,
+        codValue: dto.codValue,
+      });
+    } catch (err) {
+      console.log('Send order confirm email failed: ' + err);
+    }
+
+    return order;
   }
 
+  ///
   async findAll(user: IUser, currentPage = 1, limit = 10, queryObj: any = {}) {
     const { filter, sort } = aqp(queryObj);
 

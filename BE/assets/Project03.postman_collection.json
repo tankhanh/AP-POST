@@ -645,7 +645,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"originProvinceCode\": \"HN\",\r\n  \"destProvinceCode\": \"DNA\",\r\n  \"serviceCode\": \"STD\",\r\n  \"weightKg\": 8,\r\n  \"isLocal\": false\r\n}",
+							"raw": "{\r\n  \"originProvinceCode\": \"HN\",\r\n  \"destProvinceCode\": \"HN\",\r\n  \"serviceCode\": \"STD\",\r\n  \"weightKg\": 10,\r\n  \"isLocal\": true\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -993,7 +993,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkxODc1MmYxNDg0M2ZmYTM4NTNmOGZiIiwibmFtZSI6IkN1c3RvbWVyIiwiZW1haWwiOiJjdXNAdnRwb3N0LmxvY2FsIiwicm9sZSI6IkNVU1RPTUVSIiwiaWF0IjoxNzYzMjEwNzQyLCJleHAiOjE3NjMyNzA3NDJ9.JXndeA2e02-7cbPnd6UXiyevm1zkWYBivKzHN69j2S8",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiX2lkIjoiNjkyMmNmMTUzYWY3NzRhNjNmNzJmNjk2IiwibmFtZSI6ImFkbWluTWluaCIsImVtYWlsIjoibWluaGxhcHJvMDNAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NjM4ODg5NTgsImV4cCI6MTc2Mzk0ODk1OH0.gaxA8EmUI59h8qhEb3mvZw_WLzPR10j6DKZKmFcjG_8",
 									"type": "string"
 								}
 							]
@@ -1013,7 +1013,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"senderName\": \"Nguyễn Văn A\",\n  \"receiverName\": \"Trần Thị B\",\n  \"receiverPhone\": \"0912345678\",\n  \"pickupAddressId\": \"REPLACE_ADDRESS_ID\",\n  \"deliveryAddressId\": \"REPLACE_ADDRESS_ID\",\n  \"totalPrice\": 120000\n}"
+							"raw": "{\n  \"senderName\": \"Nguyễn Văn c\",\n  \"receiverName\": \"Trần Thị d\",\n  \"receiverPhone\": \"0987654321\",\n  \"email\": \"minhlapro03@gmail.com\",\n\n  \"pickupAddress\": {\n    \"provinceId\": \"69227527dedeef9f883ba7e4\",\n    \"communeId\": \"69227528dedeef9f883ba80d\",\n    \"address\": \"123 Đường Hồ Tùng Mậu\"\n  },\n\n  \"deliveryAddress\": {\n    \"provinceId\": \"69227527dedeef9f883ba7e5\",\n    \"communeId\": \"69227528dedeef9f883ba8f2\",\n    \"address\": \"45 Lê Lợi, Quận 1, TP.HCM\"\n  },\n\n  \"codValue\": 250000,\n  \"weightKg\": 0.8,\n  \"serviceCode\": \"STD\"\n}\n"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/orders",
@@ -1092,18 +1092,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/orders/:id",
+							"raw": "{{baseUrl}}/orders/692199d9acf4206b8c95def7",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"orders",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id"
-								}
+								"692199d9acf4206b8c95def7"
 							]
 						}
 					},
@@ -1178,6 +1173,29 @@
 									"key": "id",
 									"value": "REPLACE_ID"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get status by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/v1/orders/692199d9acf4206b8c95def7/status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"692199d9acf4206b8c95def7",
+								"status"
 							]
 						}
 					},
@@ -2271,6 +2289,28 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Fetch user with role",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/v1/users/STAFF",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"STAFF"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -2349,7 +2389,7 @@
 							"urlencoded": [
 								{
 									"key": "username",
-									"value": "cus@vtpost.local",
+									"value": "minhlapro03@gmail.com",
 									"type": "text"
 								},
 								{

@@ -42,6 +42,9 @@ export class CreateOrderDto {
   @IsString()
   receiverPhone: string;
 
+  @IsOptional()
+  email: string;
+
   @ApiProperty({ type: AddressDto })
   @ValidateNested()
   @Type(() => AddressDto)
@@ -53,14 +56,15 @@ export class CreateOrderDto {
   deliveryAddress: AddressDto;
 
   @ApiProperty({ example: 350000, description: 'Giá trị hàng hóa (COD)' })
-  @IsNumber() @Min(0)
-  codValue: number;                                      // ← mới
-
+  @IsNumber()
+  @Min(0)
+  codValue: number;
   @ApiProperty({ example: 'STD', enum: ['STD', 'EXP'], default: 'STD' })
-  @IsOptional() @IsString()
-  serviceCode?: 'STD' | 'EXP' = 'STD';                   // ← mới (mặc định STD)
-
+  @IsOptional()
+  @IsString()
+  serviceCode?: 'STD' | 'EXP' = 'STD';
   @ApiProperty({ example: 2.5, description: 'Khối lượng (kg)' })
-  @IsNumber() @Min(0.01)
-  weightKg: number = 0;                                  // ← mới
+  @IsNumber()
+  @Min(0.01)
+  weightKg: number = 0;
 }

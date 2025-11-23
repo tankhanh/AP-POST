@@ -1,0 +1,68 @@
+<html lang='vi'>
+  <head>
+    <meta charset='UTF-8' />
+    <title>Xác nhận đơn hàng</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; background: #f5f5f5;
+      margin: 0; padding: 0; } .container { max-width: 520px; margin: 20px auto;
+      background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 4px
+      10px rgba(0, 0, 0, 0.1); } .title { font-size: 18px; font-weight: 700;
+      color: #222; margin-bottom: 12px; } .info-box { background: #fafafa;
+      padding: 14px; border-radius: 8px; border: 1px solid #eee; margin-top:
+      14px; } .info-row { margin: 6px 0; font-size: 14px; } .label {
+      font-weight: 600; } .highlight { color: #d0021b; font-weight: 600; }
+      .footer { font-size: 12px; color: #888; text-align: center; margin-top:
+      24px; line-height: 1.6; } .brand { color: #1677ff; font-weight: 600; }
+    </style>
+  </head>
+
+  <body>
+    <div class='container'>
+      <div class='title' style='text-align: center;'><H1
+          style='text-align: center;'
+        >Xin chào
+          {{name}}</H1>,</div>
+      <div>
+        Cảm ơn bạn đã tạo đơn hàng tại
+        <span class='brand'>AP post</span>. Chúng tôi đã ghi nhận đơn hàng của
+        bạn!
+      </div>
+
+      <div class='info-box'>
+        <div class='info-row'>
+          <span class='label'>Mã đơn hàng:</span>
+          <span class='highlight'>{{orderId}}</span>
+        </div>
+
+        <div class='info-row'>
+          <span class='label'>Tiền hàng (COD):</span>
+          {{codValue}}
+          đ
+        </div>
+
+        <div class='info-row'>
+          <span class='label'>Phí vận chuyển:</span>
+          {{shippingFee}}
+          đ
+        </div>
+
+        <div class='info-row'>
+          <span class='label'>Tổng thanh toán:</span>
+          <span class='highlight'>{{totalPrice}} đ</span>
+        </div>
+      </div>
+
+      <div style='margin-top: 16px;'>
+        Bạn có thể theo dõi đơn hàng trong mục
+        <strong>Lịch sử đơn hàng</strong>
+        trên hệ thống.
+      </div>
+
+      <div class='footer'>
+        Đây là email tự động, vui lòng không trả lời email này.<br />
+        Nếu bạn cần hỗ trợ, liên hệ đội ngũ CSKH của
+        <span class='brand'>AP post</span>.
+      </div>
+    </div>
+  </body>
+</html>
