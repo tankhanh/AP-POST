@@ -2,85 +2,81 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TrackingEvent, TrackingPublicService } from '../../services/dashboard/tracking.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-tracking-public',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './dashboard-tracking.html',
-  styleUrls: ['./dashboard-tracking.scss']
+  styleUrls: ['./dashboard-tracking.scss'],
 })
 export class TrackingComponent {
-  shipmentId = '';
+  waybill = ''; // ĐỔI TÊN CHO RÕ NGHĨA
+  trackingData: any = null; // Đổi sang object thay vì array
   trackingEvents: TrackingEvent[] = [];
   loading = false;
   error = '';
 
   private statusOrder = [
-    'CREATED', 'ACCEPTED', 'IN_TRANSIT',
-    'OUT_FOR_DELIVERY', 'DELIVERED',
-    'FAILED', 'RETURNED', 'CANCELED'
+    'PENDING',
+    'CONFIRMED',
+    'SHIPPING',
+    'COMPLETED',
+    'CANCELED',
   ] as const;
 
   private statusLabels: Record<string, string> = {
-    CREATED: 'Đã tạo đơn hàng',
-    ACCEPTED: 'Đã tiếp nhận',
-    IN_TRANSIT: 'Đang vận chuyển',
-    OUT_FOR_DELIVERY: 'Đang giao hàng',
-    DELIVERED: 'Giao thành công',
-    FAILED: 'Giao thất bại',
-    RETURNED: 'Đã hoàn hàng',
-    CANCELED: 'Đã hủy'
+    PENDING: 'Chờ xử lý',
+    CONFIRMED: 'Đã xác nhận',
+    SHIPPING: 'Đang giao hàng',
+    COMPLETED: 'Giao thành công',
+    CANCELED: 'Đã hủy',
   };
 
   private statusColors: Record<string, string> = {
-    CREATED: 'text-secondary',
-    ACCEPTED: 'text-info',
-    IN_TRANSIT: 'text-warning',
-    OUT_FOR_DELIVERY: 'text-orange',
-    DELIVERED: 'text-success',
-    FAILED: 'text-danger',
-    RETURNED: 'text-purple',
-    CANCELED: 'text-danger'
+    PENDING: 'text-secondary',
+    CONFIRMED: 'text-info',
+    SHIPPING: 'text-warning',
+    COMPLETED: 'text-success',
+    CANCELED: 'text-danger',
   };
 
   private statusIcons: Record<string, string> = {
-    CREATED: 'bi bi-plus-circle',
-    ACCEPTED: 'bi bi-check2-circle',
-    IN_TRANSIT: 'bi bi-truck',
-    OUT_FOR_DELIVERY: 'bi bi-box-seam',
-    DELIVERED: 'bi bi-check-circle-fill',
-    FAILED: 'bi bi-x-circle-fill',
-    RETURNED: 'bi bi-arrow-return-left',
-    CANCELED: 'bi bi-slash-circle'
+    PENDING: 'bi bi-hourglass-split',
+    CONFIRMED: 'bi bi-check2-circle',
+    SHIPPING: 'bi bi-truck',
+    COMPLETED: 'bi bi-check-circle-fill',
+    CANCELED: 'bi bi-slash-circle',
   };
 
-  constructor(private trackingService: TrackingPublicService) {}
+  constructor(private trackingService: TrackingPublicService) { }
 
   search() {
-    if (!this.shipmentId.trim()) {
+    if (!this.waybill.trim()) {
       this.error = 'Vui lòng nhập mã vận đơn';
       return;
     }
 
     this.loading = true;
     this.error = '';
+    this.trackingData = null;
     this.trackingEvents = [];
 
-    this.trackingService.getTrackingByShipmentId(this.shipmentId).subscribe({
-      next: (events) => {
-        this.trackingEvents = events;
+    // ← ĐÚNG METHOD MỚI
+    this.trackingService.getTrackingByWaybill(this.waybill).subscribe({
+      next: (res: any) => {
+        console.log('Data từ API:', res);
+        this.trackingData = res.data || null;
+        this.trackingEvents = res.data?.timeline || [];
         this.loading = false;
-
-        if (events.length === 0) {
-          this.error = 'Vận đơn này chưa có hành trình hoặc không tồn tại.';
-        }
       },
       error: (err) => {
-        this.error = err.message || 'Đã có lỗi xảy ra';
+        this.error = err.message;
         this.trackingEvents = [];
+        this.trackingData = null;
         this.loading = false;
-      }
+      },
     });
   }
 
@@ -92,19 +88,17 @@ export class TrackingComponent {
   }
 
   get latestUpdate() {
-    return this.trackingEvents.length > 0
-      ? this.trackingEvents[this.trackingEvents.length - 1].timestamp
-      : null;
+    return this.trackingData?.updatedAt || null;
   }
 
   getCurrentStatusLabel() {
-    const latest = this.trackingEvents[this.trackingEvents.length - 1];
-    return latest ? this.statusLabels[latest.status] : '';
+    return this.trackingData ? this.statusLabels[this.trackingData.currentStatus] : '';
   }
 
   getCurrentStatusColor() {
-    const latest = this.trackingEvents[this.trackingEvents.length - 1];
-    return latest ? this.statusColors[latest.status] || 'text-muted' : 'text-muted';
+    return this.trackingData
+      ? this.statusColors[this.trackingData.currentStatus] || 'text-muted'
+      : 'text-muted';
   }
 
   getStatusLabel(status: string) {

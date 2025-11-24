@@ -24,6 +24,14 @@ class AddressDto {
   @IsNotEmpty()
   @IsString()
   address: string;
+
+  @IsOptional()
+  @IsNumber()
+  lat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  lng?: number;
 }
 
 export class CreateOrderDto {
@@ -36,6 +44,10 @@ export class CreateOrderDto {
   @IsNotEmpty()
   @IsString()
   receiverName: string;
+
+  @IsOptional()
+  @IsString()
+  details: string;
 
   @ApiProperty({ example: '0987654321' })
   @IsNotEmpty()

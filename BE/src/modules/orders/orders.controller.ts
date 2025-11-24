@@ -37,7 +37,7 @@ export class OrdersController {
   @Get()
   @ResponseMessage('Danh sách đơn hàng')
   findAll(
-    @Req() req, // lấy request
+    @Req() req,
     @Query('current') current?: string,
     @Query('pageSize') limit?: string,
     @Query() query?: any,
@@ -82,8 +82,12 @@ export class OrdersController {
 
   @Patch(':id/status/:status')
   @ResponseMessage('Cập nhật trạng thái đơn hàng')
-  updateStatus(@Param('id') id: string, @Param('status') status: OrderStatus) {
-    return this.ordersService.updateStatus(id, status);
+  updateStatus(
+    @Param('id') id: string,
+    @Param('status') status: OrderStatus,
+    @Users() user: IUser,
+  ) {
+    return this.ordersService.updateStatus(id, status, user);
   }
   @Delete(':id')
   @ResponseMessage('Xóa đơn hàng (soft)')

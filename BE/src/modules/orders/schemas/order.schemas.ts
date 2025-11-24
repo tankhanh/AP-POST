@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { IsOptional } from 'class-validator';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
 import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 
@@ -25,7 +26,6 @@ export class Order {
 
   @Prop({ required: false }) email: string;
 
-  // dùng Address chuẩn hoá
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Address',
@@ -53,6 +53,9 @@ export class Order {
   @Prop({ required: true, min: 0 })
   codValue: number;
 
+  @Prop({ type: String, default: null })
+  details?: string;
+
   @Prop({ required: true, min: 0 })
   shippingFee: number;
 
@@ -77,6 +80,21 @@ export class Order {
     match: /^[A-Z]{2}[0-9]{9}[A-Z]{2}$/,
   })
   waybill: string;
+
+  @Prop({ default: Date.now })
+  createdAt?: Date;
+
+  @Prop()
+  updatedAt?: Date;
+
+  @Prop({
+    type: {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      email: String,
+    },
+    required: false,
+  })
+  createdBy?: { _id: Types.ObjectId; email: string };
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

@@ -11,16 +11,28 @@ import { Commune } from '../location/schemas/Commune.schema';
 import { Address } from '../location/schemas/address.schema';
 import { ProvinceCode, Region } from 'src/types/location.type';
 import { getRegionByProvinceCode } from '../location/dto/locations';
+import { Service, ServiceDocument } from '../services/schemas/service.schemas';
 
 @Injectable()
 export class PricingService {
   constructor(
     @InjectModel(Pricing.name)
     private pricingModel: SoftDeleteModel<PricingDocument>,
-    @InjectModel(Branch.name) private branchModel: Model<BranchDocument>,
-    @InjectModel(Province.name) private provinceModel: Model<Province>,
-    @InjectModel(Commune.name) private communeModel: Model<Commune>,
-    @InjectModel(Address.name) private addressModel: Model<Address>,
+
+    @InjectModel(Branch.name)
+    private branchModel: Model<BranchDocument>,
+
+    @InjectModel(Province.name)
+    private provinceModel: Model<Province>,
+
+    @InjectModel(Commune.name)
+    private communeModel: Model<Commune>,
+
+    @InjectModel(Address.name)
+    private addressModel: Model<Address>,
+
+    @InjectModel(Service.name)
+    private serviceModel: Model<ServiceDocument>,
   ) {}
 
   create(dto: any) {
@@ -31,7 +43,7 @@ export class PricingService {
   }
 
   async findAll(currentPage = 1, limit = 10, queryObj: any = {}) {
-    const { filter, sort, population } = aqp(queryObj);
+    const { filter, sort } = aqp(queryObj);
     delete (filter as any).current;
     delete (filter as any).pageSize;
 
@@ -44,13 +56,13 @@ export class PricingService {
     const total = await this.pricingModel.countDocuments(filter);
     const pages = Math.ceil(total / size);
 
-    const q = this.pricingModel
+    const results = await this.pricingModel
       .find(filter)
       .sort(sort as any)
       .skip(skip)
       .limit(size)
-      .populate('serviceId');
-    const results = await q.exec();
+      .populate('serviceId')
+      .exec();
 
     return { meta: { current: page, pageSize: size, pages, total }, results };
   }
@@ -82,8 +94,45 @@ export class PricingService {
     return { message: 'Pricing soft-deleted' };
   }
 
-  ///cal
+  // ================== HELPER: LẤY PRICING ACTIVE THEO SERVICE CODE ==================
+  private async getActivePricingByServiceCode(
+    serviceCode: 'STD' | 'EXP',
+  ): Promise<PricingDocument> {
+    // 1. Tìm service theo code (giả sử schema Service có field "code")
+    const svc = await this.serviceModel
+      .findOne({ code: serviceCode, isDeleted: { $ne: true } })
+      .lean();
 
+    if (!svc) {
+      throw new NotFoundException(
+        `Service với code ${serviceCode} không tồn tại`,
+      );
+    }
+
+    const now = new Date();
+
+    // 2. Lấy pricing active theo serviceId + thời gian
+    const pricing = await this.pricingModel
+      .findOne({
+        serviceId: svc._id,
+        isActive: true,
+        isDeleted: { $ne: true },
+        effectiveFrom: { $lte: now },
+        $or: [{ effectiveTo: null }, { effectiveTo: { $gte: now } }],
+      })
+      .sort({ effectiveFrom: -1 })
+      .lean();
+
+    if (!pricing) {
+      throw new NotFoundException(
+        `Không tìm thấy pricing active cho service ${serviceCode}`,
+      );
+    }
+
+    return pricing as PricingDocument;
+  }
+
+  /// ================== TÍNH PHÍ VẬN CHUYỂN (DÙNG PRICING TRONG DB) ==================
   async calculateShipping(
     originProvinceCode: ProvinceCode,
     destProvinceCode: ProvinceCode,
@@ -91,13 +140,17 @@ export class PricingService {
     weightKg: number,
     isLocal: boolean,
   ) {
-    // 1) Phụ phí > 5kg (dùng chung cho cả local & non-local)
-    const overweightFee = weightKg > 5 ? 5000 : 0;
+    // Lấy pricing động từ DB (basePrice, overweightThresholdKg, overweightFee)
+    const pricing = await this.getActivePricingByServiceCode(serviceCode);
 
-    // 2) Nếu nội thành/gần kho
+    const threshold = pricing.overweightThresholdKg ?? 0;
+    const overweightFee =
+      threshold > 0 && weightKg > threshold ? pricing.overweightFee ?? 0 : 0;
+
+    // ========== Nội tỉnh / gần kho ==========
     if (isLocal) {
       return {
-        totalPrice: 0 + overweightFee,
+        totalPrice: overweightFee,
         description:
           overweightFee > 0
             ? 'Free ship nội thành, chỉ thu phụ phí quá cân'
@@ -108,14 +161,17 @@ export class PricingService {
           originRegion: null,
           destRegion: null,
           serviceCode,
+          pricingId: pricing._id,
           baseServicePrice: 0,
           regionFee: 0,
           overweightFee,
+          overweightThresholdKg: threshold,
           isLocal,
         },
       };
     }
 
+    // ========== Liên tỉnh: tính theo vùng + pricing ==========
     const originRegion = getRegionByProvinceCode(originProvinceCode);
     const destRegion = getRegionByProvinceCode(destProvinceCode);
 
@@ -123,18 +179,6 @@ export class PricingService {
       throw new NotFoundException('Province code không hợp lệ');
     }
 
-    // 3) Giá dịch vụ
-    const SERVICE_BASE_PRICE: Record<'STD' | 'EXP', number> = {
-      STD: 20000,
-      EXP: 40000,
-    };
-
-    const baseServicePrice = SERVICE_BASE_PRICE[serviceCode];
-    if (baseServicePrice == null) {
-      throw new NotFoundException('Service code không hợp lệ');
-    }
-
-    // 4) Phụ phí theo vùng
     let regionFee = 0;
     const pair = new Set<Region>([originRegion, destRegion]);
 
@@ -146,6 +190,7 @@ export class PricingService {
       regionFee = 10000;
     }
 
+    const baseServicePrice = pricing.basePrice;
     const totalPrice = baseServicePrice + regionFee + overweightFee;
 
     return {
@@ -156,9 +201,11 @@ export class PricingService {
         originRegion,
         destRegion,
         serviceCode,
+        pricingId: pricing._id,
         baseServicePrice,
         regionFee,
         overweightFee,
+        overweightThresholdKg: threshold,
         isLocal,
       },
     };
