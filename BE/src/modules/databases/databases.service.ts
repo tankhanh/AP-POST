@@ -86,14 +86,14 @@ export class DatabasesService implements OnModuleInit {
     if (this.config.get('SHOULD_INIT') !== 'true') return;
 
     await this.seedUsers();
-    
+
     const { hn, hcm } = await this.seedLocation34(); // 34 tỉnh + quận/huyện
     const { addrHn1, addrHcm1, addrHn2 } = await this.seedAddresses(hn, hcm); // địa chỉ lean
     const { branchHN, branchHCM } = await this.seedBranches(addrHn1, addrHcm1);
     await this.userModel.updateOne(
-    { email: 'staff.hn@vtpost.local' },
-    { $set: { branchId: branchHN._id } }
-  );
+      { email: 'staff.hn@vtpost.local' },
+      { $set: { branchId: branchHN._id } },
+    );
     const { svcSTD, svcEXP } = await this.seedServices();
     await this.seedPricing(svcSTD._id, svcEXP._id);
     const { order1, customer } = await this.seedOrders(addrHn2, addrHcm1);

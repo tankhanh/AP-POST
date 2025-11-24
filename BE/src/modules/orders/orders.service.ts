@@ -7,7 +7,6 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import aqp from 'api-query-params';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { Connection, Types } from 'mongoose';
-
 import { IUser } from 'src/types/user.interface';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -21,6 +20,7 @@ import {
 import { PricingService } from '../pricing/pricing.service';
 import { ProvinceCode } from 'src/types/location.type';
 import { Tracking, TrackingStatus } from '../tracking/schemas/tracking.schemas';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class OrdersService {
@@ -36,11 +36,41 @@ export class OrdersService {
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
     @InjectConnection() private connection: Connection,
     private pricingService: PricingService,
+    private mailerService: MailerService,
   ) {
     this.trackingModel = this.connection.model(Tracking.name);
   }
 
-  // orders.service.ts
+  private normalizeEmail(email: string) {
+    return (email || '').trim().toLowerCase();
+  }
+
+  // Gửi email xác nhận đơn hàng
+  async sendVerificationMailOrder(params: {
+    email: string;
+    name?: string;
+    orderId: string;
+    totalPrice: number;
+    shippingFee: number;
+    codValue: number;
+  }) {
+    const { email, name, orderId, totalPrice, shippingFee, codValue } = params;
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Xác nhận đơn hàng của bạn',
+      template: 'ordersEmail.hbs',
+      context: {
+        name: name || email,
+        orderId,
+        totalPrice,
+        shippingFee,
+        codValue,
+      },
+    });
+  }
+
+  // Tạo order
   async create(dto: CreateOrderDto, user: IUser) {
     const waybill = await this.generateUniqueWaybill();
     // 1. Lấy province + code
@@ -72,21 +102,13 @@ export class OrdersService {
     const pickupAddr = await this.addressModel.create(dto.pickupAddress);
     const deliveryAddr = await this.addressModel.create(dto.deliveryAddress);
 
-    // ===================================================================
-    // 4. XỬ LÝ BRANCHID – CHỈ BẮT BUỘC VỚI STAFF, ADMIN & USER ĐƯỢC QUA
-    // ===================================================================
+    // 4. Xử lý branchId
     let branchId: Types.ObjectId | null | undefined = undefined;
 
-    // Lấy branchId từ mọi nguồn có thể có (do JWT đôi khi đổi tên field)
     const rawBranchId =
-      user.branchId ??
-      (user as any).branchId ??
-      user.BranchId ??
-      (user as any).BranchId ??
-      null;
+      (user as any).branchId ?? (user as any).BranchId ?? null;
 
     if (user.role === 'STAFF') {
-      // STAFF bắt buộc phải có branchId
       if (!rawBranchId) {
         throw new BadRequestException(
           'Nhân viên chưa được gắn bưu cục. Vui lòng liên hệ quản trị viên.',
@@ -96,8 +118,7 @@ export class OrdersService {
     } else if (user.role === 'ADMIN') {
       branchId = rawBranchId ? new Types.ObjectId(rawBranchId) : null;
     } else {
-      // USER (khách hàng): không cần branchId
-      branchId = undefined;
+      branchId = undefined; // USER
     }
 
     // 5. Tạo đơn hàng
@@ -118,20 +139,37 @@ export class OrdersService {
     });
 
     try {
-      await this.trackingModel.create({
-        orderId: newOrder._id,
-        status: OrderStatus.PENDING,
-        timestamp: new Date(),
-        location: originProv?.name || 'Khách hàng đặt hàng online',
-        note: 'Đơn hàng được tạo thành công',
-        createdBy: newOrder.createdBy || (user ? { _id: user._id, email: user.email } : null),
-      });
-      console.log('TRACKING ĐÃ TẠO THÀNH CÔNG CHO ORDER:', newOrder._id);
-    } catch (error) {
-      console.error('Lỗi tạo tracking:', error);
-    }
+  // Tạo tracking cho order
+  await this.trackingModel.create({
+    orderId: newOrder._id,
+    status: OrderStatus.PENDING,
+    timestamp: new Date(),
+    location: originProv?.name || 'Khách hàng đặt hàng online',
+    note: 'Đơn hàng được tạo thành công',
+    createdBy: newOrder.createdBy || (user ? { _id: user._id, email: user.email } : null),
+  });
+  console.log('TRACKING ĐÃ TẠO THÀNH CÔNG CHO ORDER:', newOrder._id);
+} catch (error) {
+  console.error('Lỗi tạo tracking:', error);
+}
 
-    return newOrder;
+// Gửi email xác nhận đơn hàng
+try {
+  await this.sendVerificationMailOrder({
+    email: user.email,
+    name: user.name,
+    orderId: newOrder._id.toString(),
+    totalPrice,
+    shippingFee,
+    codValue: dto.codValue,
+  });
+} catch (err) {
+  console.log('Send order confirm email failed: ' + err);
+}
+
+// Trả về order cuối cùng
+return newOrder;
+
   }
 
   private async generateUniqueWaybill(): Promise<string> {
@@ -140,7 +178,7 @@ export class OrdersService {
 
     do {
       const prefix = 'BD';
-      const numbers = Math.floor(100000000 + Math.random() * 900000000); // 9 số ngẫu nhiên
+      const numbers = Math.floor(100000000 + Math.random() * 900000000);
       const suffix = 'VN';
       waybill = `${prefix}${numbers}${suffix}`;
 

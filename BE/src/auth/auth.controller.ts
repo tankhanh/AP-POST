@@ -23,7 +23,6 @@ import {
 } from 'src/modules/users/dto/create-user.dto';
 import { CodeAuthDto } from 'src/modules/users/dto/code-auth.dto';
 import { ChangePasswordDto } from 'src/modules/users/dto/change-password.dto';
-import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('auth')
 @Controller('auth')
