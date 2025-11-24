@@ -1,0 +1,168 @@
+<div class="pricing-page" *ngIf="!loading; else loadingTpl">
+  <div class="pricing-header">
+    <button class="btn btn-primary" (click)="openCreate()" title="Tạo bảng giá mới">
+      + Tạo bảng giá mới
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-header" [ngStyle]="{ 'text-align': 'center' }">
+      <h2>Danh sách bảng giá</h2>
+    </div>
+
+    <div class="card-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Dịch vụ</th>
+            <th>Base price (đ)</th>
+            <th>Ngưỡng quá cân (kg)</th>
+            <th>Phụ phí quá cân (đ)</th>
+            <th>Hiệu lực từ</th>
+            <th>Hiệu lực đến</th>
+
+            <th>Hành động</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let p of pricing; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>{{ getServiceLabel(p) }}</td>
+            <td>{{ p.basePrice | number : '1.0-0' }}</td>
+            <td>{{ p.overweightThresholdKg }}</td>
+            <td>{{ p.overweightFee | number : '1.0-0' }}</td>
+            <td>{{ p.effectiveFrom | date : 'dd/MM/yyyy' }}</td>
+            <td>
+              {{ p.effectiveTo ? (p.effectiveTo | date : 'dd/MM/yyyy') : '—' }}
+            </td>
+
+            <td class="actions-cell">
+              <button class="btn btn-edit" (click)="openEdit(p)" title="Sửa bảng giá">Sửa</button>
+              <button class="btn btn-delete" (click)="remove(p)" title="Xoá bảng giá">Xoá</button>
+            </td>
+          </tr>
+
+          <tr *ngIf="pricing.length === 0">
+            <td colspan="9" class="text-center">Chưa có bảng giá nào</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="loading-container">
+    <div class="spinner"></div>
+    <p>Đang tải dữ liệu bảng giá...</p>
+  </div>
+</ng-template>
+
+<!-- ========= MODAL (ĐÃ ĐỔI TÊN CLASS) ========= -->
+<div class="pricing-modal-backdrop" *ngIf="modalOpen">
+  <div class="pricing-modal">
+    <div class="pricing-modal-header">
+      <h3>{{ editing ? 'Cập nhật bảng giá' : 'Tạo bảng giá mới' }}</h3>
+      <button class="pricing-modal-close" (click)="closeModal()" title="Đóng">X</button>
+    </div>
+
+    <div class="pricing-modal-body">
+      <div class="form-grid">
+        <!-- Service -->
+        <div class="form-group">
+          <label for="serviceSelect">Dịch vụ *</label>
+          <select
+            id="serviceSelect"
+            [(ngModel)]="selected.serviceId"
+            name="serviceId"
+            title="Chọn dịch vụ áp dụng"
+          >
+            <option [ngValue]="''">-- Chọn dịch vụ --</option>
+            <option *ngFor="let s of services" [ngValue]="s._id">
+              {{ s.code }} - {{ s.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Base price -->
+        <div class="form-group">
+          <label for="basePrice">Giá cơ bản (đ) *</label>
+          <input
+            id="basePrice"
+            type="number"
+            [(ngModel)]="selected.basePrice"
+            name="basePrice"
+            min="0"
+            title="Nhập giá cơ bản cho dịch vụ"
+          />
+        </div>
+
+        <!-- Threshold -->
+        <div class="form-group">
+          <label for="threshold">Ngưỡng quá cân (kg) *</label>
+          <input
+            id="threshold"
+            type="number"
+            [(ngModel)]="selected.overweightThresholdKg"
+            name="overweightThresholdKg"
+            min="0"
+            title="Khối lượng bắt đầu tính phụ phí"
+          />
+        </div>
+
+        <!-- Overweight fee -->
+        <div class="form-group">
+          <label for="overFee">Phụ phí quá cân (đ) *</label>
+          <input
+            id="overFee"
+            type="number"
+            [(ngModel)]="selected.overweightFee"
+            name="overweightFee"
+            min="0"
+            title="Số tiền phụ phí khi quá cân"
+          />
+        </div>
+
+        <!-- From -->
+        <div class="form-group">
+          <label for="fromDate">Ngày bắt đầu hiệu lực *</label>
+          <input
+            id="fromDate"
+            type="date"
+            [(ngModel)]="selected.effectiveFrom"
+            name="effectiveFrom"
+            title="Chọn ngày bắt đầu áp dụng bảng giá"
+          />
+        </div>
+
+        <!-- To -->
+        <div class="form-group">
+          <label for="toDate">Ngày kết thúc hiệu lực</label>
+          <input
+            id="toDate"
+            type="date"
+            [(ngModel)]="selected.effectiveTo"
+            name="effectiveTo"
+            title="Ngày kết thúc áp dụng (có thể bỏ trống)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="pricing-modal-footer">
+      <button
+        class="btn btn-secondary"
+        (click)="closeModal()"
+        [disabled]="saving"
+        title="Huỷ thao tác"
+      >
+        Hủy
+      </button>
+      <button class="btn btn-primary" (click)="save()" [disabled]="saving" title="Lưu bảng giá">
+        {{ saving ? 'Đang lưu...' : 'Lưu' }}
+      </button>
+    </div>
+  </div>
+</div>
