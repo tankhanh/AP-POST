@@ -10,7 +10,6 @@ import { VerifyReset } from './account/verify-reset/verify-reset';
 import { ResetPassword } from './account/reset-password/reset-password';
 import { DashboardLayout } from './dashboard-layout/dashboard-layout';
 import { DashboardHome } from './dashboard-layout/dashboard-emoloyee/dashboard-home/dashboard-home';
-
 // Guards
 import { AuthGuard } from './guard/auth.guard';
 // (tùy chọn) AdminGuard nếu có
@@ -34,10 +33,17 @@ import { AdmninCreateOrder } from './dashboard-layout/dashboard-admin/dashboard-
 import { AdminEditOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminEditOrder';
 import { ListBranch } from './dashboard-layout/dashboard-emoloyee/dashboard-branches/dashboard-branch';
 import { TrackingComponent } from './dashboard-layout/dashboard-tracking/dashboard-tracking';
+import { StaffListComponent } from './dashboard-layout/dashboard-admin/staffs/staff-list/staff-list.component';
+import { StaffDetailComponent } from './dashboard-layout/dashboard-admin/staffs/staff-detail/staff-detail.component';
+import { StaffCreateComponent } from './dashboard-layout/dashboard-admin/staffs/staff-create/staff-create.component';
+import { StaffUpdateComponent } from './dashboard-layout/dashboard-admin/staffs/staff-update/staff-update.component';
+import { StaffTrashComponent } from './dashboard-layout/dashboard-admin/staffs/staff-trash/staff-trash.component';
 import { DashboardPricingComponent } from './dashboard-layout/dashboard-admin/dashboard-pricing/dashboard-pricing';
+import { CalculateShippingComponent } from './dashboard-layout/user-calculator/user-calculator';
 
 export const routes: Routes = [
   { path: 'tracking', component: TrackingComponent },
+  { path: 'calculator', component: CalculateShippingComponent },
   // ----- USER LAYOUT -----
   {
     path: '',
@@ -92,6 +98,16 @@ export const routes: Routes = [
           { path: 'detail/:id', component: BranchDetailComponent },
           { path: 'update/:id', component: BranchUpdateComponent },
           { path: 'trash', component: BranchTrashComponent },
+        ],
+      },
+      {
+        path: 'staff',
+        children: [
+          { path: '', component: StaffListComponent },
+          { path: 'create', component: StaffCreateComponent },
+          { path: 'detail/:id', component: StaffDetailComponent },
+          { path: 'update/:id', component: StaffUpdateComponent },
+          { path: 'trash', component: StaffTrashComponent },
         ],
       },
     ],

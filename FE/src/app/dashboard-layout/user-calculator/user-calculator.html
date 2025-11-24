@@ -1,0 +1,189 @@
+<div class="shipping-page">
+  <div class="shipping-card">
+    <div class="shipping-card-header">
+      <h2>Ước tính cước vận chuyển</h2>
+      <p>
+        Nhập thông tin để tính thử phí ship dựa trên
+        <strong>bảng giá hiện tại</strong>.
+      </p>
+    </div>
+
+    <div class="shipping-card-body">
+      <!-- ================= FORM ================= -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="origin" title="Chọn tỉnh gửi hàng">Tỉnh gửi *</label>
+          <select id="origin" [(ngModel)]="formData.originProvinceCode" name="originProvinceCode">
+            <option value="">-- Chọn tỉnh gửi --</option>
+            <option *ngFor="let p of provinceOptions" [value]="p.value">
+              {{ p.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Destination -->
+        <div class="form-group">
+          <label for="dest" title="Chọn tỉnh nhận hàng">Tỉnh nhận *</label>
+          <select id="dest" [(ngModel)]="formData.destProvinceCode" name="destProvinceCode">
+            <option value="">-- Chọn tỉnh nhận --</option>
+            <option *ngFor="let p of provinceOptions" [value]="p.value">
+              {{ p.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Service -->
+        <div class="form-group">
+          <label for="service" title="Chọn dịch vụ">Dịch vụ *</label>
+          <select id="service" [(ngModel)]="formData.serviceCode" name="serviceCode">
+            <option *ngFor="let s of serviceOptions" [value]="s.value">
+              {{ s.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Weight -->
+        <div class="form-group">
+          <label for="weight" title="Nhập trọng lượng (kg)">Khối lượng (kg) *</label>
+          <input
+            id="weight"
+            type="number"
+            min="0.1"
+            step="0.1"
+            [(ngModel)]="formData.weightKg"
+            name="weightKg"
+            placeholder="VD: 1.5"
+          />
+        </div>
+
+        <!-- COD -->
+        <div class="form-group">
+          <label for="cod" title="Nhập giá trị tiền hàng">Tiền hàng (COD)</label>
+          <input
+            id="cod"
+            type="number"
+            min="0"
+            step="1000"
+            [(ngModel)]="formData.codValue"
+            name="codValue"
+            placeholder="VD: 150000"
+          />
+        </div>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="actions">
+        <button class="btn btn-secondary" (click)="resetForm()" [disabled]="loading">
+          Xoá form
+        </button>
+
+        <button class="btn btn-primary" (click)="submit()" [disabled]="loading">
+          {{ loading ? 'Đang tính...' : 'Tính cước' }}
+        </button>
+      </div>
+
+      <!-- ERROR -->
+      <div class="alert alert-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- ================= RESULT ================= -->
+      <div class="result-card" *ngIf="result">
+        <div class="result-header">
+          <h3>Kết quả ước tính</h3>
+          <p *ngIf="result?.description">{{ result.description }}</p>
+        </div>
+
+        <div class="result-main">
+          <!-- SHIP FEE -->
+          <div class="result-total">
+            <span class="result-label">Phí ship:</span>
+            <span class="result-value">{{ result?.totalPrice | number : '1.0-0' }} đ</span>
+          </div>
+
+          <!-- COD -->
+          <div class="result-total" *ngIf="formData.codValue > 0">
+            <span class="result-label">Tiền hàng (COD):</span>
+            <span class="result-value">{{ formData.codValue | number : '1.0-0' }} đ</span>
+          </div>
+
+          <!-- TOTAL -->
+          <div class="result-total" *ngIf="formData.codValue > 0">
+            <span class="result-label">Tổng thu hộ:</span>
+            <span class="result-value">{{ totalCollect | number : '1.0-0' }} đ</span>
+          </div>
+
+          <!-- BREAKDOWN -->
+          <div class="result-breakdown">
+            <h4>Chi tiết tính phí</h4>
+            <table>
+              <tbody>
+                <tr>
+                  <td>Tỉnh gửi</td>
+                  <td>{{ result?.breakdown.originProvinceCode }}</td>
+                </tr>
+                <tr>
+                  <td>Tỉnh nhận</td>
+                  <td>{{ result?.breakdown.destProvinceCode }}</td>
+                </tr>
+                <tr>
+                  <td>Vùng gửi</td>
+                  <td>{{ result?.breakdown.originRegion || '—' }}</td>
+                </tr>
+                <tr>
+                  <td>Vùng nhận</td>
+                  <td>{{ result?.breakdown.destRegion || '—' }}</td>
+                </tr>
+
+                <tr>
+                  <td>Dịch vụ</td>
+                  <td>{{ result?.breakdown.serviceCode }}</td>
+                </tr>
+
+                <tr>
+                  <td>Giá base dịch vụ</td>
+                  <td>{{ result?.breakdown.baseServicePrice | number : '1.0-0' }} đ</td>
+                </tr>
+
+                <tr>
+                  <td>Phụ phí vùng</td>
+                  <td>{{ result?.breakdown.regionFee | number : '1.0-0' }} đ</td>
+                </tr>
+
+                <tr>
+                  <td>Ngưỡng quá cân</td>
+                  <td>{{ result?.breakdown.overweightThresholdKg }} kg</td>
+                </tr>
+
+                <tr>
+                  <td>Phụ phí quá cân</td>
+                  <td>{{ result?.breakdown.overweightFee | number : '1.0-0' }} đ</td>
+                </tr>
+
+                <tr>
+                  <td>Nội tỉnh</td>
+                  <td>{{ result?.breakdown.isLocal ? 'Có' : 'Không' }}</td>
+                </tr>
+
+                <tr>
+                  <td>Pricing ID</td>
+                  <td>{{ result?.breakdown.pricingId }}</td>
+                </tr>
+
+                <tr *ngIf="formData.codValue > 0">
+                  <td>Tiền hàng COD</td>
+                  <td>{{ formData.codValue | number : '1.0-0' }} đ</td>
+                </tr>
+
+                <tr *ngIf="formData.codValue > 0">
+                  <td>Tổng thu hộ</td>
+                  <td>{{ totalCollect | number : '1.0-0' }} đ</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

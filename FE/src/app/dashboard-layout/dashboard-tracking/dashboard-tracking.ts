@@ -18,13 +18,7 @@ export class TrackingComponent {
   loading = false;
   error = '';
 
-  private statusOrder = [
-    'PENDING',
-    'CONFIRMED',
-    'SHIPPING',
-    'COMPLETED',
-    'CANCELED',
-  ] as const;
+  private statusOrder = ['PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED', 'CANCELED'] as const;
 
   private statusLabels: Record<string, string> = {
     PENDING: 'Chờ xử lý',
@@ -50,7 +44,7 @@ export class TrackingComponent {
     CANCELED: 'bi bi-slash-circle',
   };
 
-  constructor(private trackingService: TrackingPublicService) { }
+  constructor(private trackingService: TrackingPublicService) {}
 
   search() {
     if (!this.waybill.trim()) {
