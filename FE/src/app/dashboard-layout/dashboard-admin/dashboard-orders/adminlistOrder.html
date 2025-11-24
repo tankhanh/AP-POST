@@ -198,42 +198,46 @@
 
           <!-- Thao tác -->
           <td (click)="$event.stopPropagation()">
-            <button
-              *ngIf="canEdit(order)"
-              class="btn btn-warning btn-sm py-2 px-3 me-1"
-              [routerLink]="['/admin/order/edit', order._id]"
-            >
-              Sửa
-            </button>
-
-            <button
-              *ngIf="canDelete(order)"
-              class="btn btn-danger btn-sm py-2 px-3 me-1"
-              (click)="deleteOrder(order._id, $event)"
-            >
-              Xóa
-            </button>
-
-            <!-- Nút In -->
-            <button
-              class="btn btn-info btn-sm py-2 px-3 text-white"
-              (click)="printOrder(order)"
-              title="In vận đơn"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                fill="currentColor"
-                viewBox="0 0 16 16"
+            <div class="table-actions">
+              <button
+                *ngIf="canEdit(order)"
+                class="btn-sm btn-edit"
+                [routerLink]="['/admin/order/edit', order._id]"
+                title="Sửa đơn"
               >
-                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z" />
-                <path
-                  d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5z"
-                />
-              </svg>
-              In
-            </button>
+                Sửa
+              </button>
+
+              <button
+                *ngIf="canDelete(order)"
+                class="btn-sm btn-delete btn-sm py-2 px-3 me-1"
+                (click)="deleteOrder(order._id, $event)"
+                title="Xóa đơn"
+              >
+                Xóa
+              </button>
+
+              <!-- Nút In -->
+              <button
+                class="btn btn-info btn-sm py-2 px-3 text-white"
+                (click)="printOrder(order)"
+                title="In vận đơn"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  viewBox="0 0 16 16"
+                >
+                  <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z" />
+                  <path
+                    d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5z"
+                  />
+                </svg>
+                In
+              </button>
+            </div>
           </td>
         </tr>
 
