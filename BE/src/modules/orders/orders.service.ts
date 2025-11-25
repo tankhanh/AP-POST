@@ -549,7 +549,7 @@ export class OrdersService {
               waybill: order.waybill,
               orderId: order._id.toString(),
               status: display[status]?.note || status,
-              trackingUrl: `https://yourdomain.com/tracking/${order.waybill}`, // thay domain thật
+              trackingUrl: `https://localhost:4200/tracking/${order.waybill}`, // thay domain thật
               totalPrice: order.totalPrice,
               codValue: order.codValue,
             },
@@ -557,7 +557,6 @@ export class OrdersService {
           console.log(`Đã gửi email trạng thái ${status} đến: ${order.email}`);
         } catch (err) {
           console.log(`Gửi email trạng thái ${status} thất bại:`, err);
-          // Không throw → không làm hỏng cập nhật trạng thái
         }
       }
     }

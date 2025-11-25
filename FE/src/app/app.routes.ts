@@ -40,6 +40,7 @@ import { StaffUpdateComponent } from './dashboard-layout/dashboard-admin/staffs/
 import { StaffTrashComponent } from './dashboard-layout/dashboard-admin/staffs/staff-trash/staff-trash.component';
 import { DashboardPricingComponent } from './dashboard-layout/dashboard-admin/dashboard-pricing/dashboard-pricing';
 import { CalculateShippingComponent } from './dashboard-layout/user-calculator/user-calculator';
+import { SupportComponent } from './dashboard-layout/dashboard-admin/support/support.component';
 
 export const routes: Routes = [
   { path: 'tracking', component: TrackingComponent },
@@ -90,6 +91,7 @@ export const routes: Routes = [
       { path: 'orders/list', component: AdminListOrder },
       { path: 'order/edit/:id', component: AdminEditOrder },
       { path: 'pricing', component: DashboardPricingComponent },
+      { path: 'support', component: SupportComponent },
       {
         path: 'branch',
         children: [
