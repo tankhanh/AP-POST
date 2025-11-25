@@ -1,4 +1,3 @@
-// src/app/services/geocoding.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, catchError, of } from 'rxjs';  // Thêm catchError, of
@@ -17,12 +16,10 @@ export class GeocodingService {
       return of(this.cache.get(cacheKey)!);
     }
 
-    // BƯỚC 1: Thử Photon trước (nhanh, không CORS)
     return this.http.get<any>('https://photon.komoot.io/api/', {
       params: {
-        q: encodeURIComponent(address),  // Encode UTF-8 đúng, không thêm ', Việt Nam' vì gây conflict
+        q: encodeURIComponent(address),
         limit: '1',
-        // Bỏ lang=vi (không support), thêm countrycode=vn
         countrycode: 'vn'
       }
     }).pipe(
@@ -31,7 +28,6 @@ export class GeocodingService {
         let result = [];
         
         if (features.length > 0) {
-          // Success! Format giống Nominatim
           result = [{
             lat: features[0].geometry.coordinates[1].toString(),
             lon: features[0].geometry.coordinates[0].toString(),
@@ -55,7 +51,6 @@ export class GeocodingService {
     );
   }
 
-  // Fallback Nominatim (giống code cũ của bạn)
   private fallbackNominatim(address: string, cacheKey: string) {
     return this.http.get<any[]>(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=vn&limit=1`,
@@ -78,7 +73,7 @@ export class GeocodingService {
       }),
       catchError((err) => {
         console.error('❌ Fallback failed:', err);
-        return of([]);  // Trả empty nếu cả hai fail
+        return of([]);
       })
     );
   }
