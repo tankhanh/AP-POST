@@ -92,6 +92,10 @@ export class OrdersService {
       originProv.code === destProv.code,
     );
 
+    const activePricing = await this.pricingService['getActivePricingByServiceCode'](
+      dto.serviceCode || 'STD',
+    );
+
     const shippingFee =
       typeof calcResult.totalPrice === 'number' ? calcResult.totalPrice : 0;
     const totalPrice = dto.codValue + shippingFee;
@@ -136,6 +140,16 @@ export class OrdersService {
       serviceCode: dto.serviceCode || 'STD',
       weightKg: dto.weightKg,
       waybill,
+
+      snapshotPricingId: activePricing._id,
+      snapshotBasePrice: activePricing.basePrice,
+      snapshotOverweightFee: calcResult.breakdown.overweightFee || 0,
+      snapshotRegionFee: calcResult.breakdown.regionFee || 0,
+      snapshotIsLocal: calcResult.breakdown.isLocal,
+      snapshotServiceCode: dto.serviceCode || 'STD',
+      snapshotWeightKg: dto.weightKg,
+      snapshotBreakdown: calcResult.breakdown,
+
       status: OrderStatus.PENDING,
       createdBy: { _id: new Types.ObjectId(user._id), email: user.email },
     });
@@ -324,24 +338,36 @@ export class OrdersService {
       .findById(id)
       .populate({
         path: 'pickupAddressId',
-        model: Address.name,
         populate: [
-          { path: 'provinceId', model: Province.name },
-          { path: 'communeId', model: Commune.name },
+          { path: 'provinceId', model: 'Province' },
+          { path: 'communeId', model: 'Commune' },
         ],
       })
       .populate({
         path: 'deliveryAddressId',
-        model: Address.name,
         populate: [
-          { path: 'provinceId', model: Province.name },
-          { path: 'communeId', model: Commune.name },
+          { path: 'provinceId', model: 'Province' },
+          { path: 'communeId', model: 'Commune' },
         ],
-      });
+      })
+      .lean();
 
-    if (!order || order.isDeleted)
+    if (!order || order.isDeleted) {
       throw new NotFoundException('Order not found');
-    return order;
+    }
+
+    // THÊM ĐOẠN NÀY – BẮT BUỘC PHẢI CÓ
+    const hasSnapshot = !!order.snapshotPricingId;
+    const response: any = {
+      ...order,
+      pricingLocked: hasSnapshot,
+      snapshotShippingFee: order.shippingFee,
+      pricingNote: hasSnapshot
+        ? 'Phí vận chuyển đã được cố định từ lúc khách đặt hàng'
+        : 'Có thể điều chỉnh phí',
+    };
+
+    return response;
   }
   // orders.service.ts
   async update(id: string, dto: UpdateOrderDto) {
@@ -349,6 +375,8 @@ export class OrdersService {
     if (!order || order.isDeleted) {
       throw new NotFoundException('Order not found');
     }
+
+    const hasSnapshot = !!order.snapshotPricingId;
 
     let needRecalculateFee = false;
     let newShippingFee = order.shippingFee;
@@ -361,6 +389,17 @@ export class OrdersService {
       dto.weightKg !== undefined
     ) {
       needRecalculateFee = true;
+    }
+
+    if (!hasSnapshot) {
+      if (
+        dto.pickupAddress?.provinceId ||
+        dto.deliveryAddress?.provinceId ||
+        dto.serviceCode ||
+        dto.weightKg !== undefined
+      ) {
+        needRecalculateFee = true;
+      }
     }
 
     // Nếu có thay đổi địa chỉ, dịch vụ, cân nặng → tính lại phí

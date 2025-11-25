@@ -82,4 +82,8 @@ export class CreateOrderDto {
   @IsNumber()
   @Min(0.01)
   weightKg: number = 0;
+
+  pricingLocked?: boolean;
+  snapshotShippingFee?: number;
+  pricingNote?: string;
 }

@@ -18,6 +18,9 @@ export class Order {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
+  @Prop({ required: true })
+  snapshotPricingId: Types.ObjectId;
+
   @Prop({ required: true }) senderName: string;
 
   @Prop({ required: true }) receiverName: string;
@@ -96,6 +99,9 @@ export class Order {
     required: false,
   })
   createdBy?: { _id: Types.ObjectId; email: string };
+
+  @Prop({ type: Object })
+  snapshotBreakdown?: any;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

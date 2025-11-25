@@ -107,7 +107,9 @@ export class CreateOrder implements OnInit {
       weightKg: [1, [Validators.required, Validators.min(0.01)]],
       codValue: [0, [Validators.required, Validators.min(0)]],
 
-      email: ['']
+      email: [''],
+
+      details: ['']
     });
   }
 
@@ -291,6 +293,8 @@ export class CreateOrder implements OnInit {
       codValue: Number(f.codValue) || 0,
       weightKg: Number(f.weightKg) || 1,
       serviceCode: f.serviceCode || 'STD',
+
+      details: f.details?.trim() || null,
     };
 
     this.ordersService.createOrder(data).subscribe({

@@ -33,6 +33,10 @@ export class EditOrder implements OnInit {
   currentShippingFee = 0;
   recalculated = false;
 
+  isPricingLocked = false;
+  pricingNote = '';
+  originalShippingFee = 0;
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -48,7 +52,7 @@ export class EditOrder implements OnInit {
     this.orderId = this.route.snapshot.params['id'];
     if (!this.orderId) {
       Swal.fire('Lỗi', 'Không tìm thấy ID đơn hàng', 'error');
-      this.router.navigate(['/employee/orders/list']);
+      this.router.navigate(['/employee/order/list']);
       return;
     }
 
@@ -70,9 +74,9 @@ export class EditOrder implements OnInit {
         if (this.shouldSearch('delivery')) this.updateDeliveryMap();
       });
 
-    this.orderForm.valueChanges.pipe(debounceTime(600)).subscribe(() => {
-      if (this.order?.status === 'CONFIRMED') this.recalculateIfAllowed();
-    });
+    // this.orderForm.valueChanges.pipe(debounceTime(600)).subscribe(() => {
+    //   if (this.order?.status === 'CONFIRMED') this.recalculateIfAllowed();
+    // });
   }
 
   // Thêm hàm này vào class
@@ -161,6 +165,8 @@ export class EditOrder implements OnInit {
       weightKg: [1, [Validators.required, Validators.min(0.01)]],
 
       status: ['PENDING'],
+
+      details: ['']
     });
   }
 
@@ -181,7 +187,14 @@ export class EditOrder implements OnInit {
   loadOrderDetail() {
     this.ordersService.getOrderById(this.orderId).subscribe((res) => {
       this.order = res.data;
-      this.currentShippingFee = this.order.shippingFee || 0;
+
+      this.isPricingLocked = !!this.order.pricingLocked;
+      this.pricingNote = this.order.pricingNote || '';
+      this.originalShippingFee = this.order.shippingFee || 0;
+
+      this.currentShippingFee = this.isPricingLocked
+        ? this.originalShippingFee
+        : this.order.shippingFee;
 
       this.orderForm.patchValue({
         senderName: this.order.senderName,
@@ -203,6 +216,8 @@ export class EditOrder implements OnInit {
         serviceCode: this.order.serviceCode || 'STD',
         weightKg: this.order.weightKg || 1,
         status: this.order.status,
+
+        details: this.order.details || '',
       });
 
       // Set marker map sau khi patchValue xong
@@ -266,6 +281,18 @@ export class EditOrder implements OnInit {
 
   // ================== TÍNH PHÍ ==================
   async recalculateIfAllowed() {
+    if (this.isPricingLocked) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Không thể thay đổi phí vận chuyển!',
+        text: 'Phí đã được cố định từ lúc khách đặt hàng. Chỉ Admin mới có thể mở khóa (nếu cần).',
+        timer: 5000,
+        toast: true,
+        position: 'top-end'
+      });
+      return; // DỪNG LUÔN – không tính gì nữa
+    }
+
     const f = this.orderForm.value;
     if (!f.pickupProvinceId || !f.deliveryProvinceId) return;
 
@@ -290,6 +317,12 @@ export class EditOrder implements OnInit {
     }
   }
 
+  onWeightOrServiceChange() {
+  if (this.canEditService()) {
+    this.recalculateIfAllowed();
+  }
+}
+
   // ================== MAP & LOCATION ==================
   onPickupProvinceChange(reset = true) {
     const id = this.orderForm.get('pickupProvinceId')?.value;
@@ -313,7 +346,10 @@ export class EditOrder implements OnInit {
       this.deliveryCommunes = res.data || [];
       if (reset) this.orderForm.get('deliveryCommuneId')?.setValue('');
     });
-    if (this.order?.status === 'CONFIRMED') this.recalculateIfAllowed();
+    if (reset !== false) {
+      this.recalculateIfAllowed();
+    }
+    // if (this.order?.status === 'CONFIRMED') this.recalculateIfAllowed();
   }
 
   setPickupLocation(pos: { lat: number; lng: number }) {
@@ -395,6 +431,7 @@ export class EditOrder implements OnInit {
         lat: f.deliveryLat || null,
         lng: f.deliveryLng || null,
       },
+      details: f.details?.trim() || null,
     };
 
     if (this.canEditSender()) payload.senderName = f.senderName;

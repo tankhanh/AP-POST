@@ -95,6 +95,16 @@
           <label class="form-label fw-semibold">Giá trị hàng hóa (VNĐ)</label>
           <input type="number" min="0" class="form-control" formControlName="codValue" placeholder="0" />
         </div>
+        
+        <!-- GHI CHÚ CHO NHÂN VIÊN / SHIPPER -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Ghi chú đơn hàng <small class="text-muted">(giao giờ hành chính, gọi trước khi giao...)</small>
+          </label>
+          <textarea class="form-control" rows="3" formControlName="details"
+            placeholder="Ví dụ: Giao sau 14h, gọi trước 30 phút, để trước cửa...">
+          </textarea>
+        </div>
 
         <!-- Kết quả tự động tính -->
         <div class="alert alert-info mt-3">
