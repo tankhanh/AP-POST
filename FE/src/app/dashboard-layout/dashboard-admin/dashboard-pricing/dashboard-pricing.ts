@@ -41,7 +41,8 @@ export class DashboardPricingComponent implements OnInit {
   selected: IPricing = this.emptyPricing();
 
   // ⚙️ Đổi lại URL nếu BE khác
-  private readonly baseUrl = 'http://localhost:8000/api/v1';
+  // private readonly baseUrl = 'http://localhost:8000/api/v1';
+  private readonly baseUrl = 'https://ap-post-api.onrender.com/api/v1';
 
   constructor(private http: HttpClient) {}
 

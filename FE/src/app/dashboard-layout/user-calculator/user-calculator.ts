@@ -45,7 +45,8 @@ type ShippingForm = ShippingRequest & {
 })
 export class CalculateShippingComponent implements OnInit {
   private http = inject(HttpClient);
-  private readonly API_URL = 'http://localhost:8000/api/v1';
+  // private readonly API_URL = 'http://localhost:8000/api/v1';
+  private readonly API_URL = 'https://ap-post-api.onrender.com/api/v1';
 
   provinceOptions: { value: string; label: string }[] = [];
 
