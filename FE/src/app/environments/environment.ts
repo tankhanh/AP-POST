@@ -1,3 +1,3 @@
 export const env = {
-    baseUrl: 'http://localhost:8000/api/v1'
+    baseUrl: 'https://ap-post-nest-api.onrender.com/api/v1'
 }

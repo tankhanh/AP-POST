@@ -29,7 +29,10 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: true,
+    origin: [
+      'https://ap-post.vercel.app',        // ← link Vercel của bạn (sẽ có sau khi deploy)
+      'http://localhost:4200',             // để dev local vẫn gọi được
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     credentials: true,
