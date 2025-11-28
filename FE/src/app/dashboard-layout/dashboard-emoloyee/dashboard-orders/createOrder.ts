@@ -180,7 +180,8 @@ export class CreateOrder implements OnInit {
 
       this.orderForm.patchValue({ pickupLat: lat, pickupLng: lng });
       if (this.pickupMap) {
-        this.pickupMap.setMarker(lat, lng);
+        // this.pickupMap.setMarker(lat, lng);
+        if (this.pickupMap) this.pickupMap.setMarker(lat, lng);
       }
     });
   }
@@ -207,7 +208,8 @@ export class CreateOrder implements OnInit {
 
       this.orderForm.patchValue({ deliveryLat: lat, deliveryLng: lng });
       if (this.deliveryMap) {
-        this.deliveryMap.setMarker(lat, lng);
+        // this.deliveryMap.setMarker(lat, lng);
+        if (this.deliveryMap) this.deliveryMap.setMarker(lat, lng);
       }
     });
   }
