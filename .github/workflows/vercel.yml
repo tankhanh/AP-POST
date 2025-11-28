@@ -1,11 +1,12 @@
+# .github/workflows/vercel.yml
 name: Deploy Frontend to Vercel
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
     paths:
-      - "FE/**"
-      - ".github/workflows/vercel.yml"
+      - 'FE/**'
+      - '.github/workflows/vercel.yml'
 
 jobs:
   deploy:
@@ -18,7 +19,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build Angular
+      - name: Install & Build
         run: |
           cd FE
           npm ci
@@ -27,7 +28,8 @@ jobs:
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
-          vercel-token: ${{ secrets.aHezBCrv3sQKmAvk1WfyTYVR }}
-          vercel-org-id: ${{ secrets.yCF2GA2FHTmwRyiyoCOYneWk }}
-          vercel-project-id: ${{ secrets.prj_gQXDBLJTERcvgFKz2SnOLNf4Zkob }}
-          working-directory: FE/dist/FE/browser
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: FE/dist/FE/browser   # đúng với angular.json của bạn
+          production: true
