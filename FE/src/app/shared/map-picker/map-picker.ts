@@ -10,12 +10,6 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
-declare global {
-  interface Window {
-    L: any;
-  }
-}
-
 @Component({
   selector: 'app-map-picker',
   standalone: true,
@@ -29,16 +23,18 @@ export class MapPickerComponent implements AfterViewInit {
   private map: any;
   private marker: any;
   private L: any;
-  public isReady = false; // ← THÊM DÒNG NÀY
 
   constructor(@Inject(PLATFORM_ID) private platformId: object) {}
 
   async ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    this.L = await import('leaflet');
-    (window as any).L = this.L;
+    // ← DÒNG QUAN TRỌNG NHẤT: .default !!!
+    const leafletModule = await import('leaflet');
+    this.L = leafletModule.default;  // ← ĐÚNG RỒI ĐÂY!
+    (window as any).L = this.L;     // gán để bên ngoài dùng chung
 
+    // Bây giờ this.L.map chắc chắn là function
     this.map = this.L.map(this.mapContainer.nativeElement).setView([10.76, 106.66], 13);
 
     this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -52,14 +48,12 @@ export class MapPickerComponent implements AfterViewInit {
       this.locationSelect.emit({ lat, lng });
     });
 
+    // Marker mặc định
     this.setMarker(10.76, 106.66);
-    this.isReady = true; // ← ĐÁNH DẤU MAP ĐÃ SẴN SÀNG
   }
 
-  // Hàm public để gọi từ bên ngoài
   public setMarker(lat: number, lng: number) {
-    if (!this.isReady || !this.map || !this.L) {
-      // Nếu chưa sẵn sàng → đợi 100ms rồi thử lại (rất hiệu quả)
+    if (!this.map || !this.L) {
       setTimeout(() => this.setMarker(lat, lng), 100);
       return;
     }
