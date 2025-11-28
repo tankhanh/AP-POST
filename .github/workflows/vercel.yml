@@ -2,10 +2,10 @@ name: Deploy Frontend to Vercel
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'FE/**'
-      - '.github/workflows/vercel.yml'
+      - "FE/**"
+      - ".github/workflows/vercel.yml"
 
 jobs:
   deploy:
@@ -30,4 +30,4 @@ jobs:
           vercel-token: ${{ secrets.aHezBCrv3sQKmAvk1WfyTYVR }}
           vercel-org-id: ${{ secrets.yCF2GA2FHTmwRyiyoCOYneWk }}
           vercel-project-id: ${{ secrets.prj_gQXDBLJTERcvgFKz2SnOLNf4Zkob }}
-          working-directory: ./FE/dist/AP-POST/browser   # nếu tên folder Angular khác thì sửa lại
+          working-directory: FE/dist/FE/browser
