@@ -1,3 +1,3 @@
 export const env = {
-    baseUrl: 'https://ap-post.vercel.app.com/api/v1'
+    baseUrl: 'https://ap-post.vercel.app/api/v1'
 }
