@@ -13,5 +13,5 @@ jobs:
     steps:
       - name: Trigger Render Deploy
         run: |
-          curl -X POST "https://api.render.com/v1/services/srv-d4kkdrs9c44c73f0ur00/deploys" \
+          curl -X POST "https://api.render.com/v1/services/srv-d4kqo07pm1nc738ebl3g/deploys" \
             -H "Authorization: Bearer ${{ secrets.rnd_qsgDG7LBHPQqY08QWpq5nCCr7gjp }}"
