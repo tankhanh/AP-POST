@@ -22,7 +22,9 @@ declare global {
   templateUrl: './map-picker.html',
 })
 export class MapPickerComponent implements AfterViewInit {
-  @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
+  // SỬA CHỖ NÀY: static: true
+  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
+
   @Output() locationSelect = new EventEmitter<{ lat: number; lng: number }>();
 
   private map: any;
@@ -32,11 +34,9 @@ export class MapPickerComponent implements AfterViewInit {
 
   async ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return;
-    if (!this.mapContainer) return;
 
-    // DÙNG CHUNG 1 BIẾN L DUY NHẤT: window.L
     const L = await import('leaflet');
-    (window as any).L = L; // ← DÒNG QUAN TRỌNG NHẤT: gán vào window để mọi nơi dùng chung
+    (window as any).L = L; // cực kỳ quan trọng
 
     this.map = L.map(this.mapContainer.nativeElement).setView([10.76, 106.66], 13);
 
@@ -45,22 +45,20 @@ export class MapPickerComponent implements AfterViewInit {
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(this.map);
 
-    // Dùng L từ window để đảm bảo cùng instance
     this.map.on('click', (e: any) => {
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
+      const { lat, lng } = e.latlng;
       this.setMarker(lat, lng);
       this.locationSelect.emit({ lat, lng });
     });
 
-    // Đặt marker đầu tiên
     this.setMarker(10.76, 106.66);
   }
 
   setMarker(lat: number, lng: number) {
     if (this.marker) this.marker.remove();
+    if (!this.map) return; // bảo vệ
 
-    const L = (window as any).L; // dùng chung instance
+    const L = (window as any).L;
 
     const icon = L.divIcon({
       className: 'custom-marker',
