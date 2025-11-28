@@ -21,7 +21,7 @@ import { Address } from '../location/schemas/address.schema';
 import { Branch } from '../branches/schemas/branch.schemas';
 import { Service } from '../services/schemas/service.schemas';
 import { Province } from '../location/schemas/province.schema';
-import { Commune } from '../location/schemas/Commune.schema';
+import { Commune } from '../location/schemas/commune.schema';
 
 import { ProvinceCode, Region } from 'src/types/location.type';
 import { getRegionByProvinceCode } from '../location/dto/locations';

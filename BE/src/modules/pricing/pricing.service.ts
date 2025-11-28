@@ -7,7 +7,7 @@ import { IUser } from 'src/types/user.interface';
 import { Pricing, PricingDocument } from './schemas/pricing.schemas';
 import { Branch, BranchDocument } from '../branches/schemas/branch.schemas';
 import { Province } from '../location/schemas/province.schema';
-import { Commune } from '../location/schemas/Commune.schema';
+import { Commune } from '../location/schemas/commune.schema';
 import { Address } from '../location/schemas/address.schema';
 import { ProvinceCode, Region } from 'src/types/location.type';
 import { getRegionByProvinceCode } from '../location/dto/locations';

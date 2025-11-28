@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
-import { Payment, PaymentSchema } from './schema/payment.schema';
+import { Payment, PaymentSchema } from './schemas/payment.schema';
 import { OrdersModule } from '../orders/orders.module'; // 👈 lấy từ đây
 
 @Module({

@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
 import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 import { Province } from './province.schema';
-import { Commune } from './Commune.schema';
+import { Commune } from './commune.schema';
 
 @Schema({
   timestamps: true,

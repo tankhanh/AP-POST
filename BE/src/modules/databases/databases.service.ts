@@ -5,7 +5,7 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { Connection, Types } from 'mongoose';
 import { UsersService } from '../users/users.service';
 import { User, UserDocument } from '../users/schemas/user.schema';
-import { Payment, PaymentDocument } from '../payments/schema/payment.schema';
+import { Payment, PaymentDocument } from '../payments/schemas/payment.schema';
 import { Address, AddressDocument } from '../location/schemas/address.schema';
 import { Branch, BranchDocument } from '../branches/schemas/branch.schemas';
 import { Service, ServiceDocument } from '../services/schemas/service.schemas';
@@ -34,7 +34,7 @@ import {
   NotificationStatus,
   NotificationType,
 } from '../notifications/schemas/notification.schemas';
-import { Commune, CommuneDocument } from '../location/schemas/Commune.schema';
+import { Commune, CommuneDocument } from '../location/schemas/commune.schema';
 
 /** Lean address type dùng trong seed */
 type SeedAddress = {

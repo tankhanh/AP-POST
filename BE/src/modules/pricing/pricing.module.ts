@@ -6,7 +6,7 @@ import { Pricing, PricingSchema } from './schemas/pricing.schemas';
 import { Service, ServiceSchema } from '../services/schemas/service.schemas';
 import { Branch, BranchSchema } from '../branches/schemas/branch.schemas';
 import { Province, ProvinceSchema } from '../location/schemas/province.schema';
-import { Commune, CommuneSchema } from '../location/schemas/Commune.schema';
+import { Commune, CommuneSchema } from '../location/schemas/commune.schema';
 import { Address, AddressSchema } from '../location/schemas/address.schema';
 
 @Module({
