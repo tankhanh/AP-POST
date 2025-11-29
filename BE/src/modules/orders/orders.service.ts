@@ -20,7 +20,7 @@ import {
 import { PricingService } from '../pricing/pricing.service';
 import { ProvinceCode } from 'src/types/location.type';
 import { Tracking } from '../tracking/schemas/tracking.schemas';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class OrdersService {
@@ -36,7 +36,7 @@ export class OrdersService {
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
     @InjectConnection() private connection: Connection,
     private pricingService: PricingService,
-    private mailerService: MailerService,
+    private mailService: MailService,
   ) {
     this.trackingModel = this.connection.model(Tracking.name);
   }
@@ -44,29 +44,29 @@ export class OrdersService {
   private normalizeEmail(email: string) {
     return (email || '').trim().toLowerCase();
   }
-  async sendVerificationMailOrder(params: {
-    email: string;
-    name?: string;
-    orderId: string;
-    totalPrice: number;
-    shippingFee: number;
-    codValue: number;
-  }) {
-    const { email, name, orderId, totalPrice, shippingFee, codValue } = params;
+  // async sendVerificationMailOrder(params: {
+  //   email: string;
+  //   name?: string;
+  //   orderId: string;
+  //   totalPrice: number;
+  //   shippingFee: number;
+  //   codValue: number;
+  // }) {
+  //   const { email, name, orderId, totalPrice, shippingFee, codValue } = params;
 
-    await this.mailerService.sendMail({
-      to: this.normalizeEmail(email),
-      subject: 'Xác nhận đơn hàng của bạn',
-      template: 'ordersEmail.hbs',
-      context: {
-        name: name || email,
-        orderId,
-        totalPrice,
-        shippingFee,
-        codValue,
-      },
-    });
-  }
+  //   await this.mailerService.sendMail({
+  //     to: this.normalizeEmail(email),
+  //     subject: 'Xác nhận đơn hàng của bạn',
+  //     template: 'ordersEmail.hbs',
+  //     context: {
+  //       name: name || email,
+  //       orderId,
+  //       totalPrice,
+  //       shippingFee,
+  //       codValue,
+  //     },
+  //   });
+  // }
 
   async create(dto: CreateOrderDto, user: IUser) {
     const waybill = await this.generateUniqueWaybill();
@@ -172,36 +172,31 @@ export class OrdersService {
       console.error('Lỗi tạo tracking:', error);
     }
 
-    if (dto.email) {
-      try {
-        await this.sendVerificationMailOrder({
-          email: dto.email,
-          name: dto.receiverName || 'Khách hàng',
-          orderId: newOrder.waybill || newOrder._id.toString(),
-          totalPrice,
-          shippingFee,
-          codValue: dto.codValue,
-        });
-        console.log('Đã gửi email xác nhận đến khách:', dto.email);
-      } catch (err) {
-        console.log('Gửi email đến khách thất bại:', dto.email, err);
-        // Không throw lỗi → không làm hỏng việc tạo đơn
-      }
-    }
+    const customerEmail = dto.email?.trim();
+    console.log('=== KIỂM TRA EMAIL ===');
+    console.log('Email khách nhập:', customerEmail);
+    console.log(
+      'Key Resend:',
+      process.env.RESEND_API_KEY ? 'CÓ KEY' : 'KHÔNG CÓ KEY',
+    );
 
-    if (user.email && user.email !== dto.email) {
+    if (customerEmail) {
+      console.log('ĐANG CHUẨN BỊ GỬI EMAIL ĐẾN:', customerEmail);
       try {
-        await this.sendVerificationMailOrder({
-          email: user.email,
-          name: user.name || 'Nhân viên',
-          orderId: newOrder.waybill || newOrder._id.toString(),
+        await this.mailService.sendOrderConfirmation({
+          to: customerEmail,
+          receiverName: dto.receiverName,
+          waybill: newOrder.waybill,
           totalPrice,
           shippingFee,
           codValue: dto.codValue,
         });
-      } catch (err) {
-        console.log('Gửi email thông báo nhân viên thất bại:', err);
+        console.log('ĐÃ GỬI EMAIL THÀNH CÔNG CHO:', customerEmail);
+      } catch (err: any) {
+        console.log('GỬI EMAIL BỊ LỖI:', err.message);
       }
+    } else {
+      console.log('KHÔNG GỬI EMAIL: khách không nhập email');
     }
     // Trả về order cuối cùng
     return newOrder;
@@ -576,28 +571,28 @@ export class OrdersService {
         },
       };
 
-      const config = templates[status];
-      if (config) {
-        try {
-          await this.mailerService.sendMail({
-            to: order.email,
-            subject: config.subject,
-            template: config.template,
-            context: {
-              name: order.receiverName || 'Khách hàng',
-              waybill: order.waybill,
-              orderId: order._id.toString(),
-              status: display[status]?.note || status,
-              trackingUrl: `https://localhost:4200/tracking/${order.waybill}`, // thay domain thật
-              totalPrice: order.totalPrice,
-              codValue: order.codValue,
-            },
-          });
-          console.log(`Đã gửi email trạng thái ${status} đến: ${order.email}`);
-        } catch (err) {
-          console.log(`Gửi email trạng thái ${status} thất bại:`, err);
-        }
-      }
+      // const config = templates[status];
+      // if (config) {
+      //   try {
+      //     await this.mailerService.sendMail({
+      //       to: order.email,
+      //       subject: config.subject,
+      //       template: config.template,
+      //       context: {
+      //         name: order.receiverName || 'Khách hàng',
+      //         waybill: order.waybill,
+      //         orderId: order._id.toString(),
+      //         status: display[status]?.note || status,
+      //         trackingUrl: `https://localhost:4200/tracking/${order.waybill}`, // thay domain thật
+      //         totalPrice: order.totalPrice,
+      //         codValue: order.codValue,
+      //       },
+      //     });
+      //     console.log(`Đã gửi email trạng thái ${status} đến: ${order.email}`);
+      //   } catch (err) {
+      //     console.log(`Gửi email trạng thái ${status} thất bại:`, err);
+      //   }
+      // }
     }
 
     // Trả về order mới nhất
