@@ -6,47 +6,30 @@ import { map, catchError, of } from 'rxjs';  // Thêm catchError, of
 export class GeocodingService {
   private cache = new Map<string, any[]>();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-  search(address: string): any {
-    const cacheKey = address.toLowerCase().trim();
-    
-    // Cache hit
-    if (this.cache.has(cacheKey)) {
-      return of(this.cache.get(cacheKey)!);
-    }
-
-    return this.http.get<any>('https://photon.komoot.io/api/', {
+  search(address: string) {
+    const url = `https://nominatim.openstreetmap.org/search`;
+    return this.http.get<any[]>(url, {
       params: {
-        q: encodeURIComponent(address),
+        format: 'json',
+        q: address,
+        countrycodes: 'vn',
         limit: '1',
-        countrycode: 'vn'
+        addressdetails: '1'
+      },
+      headers: {
+        'User-Agent': 'MyDeliveryApp/1.0 (your-email@gmail.com)' // BẮT BUỘC PHẢI CÓ
       }
     }).pipe(
-      map((response: any) => {
-        const features = response.features || [];
-        let result = [];
-        
-        if (features.length > 0) {
-          result = [{
-            lat: features[0].geometry.coordinates[1].toString(),
-            lon: features[0].geometry.coordinates[0].toString(),
-            display_name: features[0].properties.name || address
-          }];
-          console.log('✅ Photon success:', result);  // Debug
-        } else {
-          console.warn('⚠️ Photon empty, fallback Nominatim');
-          return null;  // Trigger fallback
-        }
-
-        // Cache chỉ khi success
-        this.cache.set(cacheKey, result);
-        setTimeout(() => this.cache.delete(cacheKey), 10 * 60 * 1000);
-        return result;
-      }),
-      catchError((err) => {
-        console.warn('❌ Photon error:', err.message, '→ Fallback Nominatim');
-        return this.fallbackNominatim(address, cacheKey);  // Fallback
+      map(res => res && res.length > 0 ? [{
+        lat: res[0].lat,
+        lon: res[0].lon,
+        display_name: res[0].display_name
+      }] : []),
+      catchError(err => {
+        console.warn('Geocoding error:', err);
+        return of([]);
       })
     );
   }

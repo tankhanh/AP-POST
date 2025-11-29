@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -6,20 +6,18 @@ import { OrdersService } from '../../../services/dashboard/orders.service';
 import { LocationService } from '../../../services/location.service';
 import { Router, RouterLink, RouterModule } from '@angular/router';
 import Swal from 'sweetalert2';
-import { MapPickerComponent } from '../../../shared/map-picker/map-picker';
 import { GeocodingService } from '../../../services/geocoding.service';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { firstValueFrom } from 'rxjs';
+import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators';
+import { firstValueFrom, merge } from 'rxjs';
+import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
 
 @Component({
   selector: 'app-create-order',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MapPickerComponent, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, DualMapComponent],
   templateUrl: './createOrder.html',
 })
-export class CreateOrder implements OnInit {
-  @ViewChild('pickupMap') pickupMap!: MapPickerComponent;
-  @ViewChild('deliveryMap') deliveryMap!: MapPickerComponent;
+export class CreateOrder implements OnInit, AfterViewInit {
 
   orderForm!: FormGroup;
   loading = false;
@@ -33,6 +31,9 @@ export class CreateOrder implements OnInit {
 
   createdWaybill: string = '';
 
+  routeDistance = 0;
+  routeTime = 0;
+
   constructor(
     private fb: FormBuilder,
     private ordersService: OrdersService,
@@ -45,30 +46,42 @@ export class CreateOrder implements OnInit {
   ngOnInit(): void {
     this.initForm();
     this.loadProvinces();
+  }
 
-    this.orderForm
-      .get('pickupDetailAddress')!
-      .valueChanges.pipe(debounceTime(800))
-      .subscribe(() => {
-        if (this.shouldSearch('pickup')) {
-          console.log('🔍 Starting pickup search...'); // Debug
-          this.updatePickupMap();
-        }
-      });
+  ngAfterViewInit() {
+    setTimeout(() => { // thêm setTimeout để Angular ổn định
+      // Tìm kiếm địa chỉ
+      this.orderForm.get('pickupDetailAddress')?.valueChanges
+        .pipe(debounceTime(800))
+        .subscribe(() => {
+          if (this.shouldSearch('pickup')) this.updatePickupMap();
+        });
 
-    this.orderForm
-      .get('deliveryDetailAddress')!
-      .valueChanges.pipe(debounceTime(800))
-      .subscribe(() => {
-        if (this.shouldSearch('delivery')) {
-          console.log('🔍 Starting delivery search...'); // Debug
-          this.updateDeliveryMap();
-        }
-      });
+      this.orderForm.get('deliveryDetailAddress')?.valueChanges
+        .pipe(debounceTime(800))
+        .subscribe(() => {
+          if (this.shouldSearch('delivery')) this.updateDeliveryMap();
+        });
 
-    this.orderForm.valueChanges
-      .pipe(debounceTime(600), distinctUntilChanged())
-      .subscribe(() => this.calculateShippingFee());
+      merge(
+        this.orderForm.get('pickupProvinceId')!.valueChanges.pipe(startWith(this.orderForm.value.pickupProvinceId)),
+        this.orderForm.get('deliveryProvinceId')!.valueChanges.pipe(startWith(this.orderForm.value.deliveryProvinceId)),
+        this.orderForm.get('weightKg')!.valueChanges.pipe(startWith(this.orderForm.value.weightKg)),
+        this.orderForm.get('serviceCode')!.valueChanges.pipe(startWith(this.orderForm.value.serviceCode))
+      )
+        .pipe(debounceTime(600))
+        .subscribe(() => {
+          this.calculateShippingFee();
+        });
+
+      // Cập nhật tổng khi gõ COD
+      this.orderForm.get('codValue')?.valueChanges
+        .pipe(debounceTime(300))
+        .subscribe(() => this.updateTotalPrice());
+
+      // Tính phí lần đầu
+      this.calculateShippingFee();
+    }, 100);
   }
 
   // Hàm kiểm tra đủ điều kiện để search (tránh gọi thừa)
@@ -109,7 +122,11 @@ export class CreateOrder implements OnInit {
 
       email: [''],
 
-      details: ['']
+      details: [''],
+      pickupLat: [null],
+      pickupLng: [null],
+      deliveryLat: [null],
+      deliveryLng: [null],
     });
   }
 
@@ -130,6 +147,12 @@ export class CreateOrder implements OnInit {
       next: (res) => {
         this.pickupCommunes = res.data || [];
         this.orderForm.get('pickupCommuneId')?.setValue('');
+
+        this.orderForm.get('pickupCommuneId')?.valueChanges.subscribe(() => {
+          if (this.orderForm.value.pickupDetailAddress) {
+            this.updatePickupMap();
+          }
+        });
       },
       error: (err) => console.error(err),
     });
@@ -145,6 +168,12 @@ export class CreateOrder implements OnInit {
       next: (res) => {
         this.deliveryCommunes = res.data || [];
         this.orderForm.get('deliveryCommuneId')?.setValue('');
+
+        this.orderForm.get('deliveryCommuneId')?.valueChanges.subscribe(() => {
+          if (this.orderForm.value.deliveryDetailAddress) {
+            this.updateDeliveryMap();
+          }
+        });
       },
       error: (err) => console.error(err),
     });
@@ -160,56 +189,84 @@ export class CreateOrder implements OnInit {
 
   updatePickupMap() {
     const f = this.orderForm.value;
-    if (!f.pickupDetailAddress || !f.pickupProvinceId || !f.pickupCommuneId) return;
+    if (!f.pickupDetailAddress && !f.pickupDetailAddress) return;
 
-    const fullAddress = `${this.getCommuneName(f.pickupCommuneId)}, ${this.getProvinceName(
-      f.pickupProvinceId
-    )}, ${f.pickupDetailAddress}`;
-    console.log('📍 Pickup full address:', fullAddress); // Debug
+    // Ưu tiên 1: Dùng địa chỉ chi tiết + phường + tỉnh (rút gọn)
+    let searchQuery = [
+      f.pickupDetailAddress?.trim(),
+      this.getCommuneName(f.pickupCommuneId),
+      this.getProvinceName(f.pickupProvinceId)
+    ].filter(Boolean).join(', ');
 
-    this.geocoding.search(fullAddress).subscribe((res) => {
-      console.log('📍 Pickup result:', res); // Debug
-      if (!res || res.length === 0) {
-        console.warn('⚠️ No pickup location found');
-        return;
-      }
+    // Nếu vẫn trống thì dùng ít nhất tỉnh + phường
+    if (!searchQuery.trim()) {
+      searchQuery = `${this.getCommuneName(f.pickupCommuneId)} ${this.getProvinceName(f.pickupProvinceId)}`;
+    }
 
-      const lat = parseFloat(res[0].lat);
-      const lng = parseFloat(res[0].lon);
-      console.log(`✅ Setting pickup marker at ${lat}, ${lng}`);
+    // Thêm Việt Nam để tăng độ chính xác
+    searchQuery = searchQuery + ', Việt Nam';
 
-      this.orderForm.patchValue({ pickupLat: lat, pickupLng: lng });
-      if (this.pickupMap) {
-        // this.pickupMap.setMarker(lat, lng);
-        if (this.pickupMap) this.pickupMap.setMarker(lat, lng);
+    console.log('Pickup search:', searchQuery);
+
+    this.geocoding.search(searchQuery).subscribe(res => {
+      if (res?.length > 0) {
+        const lat = parseFloat(res[0].lat);
+        const lng = parseFloat(res[0].lon);
+        this.orderForm.patchValue({
+          pickupLat: lat,
+          pickupLng: lng
+        });
+        console.log('Pickup OK:', lat, lng);
+      } else {
+        // Fallback cuối cùng: chỉ dùng tỉnh
+        const fallback = `${this.getProvinceName(f.pickupProvinceId)}, Việt Nam`;
+        this.geocoding.search(fallback).subscribe(res2 => {
+          if (res2?.length > 0) {
+            this.orderForm.patchValue({
+              pickupLat: parseFloat(res2[0].lat),
+              pickupLng: parseFloat(res2[0].lon)
+            });
+          }
+        });
       }
     });
   }
 
   updateDeliveryMap() {
     const f = this.orderForm.value;
-    if (!f.deliveryDetailAddress || !f.deliveryProvinceId || !f.deliveryCommuneId) return;
+    if (!f.deliveryDetailAddress) return;
 
-    const fullAddress = `${this.getCommuneName(f.deliveryCommuneId)}, ${this.getProvinceName(
-      f.deliveryProvinceId
-    )}, ${f.deliveryDetailAddress}`;
-    console.log('📍 Delivery full address:', fullAddress); // Debug
+    let searchQuery = [
+      f.deliveryDetailAddress.trim(),
+      this.getCommuneName(f.deliveryCommuneId),
+      this.getProvinceName(f.deliveryProvinceId)
+    ].filter(Boolean).join(', ');
 
-    this.geocoding.search(fullAddress).subscribe((res) => {
-      console.log('📍 Delivery result:', res); // Debug
-      if (!res || res.length === 0) {
-        console.warn('⚠️ No delivery location found');
-        return;
-      }
+    if (!searchQuery.trim()) {
+      searchQuery = `${this.getCommuneName(f.deliveryCommuneId)} ${this.getProvinceName(f.deliveryProvinceId)}`;
+    }
 
-      const lat = parseFloat(res[0].lat);
-      const lng = parseFloat(res[0].lon);
-      console.log(`✅ Setting delivery marker at ${lat}, ${lng}`);
+    searchQuery += ', Việt Nam';
 
-      this.orderForm.patchValue({ deliveryLat: lat, deliveryLng: lng });
-      if (this.deliveryMap) {
-        // this.deliveryMap.setMarker(lat, lng);
-        if (this.deliveryMap) this.deliveryMap.setMarker(lat, lng);
+    console.log('Delivery search:', searchQuery);
+
+    this.geocoding.search(searchQuery).subscribe(res => {
+      if (res?.length > 0) {
+        this.orderForm.patchValue({
+          deliveryLat: parseFloat(res[0].lat),
+          deliveryLng: parseFloat(res[0].lon)
+        });
+      } else {
+        // Fallback
+        const fallback = `${this.getProvinceName(f.deliveryProvinceId)}, Việt Nam`;
+        this.geocoding.search(fallback).subscribe(res2 => {
+          if (res2?.length > 0) {
+            this.orderForm.patchValue({
+              deliveryLat: parseFloat(res2[0].lat),
+              deliveryLng: parseFloat(res2[0].lon)
+            });
+          }
+        });
       }
     });
   }
@@ -226,42 +283,73 @@ export class CreateOrder implements OnInit {
     );
   }
 
+  private updateTotalPrice() {
+    const cod = Number(this.orderForm.value.codValue || 0);
+    this.totalPrice = this.shippingFee + cod;
+  }
+
   async calculateShippingFee() {
-    // ... giữ nguyên như cũ
     const f = this.orderForm.value;
+
     if (!f.pickupProvinceId || !f.deliveryProvinceId || !f.weightKg) {
       this.shippingFee = 0;
-      this.totalPrice = Number(f.codValue || 0);
+      this.updateTotalPrice();
       return;
     }
 
-    const originProv = this.provinces.find((p) => p._id === f.pickupProvinceId);
-    const destProv = this.provinces.find((p) => p._id === f.deliveryProvinceId);
+    const originProv = this.provinces.find(p => p._id === f.pickupProvinceId);
+    const destProv = this.provinces.find(p => p._id === f.deliveryProvinceId);
 
     if (!originProv?.code || !destProv?.code) {
       this.shippingFee = 0;
-      this.totalPrice = Number(f.codValue || 0);
+      this.updateTotalPrice();
       return;
     }
 
+    const isSameProvince = f.pickupProvinceId === f.deliveryProvinceId;
+
     try {
-      const isSameProvince = f.pickupProvinceId === f.deliveryProvinceId;
       const res: any = await firstValueFrom(
         this.ordersService.calculateShippingFee({
           originProvinceCode: originProv.code,
           destProvinceCode: destProv.code,
-          serviceCode: f.serviceCode,
+          serviceCode: f.serviceCode || 'STD',
           weightKg: Number(f.weightKg),
           isLocal: isSameProvince,
         })
       );
-      this.shippingFee = res.data?.totalPrice ?? 0;
-      this.totalPrice = this.shippingFee + Number(f.codValue || 0);
+
+      this.shippingFee = res.data?.totalPrice ?? res.totalPrice ?? 0;
     } catch (err) {
       console.warn('Lỗi tính phí:', err);
       this.shippingFee = 0;
-      this.totalPrice = Number(f.codValue || 0);
+    } finally {
+      this.updateTotalPrice(); // Đảm bảo tổng tiền luôn đúng dù có lỗi hay không
     }
+  }
+
+  getStraightDistance(): number {
+    const f = this.orderForm.value;
+    if (!f.pickupLat || !f.deliveryLat) return 0;
+
+    const R = 6371; // Bán kính Trái Đất (km)
+    const dLat = (f.deliveryLat - f.pickupLat) * Math.PI / 180;
+    const dLon = (f.deliveryLng - f.pickupLng) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(f.pickupLat * Math.PI / 180) * Math.cos(f.deliveryLat * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  onPickupMoved(pos: { lat: number; lng: number }) {
+    this.orderForm.patchValue({ pickupLat: pos.lat, pickupLng: pos.lng });
+    this.calculateShippingFee(); // tính lại phí nếu cần
+  }
+
+  onDeliveryMoved(pos: { lat: number; lng: number }) {
+    this.orderForm.patchValue({ deliveryLat: pos.lat, deliveryLng: pos.lng });
+    this.calculateShippingFee();
   }
 
   submit() {

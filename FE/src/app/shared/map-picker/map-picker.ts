@@ -24,7 +24,7 @@ export class MapPickerComponent implements AfterViewInit {
   private marker: any;
   private L: any;
 
-  constructor(@Inject(PLATFORM_ID) private platformId: object) {}
+  constructor(@Inject(PLATFORM_ID) private platformId: object) { }
 
   async ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -69,5 +69,12 @@ export class MapPickerComponent implements AfterViewInit {
 
     this.marker = this.L.marker([lat, lng], { icon }).addTo(this.map);
     this.map.setView([lat, lng], 15);
+
+    this.marker = this.L.marker([lat, lng], { draggable: true }).addTo(this.map);
+
+    this.marker.on('dragend', (e: any) => {
+      const pos = e.target.getLatLng();
+      this.locationSelect.emit({ lat: pos.lat, lng: pos.lng });
+    });
   }
 }
