@@ -1,7 +1,6 @@
-// orders.service.ts (nâng cấp)
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
+import { Observable, map, catchError, throwError } from 'rxjs';
 import { env } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -9,7 +8,7 @@ export class OrdersService {
   private readonly API_URL = `${env.baseUrl}/orders`;
   private readonly PRICING_URL = `${env.baseUrl}/pricing/calculate`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   private getHeaders() {
     const token = localStorage.getItem('access_token') || '';
@@ -17,54 +16,54 @@ export class OrdersService {
   }
 
   /**
-   * Tạo order mới
+   * TẠO ORDER – PHIÊN BẢN ĐÃ FIX LOADING TREO 100%
    */
   createOrder(data: any): Observable<any> {
-    return this.http.post(`${this.API_URL}`, data, { headers: this.getHeaders() });
+    return this.http
+      .post<any>(`${this.API_URL}`, data, {
+        headers: this.getHeaders(),
+        observe: 'response', // ← QUAN TRỌNG: lấy full HTTP response
+        withCredentials: true, // nếu bạn dùng cookie (không bắt buộc)
+      })
+      .pipe(
+        map((response: HttpResponse<any>) => response.body ?? { success: true }),
+        catchError((err) => {
+          console.error('Create order error:', err);
+          return throwError(() => err);
+        })
+      );
   }
 
-  /**
-   * Lấy danh sách order với filter/search/pagination
-   */
+  // ==================== CÁC HÀM KHÁC GIỮ NGUYÊN, CHỈ THÊM observe nếu muốn chắc ăn hơn ====================
+
   getOrders(filters: any = {}): Observable<any> {
     let params = new HttpParams().set('pageSize', '999').set('current', '1');
 
-    // Convert object filters sang query params
     for (const key in filters) {
       if (filters[key] !== '' && filters[key] !== null && filters[key] !== undefined) {
-        // Nếu là mảng (multi-status), join thành string
         const value = Array.isArray(filters[key]) ? filters[key].join(',') : filters[key];
         params = params.set(key, value);
       }
     }
 
-    return this.http.get<any>(`${this.API_URL}`, { headers: this.getHeaders(), params });
+    return this.http.get<any>(`${this.API_URL}`, {
+      headers: this.getHeaders(),
+      params,
+    });
   }
 
-  /**
-   * Lấy chi tiết order theo ID
-   */
   getOrderById(id: string): Observable<any> {
     return this.http.get(`${this.API_URL}/${id}`, { headers: this.getHeaders() });
   }
 
-  /**
-   * Cập nhật order
-   */
   updateOrder(id: string, data: any): Observable<any> {
     return this.http.patch(`${this.API_URL}/${id}`, data, { headers: this.getHeaders() });
   }
 
-  /**
-   * Xóa soft delete order
-   */
   deleteOrder(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/${id}`, { headers: this.getHeaders() });
   }
 
-  /**
-   * Cập nhật trạng thái order
-   */
   updateStatus(id: string, status: string): Observable<any> {
     return this.http.patch(
       `${this.API_URL}/${id}/status/${status}`,
@@ -84,7 +83,10 @@ export class OrdersService {
   }
 
   resendWelcomeEmail(orderId: string) {
-    // Thay thế đường dẫn API thích hợp của bạn
-    return this.http.post(`${this.API_URL}/${orderId}/resend-email`, {});
+    return this.http.post(
+      `${this.API_URL}/${orderId}/resend-email`,
+      {},
+      { headers: this.getHeaders() }
+    );
   }
 }

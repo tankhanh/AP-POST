@@ -18,7 +18,6 @@ import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
   templateUrl: './createOrder.html',
 })
 export class CreateOrder implements OnInit, AfterViewInit {
-
   orderForm!: FormGroup;
   loading = false;
 
@@ -41,7 +40,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private router: Router,
     private geocoding: GeocodingService,
     private http: HttpClient
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -49,25 +48,34 @@ export class CreateOrder implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    setTimeout(() => { // thêm setTimeout để Angular ổn định
+    setTimeout(() => {
+      // thêm setTimeout để Angular ổn định
       // Tìm kiếm địa chỉ
-      this.orderForm.get('pickupDetailAddress')?.valueChanges
-        .pipe(debounceTime(800))
+      this.orderForm
+        .get('pickupDetailAddress')
+        ?.valueChanges.pipe(debounceTime(800))
         .subscribe(() => {
           if (this.shouldSearch('pickup')) this.updatePickupMap();
         });
 
-      this.orderForm.get('deliveryDetailAddress')?.valueChanges
-        .pipe(debounceTime(800))
+      this.orderForm
+        .get('deliveryDetailAddress')
+        ?.valueChanges.pipe(debounceTime(800))
         .subscribe(() => {
           if (this.shouldSearch('delivery')) this.updateDeliveryMap();
         });
 
       merge(
-        this.orderForm.get('pickupProvinceId')!.valueChanges.pipe(startWith(this.orderForm.value.pickupProvinceId)),
-        this.orderForm.get('deliveryProvinceId')!.valueChanges.pipe(startWith(this.orderForm.value.deliveryProvinceId)),
+        this.orderForm
+          .get('pickupProvinceId')!
+          .valueChanges.pipe(startWith(this.orderForm.value.pickupProvinceId)),
+        this.orderForm
+          .get('deliveryProvinceId')!
+          .valueChanges.pipe(startWith(this.orderForm.value.deliveryProvinceId)),
         this.orderForm.get('weightKg')!.valueChanges.pipe(startWith(this.orderForm.value.weightKg)),
-        this.orderForm.get('serviceCode')!.valueChanges.pipe(startWith(this.orderForm.value.serviceCode))
+        this.orderForm
+          .get('serviceCode')!
+          .valueChanges.pipe(startWith(this.orderForm.value.serviceCode))
       )
         .pipe(debounceTime(600))
         .subscribe(() => {
@@ -75,8 +83,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
         });
 
       // Cập nhật tổng khi gõ COD
-      this.orderForm.get('codValue')?.valueChanges
-        .pipe(debounceTime(300))
+      this.orderForm
+        .get('codValue')
+        ?.valueChanges.pipe(debounceTime(300))
         .subscribe(() => this.updateTotalPrice());
 
       // Tính phí lần đầu
@@ -187,88 +196,65 @@ export class CreateOrder implements OnInit, AfterViewInit {
     this.orderForm.patchValue({ deliveryLat: pos.lat, deliveryLng: pos.lng });
   }
 
-  updatePickupMap() {
+  async updatePickupMap() {
     const f = this.orderForm.value;
-    if (!f.pickupDetailAddress && !f.pickupDetailAddress) return;
+    if (!f.pickupProvinceId || !f.pickupCommuneId) return;
 
-    // Ưu tiên 1: Dùng địa chỉ chi tiết + phường + tỉnh (rút gọn)
-    let searchQuery = [
-      f.pickupDetailAddress?.trim(),
-      this.getCommuneName(f.pickupCommuneId),
-      this.getProvinceName(f.pickupProvinceId)
-    ].filter(Boolean).join(', ');
+    const provinceName = this.getProvinceName(f.pickupProvinceId);
+    const communeName = this.getCommuneName(f.pickupCommuneId);
+    const detail = f.pickupDetailAddress?.trim();
 
-    // Nếu vẫn trống thì dùng ít nhất tỉnh + phường
-    if (!searchQuery.trim()) {
-      searchQuery = `${this.getCommuneName(f.pickupCommuneId)} ${this.getProvinceName(f.pickupProvinceId)}`;
+    // CHIẾN LƯỢC MỚI: ƯU TIÊN TÌM THEO PHƯỜNG + TỈNH TRƯỚC
+    const queries = [];
+
+    if (detail) {
+      queries.push(`${detail}, ${communeName}, ${provinceName}, Việt Nam`);
     }
+    queries.push(`${communeName}, ${provinceName}, Việt Nam`);
+    queries.push(`${provinceName}, Việt Nam`); // fallback cuối
 
-    // Thêm Việt Nam để tăng độ chính xác
-    searchQuery = searchQuery + ', Việt Nam';
-
-    console.log('Pickup search:', searchQuery);
-
-    this.geocoding.search(searchQuery).subscribe(res => {
+    for (const q of queries) {
+      const res = await firstValueFrom(this.geocoding.search(q));
       if (res?.length > 0) {
-        const lat = parseFloat(res[0].lat);
-        const lng = parseFloat(res[0].lon);
+        const { lat, lon } = res[0];
         this.orderForm.patchValue({
-          pickupLat: lat,
-          pickupLng: lng
+          pickupLat: parseFloat(lat),
+          pickupLng: parseFloat(lon),
         });
-        console.log('Pickup OK:', lat, lng);
-      } else {
-        // Fallback cuối cùng: chỉ dùng tỉnh
-        const fallback = `${this.getProvinceName(f.pickupProvinceId)}, Việt Nam`;
-        this.geocoding.search(fallback).subscribe(res2 => {
-          if (res2?.length > 0) {
-            this.orderForm.patchValue({
-              pickupLat: parseFloat(res2[0].lat),
-              pickupLng: parseFloat(res2[0].lon)
-            });
-          }
-        });
+        console.log('Pickup geocoded:', q, '→', lat, lon);
+        return; // Thoát ngay khi tìm thấy
       }
-    });
+    }
   }
 
-  updateDeliveryMap() {
+  async updateDeliveryMap() {
     const f = this.orderForm.value;
-    if (!f.deliveryDetailAddress) return;
+    if (!f.deliveryProvinceId || !f.deliveryCommuneId) return;
 
-    let searchQuery = [
-      f.deliveryDetailAddress.trim(),
-      this.getCommuneName(f.deliveryCommuneId),
-      this.getProvinceName(f.deliveryProvinceId)
-    ].filter(Boolean).join(', ');
+    const provinceName = this.getProvinceName(f.deliveryProvinceId);
+    const communeName = this.getCommuneName(f.deliveryCommuneId);
+    const detail = f.deliveryDetailAddress?.trim();
 
-    if (!searchQuery.trim()) {
-      searchQuery = `${this.getCommuneName(f.deliveryCommuneId)} ${this.getProvinceName(f.deliveryProvinceId)}`;
+    const queries = [];
+
+    if (detail) {
+      queries.push(`${detail}, ${communeName}, ${provinceName}, Việt Nam`);
     }
+    queries.push(`${communeName}, ${provinceName}, Việt Nam`);
+    queries.push(`${provinceName}, Việt Nam`);
 
-    searchQuery += ', Việt Nam';
-
-    console.log('Delivery search:', searchQuery);
-
-    this.geocoding.search(searchQuery).subscribe(res => {
+    for (const q of queries) {
+      const res = await firstValueFrom(this.geocoding.search(q));
       if (res?.length > 0) {
+        const { lat, lon } = res[0];
         this.orderForm.patchValue({
-          deliveryLat: parseFloat(res[0].lat),
-          deliveryLng: parseFloat(res[0].lon)
+          deliveryLat: parseFloat(lat),
+          deliveryLng: parseFloat(lon),
         });
-      } else {
-        // Fallback
-        const fallback = `${this.getProvinceName(f.deliveryProvinceId)}, Việt Nam`;
-        this.geocoding.search(fallback).subscribe(res2 => {
-          if (res2?.length > 0) {
-            this.orderForm.patchValue({
-              deliveryLat: parseFloat(res2[0].lat),
-              deliveryLng: parseFloat(res2[0].lon)
-            });
-          }
-        });
+        console.log('Delivery geocoded:', q, '→', lat, lon);
+        return;
       }
-    });
+    }
   }
 
   getProvinceName(id: string) {
@@ -297,8 +283,8 @@ export class CreateOrder implements OnInit, AfterViewInit {
       return;
     }
 
-    const originProv = this.provinces.find(p => p._id === f.pickupProvinceId);
-    const destProv = this.provinces.find(p => p._id === f.deliveryProvinceId);
+    const originProv = this.provinces.find((p) => p._id === f.pickupProvinceId);
+    const destProv = this.provinces.find((p) => p._id === f.deliveryProvinceId);
 
     if (!originProv?.code || !destProv?.code) {
       this.shippingFee = 0;
@@ -333,11 +319,14 @@ export class CreateOrder implements OnInit, AfterViewInit {
     if (!f.pickupLat || !f.deliveryLat) return 0;
 
     const R = 6371; // Bán kính Trái Đất (km)
-    const dLat = (f.deliveryLat - f.pickupLat) * Math.PI / 180;
-    const dLon = (f.deliveryLng - f.pickupLng) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(f.pickupLat * Math.PI / 180) * Math.cos(f.deliveryLat * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const dLat = ((f.deliveryLat - f.pickupLat) * Math.PI) / 180;
+    const dLon = ((f.deliveryLng - f.pickupLng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((f.pickupLat * Math.PI) / 180) *
+        Math.cos((f.deliveryLat * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -352,6 +341,49 @@ export class CreateOrder implements OnInit, AfterViewInit {
     this.calculateShippingFee();
   }
 
+  onLocationReverse(event: {
+    type: 'pickup' | 'delivery';
+    lat: number;
+    lng: number;
+    address?: string;
+  }) {
+    if (!event.address) return;
+
+    // Tách địa chỉ chi tiết (bỏ phường, tỉnh)
+    const addr = event.address;
+    const lower = addr.toLowerCase();
+
+    // Lấy tên phường và tỉnh hiện tại
+    const currentCommune = this.getCommuneName(
+      event.type === 'pickup'
+        ? this.orderForm.value.pickupCommuneId
+        : this.orderForm.value.deliveryCommuneId
+    );
+    const currentProvince = this.getProvinceName(
+      event.type === 'pickup'
+        ? this.orderForm.value.pickupProvinceId
+        : this.orderForm.value.deliveryProvinceId
+    );
+
+    // Chỉ lấy phần trước phường/tỉnh
+    let detailAddress = addr.split(currentCommune)[0] || addr.split(currentProvince)[0] || addr;
+
+    // Làm sạch
+    detailAddress = detailAddress
+      .replace(/, Việt Nam.*$/i, '')
+      .replace(/, Hồ Chí Minh.*$/i, '')
+      .replace(/, TP\.?\s?HCM.*$/i, '')
+      .trim();
+
+    if (detailAddress.endsWith(',')) {
+      detailAddress = detailAddress.slice(0, -1).trim();
+    }
+
+    // Cập nhật input địa chỉ chi tiết
+    const controlName = event.type === 'pickup' ? 'pickupDetailAddress' : 'deliveryDetailAddress';
+    this.orderForm.get(controlName)?.setValue(detailAddress || '');
+  }
+
   submit() {
     if (this.orderForm.invalid) {
       this.orderForm.markAllAsTouched();
@@ -359,57 +391,56 @@ export class CreateOrder implements OnInit, AfterViewInit {
     }
 
     this.loading = true;
-    const f = this.orderForm.value;
 
     const data = {
-      senderName: f.senderName,
-      receiverName: f.receiverName,
-      receiverPhone: f.receiverPhone,
-      email: f.email?.trim() || null,
+      senderName: this.orderForm.value.senderName,
+      receiverName: this.orderForm.value.receiverName,
+      receiverPhone: this.orderForm.value.receiverPhone,
+      email: this.orderForm.value.email?.trim() || null,
       pickupAddress: {
-        provinceId: f.pickupProvinceId,
-        communeId: f.pickupCommuneId,
-        address: f.pickupDetailAddress,
-        lat: f.pickupLat,
-        lng: f.pickupLng,
+        provinceId: this.orderForm.value.pickupProvinceId,
+        communeId: this.orderForm.value.pickupCommuneId,
+        address: this.orderForm.value.pickupDetailAddress,
+        lat: this.orderForm.value.pickupLat,
+        lng: this.orderForm.value.pickupLng,
       },
       deliveryAddress: {
-        provinceId: f.deliveryProvinceId,
-        communeId: f.deliveryCommuneId,
-        address: f.deliveryDetailAddress,
-        lat: f.deliveryLat,
-        lng: f.deliveryLng,
+        provinceId: this.orderForm.value.deliveryProvinceId,
+        communeId: this.orderForm.value.deliveryCommuneId,
+        address: this.orderForm.value.deliveryDetailAddress,
+        lat: this.orderForm.value.deliveryLat,
+        lng: this.orderForm.value.deliveryLng,
       },
-      codValue: Number(f.codValue) || 0,
-      weightKg: Number(f.weightKg) || 1,
-      serviceCode: f.serviceCode || 'STD',
-
-      details: f.details?.trim() || null,
+      codValue: Number(this.orderForm.value.codValue) || 0,
+      weightKg: Number(this.orderForm.value.weightKg) || 1,
+      serviceCode: this.orderForm.value.serviceCode || 'STD',
+      details: this.orderForm.value.details?.trim() || null,
     };
 
     this.ordersService.createOrder(data).subscribe({
       next: (res: any) => {
         this.loading = false;
-        this.createdWaybill = res.data?.waybill || res.data?._id;
 
+        // Lấy mã vận đơn đúng như bạn đang làm
+        this.createdWaybill = res.data?.waybill || res.data?._id || res.waybill;
+
+        // DÙNG CHÍNH HÀM Swal bạn đã viết sẵn (không cần showSuccessSwal)
         Swal.fire({
           icon: 'success',
           title: 'Tạo đơn thành công!',
-          // 1. Thêm nút tắt ở góc trên bên phải
           showCloseButton: true,
           html: `
           <div class="text-center">
-          <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
-          <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill}</h2>
-          <p class="text-muted mt-4 small">
-          Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
-          </p>
+            <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
+            <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill}</h2>
+            <p class="text-muted mt-4 small">
+              Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
+            </p>
           </div>
-            `,
+        `,
           allowOutsideClick: false,
           showConfirmButton: true,
           confirmButtonText: 'Tạo đơn mới',
-          // Xóa didOpen vì không còn các nút cần xử lý sự kiện
         }).then((result) => {
           if (result.isConfirmed) {
             this.orderForm.reset();
@@ -424,6 +455,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
       },
       error: (err) => {
         this.loading = false;
+        console.error('Tạo đơn thất bại:', err);
         Swal.fire('Lỗi!', err.error?.message || 'Không thể tạo đơn hàng', 'error');
       },
     });

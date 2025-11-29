@@ -3,17 +3,25 @@
 
   <form [formGroup]="orderForm" (ngSubmit)="submit()">
     <div class="row g-4">
-
       <!-- CỘT TRÁI: Thông tin người gửi + địa chỉ lấy -->
       <div class="col-lg-6">
         <div class="mb-3">
           <label class="form-label fw-semibold">Người gửi</label>
-          <input type="text" class="form-control" formControlName="senderName" placeholder="Nhập tên người gửi" />
+          <input
+            type="text"
+            class="form-control"
+            formControlName="senderName"
+            placeholder="Nhập tên người gửi"
+          />
         </div>
 
         <div class="mb-3">
           <label class="form-label fw-semibold">Địa chỉ lấy hàng</label>
-          <select class="form-select mb-2" formControlName="pickupProvinceId" (change)="onPickupProvinceChange()">
+          <select
+            class="form-select mb-2"
+            formControlName="pickupProvinceId"
+            (change)="onPickupProvinceChange()"
+          >
             <option value="">-- Chọn tỉnh/thành phố --</option>
             <option *ngFor="let p of provinces" [value]="p._id">{{ p.name }}</option>
           </select>
@@ -23,8 +31,12 @@
             <option *ngFor="let c of pickupCommunes" [value]="c._id">{{ c.name }}</option>
           </select>
 
-          <input type="text" class="form-control" formControlName="pickupDetailAddress"
-            placeholder="Số nhà, tên đường..." />
+          <input
+            type="text"
+            class="form-control"
+            formControlName="pickupDetailAddress"
+            placeholder="Số nhà, tên đường..."
+          />
         </div>
       </div>
 
@@ -32,22 +44,43 @@
       <div class="col-lg-6">
         <div class="mb-3">
           <label class="form-label fw-semibold">Người nhận</label>
-          <input type="text" class="form-control" formControlName="receiverName" placeholder="Nhập tên người nhận" />
+          <input
+            type="text"
+            class="form-control"
+            formControlName="receiverName"
+            placeholder="Nhập tên người nhận"
+          />
         </div>
 
         <div class="mb-3">
           <label class="form-label fw-semibold">SĐT người nhận</label>
-          <input type="text" class="form-control" formControlName="receiverPhone" placeholder="0901234567" />
+          <input
+            type="text"
+            class="form-control"
+            formControlName="receiverPhone"
+            placeholder="0901234567"
+          />
         </div>
 
         <div class="mb-3">
-          <label class="form-label fw-semibold">Email người nhận <small class="text-muted">(không bắt buộc)</small></label>
-          <input type="email" class="form-control" formControlName="email" placeholder="khach@gmail.com" />
+          <label class="form-label fw-semibold"
+            >Email người nhận <small class="text-muted">(không bắt buộc)</small></label
+          >
+          <input
+            type="email"
+            class="form-control"
+            formControlName="email"
+            placeholder="khach@gmail.com"
+          />
         </div>
 
         <div class="mb-3">
           <label class="form-label fw-semibold">Địa chỉ giao hàng</label>
-          <select class="form-select mb-2" formControlName="deliveryProvinceId" (change)="onDeliveryProvinceChange()">
+          <select
+            class="form-select mb-2"
+            formControlName="deliveryProvinceId"
+            (change)="onDeliveryProvinceChange()"
+          >
             <option value="">-- Chọn tỉnh/thành phố --</option>
             <option *ngFor="let p of provinces" [value]="p._id">{{ p.name }}</option>
           </select>
@@ -57,8 +90,12 @@
             <option *ngFor="let c of deliveryCommunes" [value]="c._id">{{ c.name }}</option>
           </select>
 
-          <input type="text" class="form-control" formControlName="deliveryDetailAddress"
-            placeholder="Số nhà, tên đường..." />
+          <input
+            type="text"
+            class="form-control"
+            formControlName="deliveryDetailAddress"
+            placeholder="Số nhà, tên đường..."
+          />
         </div>
 
         <!-- Dịch vụ + cân nặng + COD -->
@@ -72,7 +109,13 @@
           </div>
           <div class="col-md-4">
             <label class="form-label fw-semibold">Khối lượng (kg)</label>
-            <input type="number" step="0.1" min="0.01" class="form-control" formControlName="weightKg" />
+            <input
+              type="number"
+              step="0.1"
+              min="0.01"
+              class="form-control"
+              formControlName="weightKg"
+            />
           </div>
           <div class="col-md-4">
             <label class="form-label fw-semibold">Giá trị hàng (VNĐ)</label>
@@ -82,15 +125,19 @@
 
         <div class="mb-3 mt-3">
           <label class="form-label fw-semibold">Ghi chú</label>
-          <textarea class="form-control" rows="2" formControlName="details"
-            placeholder="Giao giờ hành chính, gọi trước khi giao..."></textarea>
+          <textarea
+            class="form-control"
+            rows="2"
+            formControlName="details"
+            placeholder="Giao giờ hành chính, gọi trước khi giao..."
+          ></textarea>
         </div>
 
         <div class="alert alert-info">
-          <strong>Phí vận chuyển: {{ shippingFee | number:'1.0-0' }} ₫</strong>
+          <strong>Phí vận chuyển: {{ shippingFee | number : '1.0-0' }} ₫</strong>
         </div>
         <div class="alert alert-success fs-4 fw-bold">
-          Tổng tiền khách trả: {{ totalPrice | number:'1.0-0' }} ₫
+          Tổng tiền khách trả: {{ totalPrice | number : '1.0-0' }} ₫
         </div>
       </div>
     </div>
@@ -101,7 +148,9 @@
         [pickup]="{ lat: orderForm.value.pickupLat, lng: orderForm.value.pickupLng }"
         [delivery]="{ lat: orderForm.value.deliveryLat, lng: orderForm.value.deliveryLng }"
         (pickupMoved)="onPickupMoved($event)"
-        (deliveryMoved)="onDeliveryMoved($event)">
+        (deliveryMoved)="onDeliveryMoved($event)"
+        (locationChanged)="onLocationReverse($event)"
+      >
       </app-dual-map>
     </div>
 
