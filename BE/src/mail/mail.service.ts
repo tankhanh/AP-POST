@@ -1,14 +1,17 @@
-// src/mail/mail.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Resend } from 'resend';
+import * as Handlebars from 'handlebars';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
-export class MailService {
+export class MailService implements OnModuleInit {
   private resend: Resend;
+  private orderConfirmationTemplate: HandlebarsTemplateDelegate;
 
   constructor() {
     const key = process.env.RESEND_API_KEY?.trim();
-    
+
     console.log('RESEND_API_KEY loaded:', key ? 'YES (hidden)' : 'NO → EMAIL SẼ KHÔNG GỬI ĐƯỢC');
 
     if (!key) {
@@ -16,6 +19,22 @@ export class MailService {
     }
 
     this.resend = new Resend(key);
+  }
+
+  onModuleInit() {
+    this.loadTemplates();
+  }
+
+  private loadTemplates() {
+    try {
+      const templatePath = path.join(__dirname, 'templates', 'ordersEmail.hbs');
+      const source = fs.readFileSync(templatePath, 'utf8');
+      this.orderConfirmationTemplate = Handlebars.compile(source);
+      console.log('Template ordersEmail.hbs đã được load thành công');
+    } catch (err) {
+      console.error('KHÔNG THỂ LOAD TEMPLATE EMAIL:', err);
+      throw new Error('Failed to load email templates');
+    }
   }
 
   async sendOrderConfirmation(params: {
@@ -31,23 +50,25 @@ export class MailService {
       return;
     }
 
+    // Format tiền tệ
+    const formatPrice = (num: number) => num.toLocaleString('vi-VN');
+
+    const html = this.orderConfirmationTemplate({
+      name: params.receiverName,
+      waybill: params.waybill,
+      totalPrice: formatPrice(params.totalPrice),
+      shippingFee: formatPrice(params.shippingFee),
+      codValue: formatPrice(params.codValue),
+    });
+
     try {
-      console.log('BẮT ĐẦU GỬI EMAIL QUA RESEND ĐẾN:', params.to);
+      console.log('ĐANG GỬI EMAIL XÁC NHẬN ĐẾN:', params.to);
 
       const { data, error } = await this.resend.emails.send({
-        from: 'AP POST <onboarding@resend.dev>',
-        to: [params.to],                              // ← PHẢI LÀ MẢNG
-        subject: 'Xác nhận đơn hàng thành công! AP POST',
-        html: `
-          <h2>Xin chào ${params.receiverName}!</h2>
-          <p>Đơn hàng của bạn đã được tạo thành công.</p>
-          <p><strong>Mã vận đơn:</strong> <h3>${params.waybill}</h3></p>
-          <p>Tổng tiền: <strong>${params.totalPrice.toLocaleString()}₫</strong> 
-             (Phí ship: ${params.shippingFee.toLocaleString()}₫ + COD: ${params.codValue.toLocaleString()}₫)</p>
-          <p>Tra cứu hành trình: <a href="https://ap-post.vercel.app/tracking/${params.waybill}">Nhấn vào đây</a></p>
-          <br>
-          <p>Cảm ơn bạn đã sử dụng <strong>AP POST</strong>!</p>
-        `,
+        from: 'AP Post <onboarding@resend.dev>',
+        to: [params.to],
+        subject: `Đơn hàng ${params.waybill} đã được tạo thành công! | AP Post`,
+        html,
       });
 
       if (error) {
