@@ -42,7 +42,7 @@
     "cron": "2.4.3",
     "D": "^1.0.0",
     "dayjs": "^1.11.13",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "ejs": "3.1.9",
     "handlebars": "4.7.7",
     "helmet": "8.1.0",
@@ -55,6 +55,7 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "reflect-metadata": "0.1.13",
+    "resend": "^6.5.2",
     "rxjs": "^7.8.2",
     "soft-delete-plugin-mongoose": "1.0.15",
     "swagger-ui-express": "^5.0.1"
