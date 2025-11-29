@@ -6,7 +6,6 @@ import { Order, OrderSchema } from './schemas/order.schemas';
 import { Province, ProvinceSchema } from '../location/schemas/province.schema';
 import { LocationModule } from '../location/location.module';
 import { PricingModule } from '../pricing/pricing.module';
-import { MailService } from 'src/mail/mail.service';
 
 @Module({
   imports: [
@@ -15,7 +14,7 @@ import { MailService } from 'src/mail/mail.service';
     PricingModule
   ],
   controllers: [OrdersController],
-  providers: [OrdersService, MailService],
+  providers: [OrdersService],
 
   exports: [MongooseModule, OrdersService],
 })

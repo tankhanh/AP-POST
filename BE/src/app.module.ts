@@ -64,7 +64,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
         },
 
         defaults: {
-          from: 'minhlapro01@gmail.com',
+          from: 'dinhtankhanh14@gmail.com',
         },
         template: {
           dir: process.cwd() + '/src/mail/templates/',
