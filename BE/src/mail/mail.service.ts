@@ -65,7 +65,7 @@ export class MailService implements OnModuleInit {
       console.log('ĐANG GỬI EMAIL XÁC NHẬN ĐẾN:', params.to);
 
       const { data, error } = await this.resend.emails.send({
-        from: 'AP Post <onboarding@resend.dev>',
+        from: 'AP Post <ap-post.is-a.dev>',
         to: [params.to],
         subject: `Đơn hàng ${params.waybill} đã được tạo thành công! | AP Post`,
         html,
