@@ -57,7 +57,7 @@ export class OrdersService {
   //   await this.mailerService.sendMail({
   //     to: this.normalizeEmail(email),
   //     subject: 'Xác nhận đơn hàng của bạn',
-  //     template: 'ordersEmail.hbs',
+  //     template: 'pending.hbs',
   //     context: {
   //       name: name || email,
   //       orderId,

@@ -77,7 +77,7 @@ export class MailService implements OnModuleInit {
     }
 
     const formatPrice = (num: number) => num.toLocaleString('vi-VN');
-    const template = this.getTemplate('ordersEmail');
+    const template = this.getTemplate('pending');
     if (!template) return;
 
     const html = template({
