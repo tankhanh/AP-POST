@@ -28,7 +28,8 @@ export class MailService implements OnModuleInit {
   }
 
   private loadAllTemplates() {
-    const templatesDir = path.join(__dirname, 'templates');
+    // DÙNG process.cwd() để lấy root project, chắc chắn đúng
+    const templatesDir = path.join(process.cwd(), 'src', 'mail', 'templates');
 
     const files = [
       'ordersEmail.hbs',
@@ -41,22 +42,16 @@ export class MailService implements OnModuleInit {
 
     files.forEach((file) => {
       const fullPath = path.join(templatesDir, file);
-      try {
-        if (fs.existsSync(fullPath)) {
-          const source = fs.readFileSync(fullPath, 'utf8');
-          const template = Handlebars.compile(source);
-          const key = file.replace('.hbs', '').replace('/', '.'); // status.pending
-          this.templates[key] = template;
-          console.log(`Template loaded: ${file}`);
-        }
-      } catch (err) {
-        console.error(`KHÔNG LOAD ĐƯỢC TEMPLATE ${file}:`, err);
+      if (fs.existsSync(fullPath)) {
+        const source = fs.readFileSync(fullPath, 'utf8');
+        const template = Handlebars.compile(source);
+        const key = file.replace('.hbs', '').replace(/\//g, '.');
+        this.templates[key] = template;
+        console.log(`Template loaded: ${file} → ${key}`);
+      } else {
+        console.error(`KHÔNG TÌM THẤY FILE TEMPLATE: ${fullPath}`);
       }
     });
-
-    if (Object.keys(this.templates).length === 0) {
-      throw new Error('Không load được template email nào!');
-    }
   }
 
   private getTemplate(key: string): HandlebarsTemplateDelegate {
@@ -144,7 +139,7 @@ export class MailService implements OnModuleInit {
   }
 
   // Hàm chung gửi email
-    private async send(msg: {
+  private async send(msg: {
     to: string;
     subject: string;
     html: string;
