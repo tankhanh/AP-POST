@@ -175,10 +175,7 @@ export class OrdersService {
     const customerEmail = dto.email?.trim();
     console.log('=== KIỂM TRA EMAIL ===');
     console.log('Email khách nhập:', customerEmail);
-    console.log(
-      'Key Resend:',
-      process.env.RESEND_API_KEY ? 'CÓ KEY' : 'KHÔNG CÓ KEY',
-    );
+    console.log('SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? 'ĐÃ CẤU HÌNH' : 'CHƯA CẤU HÌNH');
 
     if (customerEmail) {
       console.log('ĐANG CHUẨN BỊ GỬI EMAIL ĐẾN:', customerEmail);
@@ -545,54 +542,20 @@ export class OrdersService {
 
     // === MỚI: GỬI EMAIL CHO KHÁCH KHI CẬP NHẬT TRẠNG THÁI ===
     if (order.email) {
-      const templates: Record<
-        OrderStatus,
-        { subject: string; template: string }
-      > = {
-        PENDING: {
-          subject: 'Đơn hàng đã được tạo',
-          template: 'status/pending.hbs',
-        },
-        CONFIRMED: {
-          subject: 'Đơn hàng đã được xác nhận ✓',
-          template: 'status/confirmed.hbs',
-        },
-        SHIPPING: {
-          subject: 'Đơn hàng đang giao đến bạn',
-          template: 'status/shipping.hbs',
-        },
-        COMPLETED: {
-          subject: 'Giao hàng thành công! Cảm ơn bạn',
-          template: 'status/completed.hbs',
-        },
-        CANCELED: {
-          subject: 'Đơn hàng đã bị hủy',
-          template: 'status/canceled.hbs',
-        },
-      };
-
-      // const config = templates[status];
-      // if (config) {
-      //   try {
-      //     await this.mailerService.sendMail({
-      //       to: order.email,
-      //       subject: config.subject,
-      //       template: config.template,
-      //       context: {
-      //         name: order.receiverName || 'Khách hàng',
-      //         waybill: order.waybill,
-      //         orderId: order._id.toString(),
-      //         status: display[status]?.note || status,
-      //         trackingUrl: `https://localhost:4200/tracking/${order.waybill}`, // thay domain thật
-      //         totalPrice: order.totalPrice,
-      //         codValue: order.codValue,
-      //       },
-      //     });
-      //     console.log(`Đã gửi email trạng thái ${status} đến: ${order.email}`);
-      //   } catch (err) {
-      //     console.log(`Gửi email trạng thái ${status} thất bại:`, err);
-      //   }
-      // }
+      try {
+        await this.mailService.sendStatusUpdate({
+          to: order.email.trim(),
+          receiverName: order.receiverName || 'Khách hàng',
+          waybill: order.waybill,
+          status: status,
+          trackingUrl: `https://ap-post.vercel.app//tracking/${order.waybill}`,
+          codValue: order.codValue,
+        });
+        console.log(`ĐÃ GỬI EMAIL TRẠNG THÁI ${status} → ${order.email}`);
+      } catch (err) {
+        console.error(`GỬI EMAIL TRẠNG THÁI ${status} THẤT BẠI:`, err);
+        // Không throw → không làm hỏng flow cập nhật trạng thái
+      }
     }
 
     // Trả về order mới nhất

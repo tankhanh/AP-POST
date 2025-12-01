@@ -1,42 +1,73 @@
+// src/mail/mail.service.ts
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Resend } from 'resend';
+import SendGridMail from '@sendgrid/mail';
 import * as Handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const VERIFIED_SENDER_EMAIL = process.env.VERIFIED_SENDER_EMAIL;
+
 @Injectable()
 export class MailService implements OnModuleInit {
-  private resend: Resend;
-  private orderConfirmationTemplate: HandlebarsTemplateDelegate;
+  private templates: Record<string, HandlebarsTemplateDelegate> = {};
 
   constructor() {
-    const key = process.env.RESEND_API_KEY?.trim();
+    const key = process.env.SENDGRID_API_KEY?.trim();
+    console.log('SENDGRID_API_KEY loaded:', key ? 'YES (hidden)' : 'NO');
+    console.log('VERIFIED_SENDER_EMAIL:', VERIFIED_SENDER_EMAIL ? 'YES' : 'NO');
 
-    console.log('RESEND_API_KEY loaded:', key ? 'YES (hidden)' : 'NO → EMAIL SẼ KHÔNG GỬI ĐƯỢC');
-
-    if (!key) {
-      console.warn('CẢNH BÁO: Không có RESEND_API_KEY → email sẽ không gửi!');
+    if (!key || !VERIFIED_SENDER_EMAIL) {
+      console.warn('CẢNH BÁO: Thiếu SENDGRID_API_KEY hoặc VERIFIED_SENDER_EMAIL → không gửi được email!');
+    } else {
+      SendGridMail.setApiKey(key);   // DÙNG SendGridMail, không phải sgMail
     }
-
-    this.resend = new Resend(key);
   }
 
   onModuleInit() {
-    this.loadTemplates();
+    this.loadAllTemplates();
   }
 
-  private loadTemplates() {
-    try {
-      const templatePath = path.join(__dirname, 'templates', 'ordersEmail.hbs');
-      const source = fs.readFileSync(templatePath, 'utf8');
-      this.orderConfirmationTemplate = Handlebars.compile(source);
-      console.log('Template ordersEmail.hbs đã được load thành công');
-    } catch (err) {
-      console.error('KHÔNG THỂ LOAD TEMPLATE EMAIL:', err);
-      throw new Error('Failed to load email templates');
+  private loadAllTemplates() {
+    const templatesDir = path.join(__dirname, 'templates');
+
+    const files = [
+      'ordersEmail.hbs',
+      'status/pending.hbs',
+      'status/confirmed.hbs',
+      'status/shipping.hbs',
+      'status/completed.hbs',
+      'status/canceled.hbs',
+    ];
+
+    files.forEach((file) => {
+      const fullPath = path.join(templatesDir, file);
+      try {
+        if (fs.existsSync(fullPath)) {
+          const source = fs.readFileSync(fullPath, 'utf8');
+          const template = Handlebars.compile(source);
+          const key = file.replace('.hbs', '').replace('/', '.'); // status.pending
+          this.templates[key] = template;
+          console.log(`Template loaded: ${file}`);
+        }
+      } catch (err) {
+        console.error(`KHÔNG LOAD ĐƯỢC TEMPLATE ${file}:`, err);
+      }
+    });
+
+    if (Object.keys(this.templates).length === 0) {
+      throw new Error('Không load được template email nào!');
     }
   }
 
+  private getTemplate(key: string): HandlebarsTemplateDelegate {
+    const template = this.templates[key];
+    if (!template) {
+      console.error(`Template không tồn tại: ${key}`);
+    }
+    return template;
+  }
+
+  // Gửi email xác nhận đặt hàng
   async sendOrderConfirmation(params: {
     to: string;
     receiverName: string;
@@ -45,15 +76,16 @@ export class MailService implements OnModuleInit {
     shippingFee: number;
     codValue: number;
   }) {
-    if (!params.to) {
-      console.log('KHÔNG GỬI EMAIL: Không có địa chỉ email');
+    if (!params.to || !VERIFIED_SENDER_EMAIL || !process.env.SENDGRID_API_KEY) {
+      console.warn('KHÔNG GỬI EMAIL XÁC NHẬN: Thiếu thông tin');
       return;
     }
 
-    // Format tiền tệ
     const formatPrice = (num: number) => num.toLocaleString('vi-VN');
+    const template = this.getTemplate('ordersEmail');
+    if (!template) return;
 
-    const html = this.orderConfirmationTemplate({
+    const html = template({
       name: params.receiverName,
       waybill: params.waybill,
       totalPrice: formatPrice(params.totalPrice),
@@ -61,24 +93,81 @@ export class MailService implements OnModuleInit {
       codValue: formatPrice(params.codValue),
     });
 
+    await this.send({
+      to: params.to,
+      subject: `Đơn hàng ${params.waybill} đã được tạo thành công! | AP Post`,
+      html,
+    });
+  }
+
+  // Gửi email cập nhật trạng thái
+  async sendStatusUpdate(params: {
+    to: string;
+    receiverName: string;
+    waybill: string;
+    status: string;
+    trackingUrl: string;
+    codValue?: number;
+  }) {
+    if (!params.to || !VERIFIED_SENDER_EMAIL || !process.env.SENDGRID_API_KEY) {
+      console.warn('KHÔNG GỬI EMAIL TRẠNG THÁI: Thiếu thông tin');
+      return;
+    }
+
+    const statusMap: Record<string, { subject: string; templateKey: string }> = {
+      PENDING: { subject: 'Đơn hàng của bạn đã được tạo', templateKey: 'status.pending' },
+      CONFIRMED: { subject: 'Đơn hàng đã được xác nhận ✓', templateKey: 'status.confirmed' },
+      SHIPPING: { subject: 'Đơn hàng đang trên đường giao đến bạn', templateKey: 'status.shipping' },
+      COMPLETED: { subject: 'Giao hàng thành công! Cảm ơn bạn', templateKey: 'status.completed' },
+      CANCELED: { subject: 'Đơn hàng đã bị hủy', templateKey: 'status.canceled' },
+    };
+
+    const config = statusMap[params.status];
+    if (!config) return;
+
+    const template = this.getTemplate(config.templateKey);
+    if (!template) return;
+
+    const html = template({
+      name: params.receiverName || 'Khách hàng',
+      waybill: params.waybill,
+      status: params.status,
+      trackingUrl: params.trackingUrl,
+      codValue: params.codValue ? params.codValue.toLocaleString('vi-VN') : null,
+    });
+
+    await this.send({
+      to: params.to,
+      subject: config.subject,
+      html,
+    });
+  }
+
+  // Hàm chung gửi email
+    private async send(msg: {
+    to: string;
+    subject: string;
+    html: string;
+  }) {
     try {
-      console.log('ĐANG GỬI EMAIL XÁC NHẬN ĐẾN:', params.to);
+      console.log('ĐANG GỬI EMAIL ĐẾN:', msg.to);
+      const message = {
+        from: {
+          email: VERIFIED_SENDER_EMAIL!,
+          name: 'AP Post',
+        },
+        to: msg.to,
+        subject: msg.subject,
+        html: msg.html,
+      };
 
-      const { data, error } = await this.resend.emails.send({
-        from: 'AP Post <ap-post.is-a.dev>',
-        to: [params.to],
-        subject: `Đơn hàng ${params.waybill} đã được tạo thành công! | AP Post`,
-        html,
-      });
-
-      if (error) {
-        console.error('LỖI RESEND:', error);
-        return;
-      }
-
-      console.log('EMAIL GỬI THÀNH CÔNG! ID:', data?.id);
+      const [response] = await SendGridMail.send(message);
+      console.log(`EMAIL GỬI THÀNH CÔNG → ${msg.to} | Status: ${response.statusCode}`);
     } catch (err: any) {
-      console.error('EXCEPTION KHI GỬI EMAIL:', err.message || err);
+      const errorDetail = err.response?.body?.errors
+        ? JSON.stringify(err.response.body.errors)
+        : err.message;
+      console.error('LỖI GỬI EMAIL SENDGRID:', errorDetail);
     }
   }
 }
