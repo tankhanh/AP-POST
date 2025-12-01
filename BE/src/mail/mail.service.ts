@@ -29,15 +29,15 @@ export class MailService implements OnModuleInit {
 
   private loadAllTemplates() {
     // DÙNG process.cwd() để lấy root project, chắc chắn đúng
-    const templatesDir = path.join(process.cwd(), 'src', 'mail', 'templates', 'status');
+    const templatesDir = path.join(process.cwd(), 'src', 'mail', 'templates');
 
     const files = [
-      'ordersEmail.hbs',
       'status/pending.hbs',
       'status/confirmed.hbs',
       'status/shipping.hbs',
       'status/completed.hbs',
       'status/canceled.hbs',
+      'status/restore.hbs',
     ];
 
     files.forEach((file) => {
