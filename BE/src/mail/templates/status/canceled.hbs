@@ -1,40 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
   <meta charset="utf-8">
-  <title>Đơn hàng đã bị hủy</title>
+  <title>Đơn hàng {{waybill}} đã bị hủy ✗</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
-    body { font-family: Arial, sans-serif; background: #f6f9fc; padding: 20px; margin: 0; }
-    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 25px rgba(0,0,0,0.1); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f6f9fc; margin: 0; padding: 20px 0; }
+    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+
     .header { background: linear-gradient(135deg, #dc3545, #c82333); color: white; padding: 40px 30px; text-align: center; }
-    .content { padding: 35px; line-height: 1.8; color: #333; }
-    .waybill { font-size: 28px; font-weight: bold; color: #dc3545; }
-    .footer { background: #343a40; color: #adb5bd; padding: 25px; text-align: center; font-size: 13px; }
+    .header .icon { font-size: 48px; margin-bottom: 10px; }
+    .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+
+    .content { padding: 35px 30px; line-height: 1.8; color: #2d3436; }
+
+    .waybill-box { background: #fff5f5; border: 2px dashed #dc3545; border-radius: 12px; padding: 20px; text-align: center; margin: 25px 0; }
+    .waybill { font-size: 32px; font-weight: bold; color: #dc3545; letter-spacing: 3px; margin: 0; }
+    .waybill-label { font-size: 14px; color: #636e72; margin-top: 8px; }
+
+    .info { background: #f8d7da; padding: 20px; border-radius: 12px; margin: 25px 0; font-size: 15px; border-left: 5px solid #dc3545; }
+
+    .btn { 
+      display: inline-block; 
+      background: #dc3545; 
+      color: white; 
+      padding: 14px 32px; 
+      text-decoration: none; 
+      border-radius: 50px; 
+      font-weight: bold; 
+      font-size: 16px;
+      box-shadow: 0 6px 20px rgba(220,53,69,0.3);
+      transition: all 0.3s;
+    }
+    .btn:hover { background: #b71d2a; transform: translateY(-2px); }
+
+    .footer { background: #2d3436; color: #b2bec3; padding: 30px 20px; text-align: center; font-size: 13px; line-height: 1.7; }
+    .brand { color: #20c997; font-weight: bold; }
+
+    @media (max-width: 480px) {
+      .header { padding: 30px 20px; }
+      .content { padding: 25px 20px; }
+      .waybill { font-size: 26px; }
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="header">
+      <div class="icon">✗</div>
       <h1>Đơn hàng đã bị hủy</h1>
     </div>
+
     <div class="content">
       <p>Xin chào <strong>{{name}}</strong>,</p>
-      <p>Chúng tôi rất tiếc phải thông báo rằng đơn hàng của bạn đã bị hủy.</p>
-      
-      <p><strong>Mã vận đơn:</strong> <span class="waybill">{{waybill}}</span></p>
-      
-      <div style="background: #f8d7da; padding: 20px; border-radius: 10px; border-left: 5px solid #dc3545;">
-        <p>Nếu bạn cần hỗ trợ hoặc muốn đặt lại đơn hàng, vui lòng liên hệ:</p>
+      <p>Chúng tôi rất tiếc phải thông báo rằng đơn hàng của bạn đã được <strong>hủy</strong>.</p>
+
+      <div class="waybill-box">
+        <div class="waybill">{{waybill}}</div>
+        <div class="waybill-label">Mã vận đơn của bạn</div>
+      </div>
+
+      <div class="info">
+        <p>Nếu đây không phải là yêu cầu của bạn, hoặc bạn muốn tạo lại đơn hàng mới, vui lòng liên hệ bộ phận hỗ trợ:</p>
         <p>Hotline: <strong>1900 1234</strong><br>
         Email: support@yourdomain.com</p>
       </div>
-      
-      <p>Xin lỗi vì sự bất tiện này. Hy vọng được phục vụ bạn trong tương lai gần!</p>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://yourdomain.com" class="btn">
+          Tạo đơn hàng mới
+        </a>
+      </div>
+
+      <p>Xin lỗi vì sự bất tiện này. Hy vọng được phục vụ bạn trong thời gian sớm nhất!</p>
     </div>
-    <div class='footer'>
-      Đây là email tự động, vui lòng không trả lời email này.<br />
-      Nếu bạn cần hỗ trợ, liên hệ đội ngũ CSKH của
-      <span class='brand'>AP post</span>.
+
+    <div class="footer">
+      Đây là email tự động từ hệ thống • Vui lòng không trả lời email này<br>
+      Hỗ trợ: support@yourdomain.com • Hotline: 1900 1234<br>
+      © 2025 <span class="brand">AP Post</span> - Giao hàng nhanh • Uy tín • Tiết kiệm
     </div>
   </div>
 </body>

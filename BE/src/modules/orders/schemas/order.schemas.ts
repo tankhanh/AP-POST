@@ -13,6 +13,11 @@ export enum OrderStatus {
   CANCELED = 'CANCELED',
 }
 
+export enum ShippingFeePayer {
+  SENDER = 'SENDER',
+  RECEIVER = 'RECEIVER',
+}
+
 @Schema({ timestamps: true })
 export class Order {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
@@ -102,6 +107,22 @@ export class Order {
 
   @Prop({ type: Object })
   snapshotBreakdown?: any;
+
+  @Prop({
+    type: String,
+    enum: ShippingFeePayer,
+    default: ShippingFeePayer.SENDER,
+  })
+  shippingFeePayer: ShippingFeePayer;
+
+  @Prop({ required: false, min: 0 })
+  senderPayAmount: number; // Tiền người gửi trả tại quầy
+
+  @Prop({ required: false, min: 0 })
+  receiverPayAmount: number; // Tiền người nhận trả khi nhận
+
+  @Prop({ required: false, min: 0 })
+  totalOrderValue: number; // Tổng codValue + shippingFee
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

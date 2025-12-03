@@ -33,6 +33,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
   routeDistance = 0;
   routeTime = 0;
 
+  senderPay = 0;
+  receiverPay = 0;
+
   constructor(
     private fb: FormBuilder,
     private ordersService: OrdersService,
@@ -49,8 +52,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     setTimeout(() => {
-      // thêm setTimeout để Angular ổn định
-      // Tìm kiếm địa chỉ
+      // Geocoding khi gõ địa chỉ
       this.orderForm
         .get('pickupDetailAddress')
         ?.valueChanges.pipe(debounceTime(800))
@@ -65,30 +67,21 @@ export class CreateOrder implements OnInit, AfterViewInit {
           if (this.shouldSearch('delivery')) this.updateDeliveryMap();
         });
 
+      // Tự động tính lại phí + tiền khi thay đổi các field quan trọng
       merge(
-        this.orderForm
-          .get('pickupProvinceId')!
-          .valueChanges.pipe(startWith(this.orderForm.value.pickupProvinceId)),
-        this.orderForm
-          .get('deliveryProvinceId')!
-          .valueChanges.pipe(startWith(this.orderForm.value.deliveryProvinceId)),
-        this.orderForm.get('weightKg')!.valueChanges.pipe(startWith(this.orderForm.value.weightKg)),
-        this.orderForm
-          .get('serviceCode')!
-          .valueChanges.pipe(startWith(this.orderForm.value.serviceCode))
+        this.orderForm.get('pickupProvinceId')!.valueChanges,
+        this.orderForm.get('deliveryProvinceId')!.valueChanges,
+        this.orderForm.get('weightKg')!.valueChanges,
+        this.orderForm.get('serviceCode')!.valueChanges,
+        this.orderForm.get('codValue')!.valueChanges,
+        this.orderForm.get('shippingFeePayer')!.valueChanges.pipe(startWith('SENDER'))
       )
-        .pipe(debounceTime(600))
+        .pipe(debounceTime(300))
         .subscribe(() => {
-          this.calculateShippingFee();
+          this.calculateShippingFee(); // → sẽ gọi updatePayments() bên trong
         });
 
-      // Cập nhật tổng khi gõ COD
-      this.orderForm
-        .get('codValue')
-        ?.valueChanges.pipe(debounceTime(300))
-        .subscribe(() => this.updateTotalPrice());
-
-      // Tính phí lần đầu
+      // Tính lần đầu
       this.calculateShippingFee();
     }, 100);
   }
@@ -136,6 +129,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
       pickupLng: [null],
       deliveryLat: [null],
       deliveryLng: [null],
+      shippingFeePayer: ['SENDER'],
     });
   }
 
@@ -269,9 +263,11 @@ export class CreateOrder implements OnInit, AfterViewInit {
     );
   }
 
-  private updateTotalPrice() {
+  private updatePayments() {
     const cod = Number(this.orderForm.value.codValue || 0);
-    this.totalPrice = this.shippingFee + cod;
+    const payer = this.orderForm.value.shippingFeePayer || 'SENDER';
+    this.senderPay = payer === 'SENDER' ? this.shippingFee : 0;
+    this.receiverPay = cod + (payer === 'RECEIVER' ? this.shippingFee : 0);
   }
 
   async calculateShippingFee() {
@@ -279,7 +275,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
     if (!f.pickupProvinceId || !f.deliveryProvinceId || !f.weightKg) {
       this.shippingFee = 0;
-      this.updateTotalPrice();
+      this.updatePayments();
       return;
     }
 
@@ -288,7 +284,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
     if (!originProv?.code || !destProv?.code) {
       this.shippingFee = 0;
-      this.updateTotalPrice();
+      this.updatePayments();
       return;
     }
 
@@ -310,7 +306,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
       console.warn('Lỗi tính phí:', err);
       this.shippingFee = 0;
     } finally {
-      this.updateTotalPrice(); // Đảm bảo tổng tiền luôn đúng dù có lỗi hay không
+      this.updatePayments(); // Quan trọng: luôn cập nhật tiền
     }
   }
 
@@ -415,6 +411,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
       weightKg: Number(this.orderForm.value.weightKg) || 1,
       serviceCode: this.orderForm.value.serviceCode || 'STD',
       details: this.orderForm.value.details?.trim() || null,
+      shippingFeePayer: this.orderForm.value.shippingFeePayer,
     };
 
     this.ordersService.createOrder(data).subscribe({

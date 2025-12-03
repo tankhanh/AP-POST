@@ -95,7 +95,7 @@ export class PricingService {
   }
 
   // ================== HELPER: LẤY PRICING ACTIVE THEO SERVICE CODE ==================
-  private async getActivePricingByServiceCode(
+  async getActivePricingByServiceCode(
     serviceCode: 'STD' | 'EXP',
   ): Promise<PricingDocument> {
     // 1. Tìm service theo code (giả sử schema Service có field "code")

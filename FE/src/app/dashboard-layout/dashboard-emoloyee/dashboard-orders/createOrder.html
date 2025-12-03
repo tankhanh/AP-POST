@@ -121,6 +121,13 @@
             <label class="form-label fw-semibold">Giá trị hàng (VNĐ)</label>
             <input type="number" class="form-control" formControlName="codValue" placeholder="0" />
           </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Ai trả phí vận chuyển?</label>
+            <select class="form-select" formControlName="shippingFeePayer">
+              <option value="SENDER">Người gửi</option>
+              <option value="RECEIVER">Người nhận</option>
+            </select>
+          </div>
         </div>
 
         <div class="mb-3 mt-3">
@@ -136,8 +143,12 @@
         <div class="alert alert-info">
           <strong>Phí vận chuyển: {{ shippingFee | number : '1.0-0' }} ₫</strong>
         </div>
+        <div class="alert alert-warning">
+          <strong>Người gửi trả tại quầy: {{ senderPay | number : '1.0-0' }} ₫</strong>
+        </div>
         <div class="alert alert-success fs-4 fw-bold">
-          Tổng tiền khách trả: {{ totalPrice | number : '1.0-0' }} ₫
+          <strong>Người nhận trả khi giao: {{ receiverPay | number : '1.0-0' }} ₫</strong>
+          <small>(Bao gồm COD + phí nếu áp dụng)</small>
         </div>
       </div>
     </div>

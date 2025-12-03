@@ -1,96 +1,87 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="vi">
 <head>
   <meta charset="utf-8">
-  <title>Đơn hàng đang giao đến bạn!</title>
+  <title>Đơn hàng {{waybill}} đang trên đường giao đến bạn!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f6f9fc;
-      padding: 20px;
-      margin: 0;
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f6f9fc; margin: 0; padding: 20px 0; }
+    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 35px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #fd7e14, #f39c12); color: white; padding: 45px 30px; text-align: center; }
+    .header h1 { margin: 0 0 10px 0; font-size: 28px; font-weight: 700; }
+    .header .icon { font-size: 56px; margin-bottom: 10px; animation: move 2s infinite; }
+    @keyframes move { 0%,100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+    .content { padding: 35px 30px; line-height: 1.8; color: #2d3436; }
+    .waybill-box { background: #fff8e1; border: 3px dashed #fd7e14; border-radius: 14px; padding: 22px; text-align: center; margin: 30px 0; }
+    .waybill { font-size: 34px; font-weight: bold; color: #e67e22; letter-spacing: 4px; margin: 0; }
+    .waybill-label { font-size: 15px; color: #636e72; margin-top: 10px; opacity: 0.9; }
+    .alert-box { background: #fff3cd; border-left: 6px solid #ffc107; padding: 20px; border-radius: 0 12px 12px 0; margin: 25px 0; font-size: 15px; }
+    .btn { 
+      display: inline-block; 
+      background: #fd7e14; 
+      color: white; 
+      padding: 15px 35px; 
+      text-decoration: none; 
+      border-radius: 50px; 
+      font-weight: bold; 
+      font-size: 17px;
+      box-shadow: 0 8px 25px rgba(253,126,20,0.4);
+      transition: all 0.3s;
     }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
-    }
-
-    .header {
-      background: linear-gradient(135deg, #ffc107, #fd7e14);
-      color: white;
-      padding: 40px 30px;
-      text-align: center;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 28px;
-    }
-
-    .content {
-      padding: 35px;
-      line-height: 1.8;
-      color: #333;
-    }
-
-    .waybill {
-      font-size: 32px;
-      font-weight: bold;
-      color: #fd7e14;
-      letter-spacing: 2px;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 14px 30px;
-      background: #fd7e14;
-      color: white;
-      text-decoration: none;
-      border-radius: 50px;
-      font-weight: bold;
-      margin: 20px 0;
-    }
-
-    .footer {
-      background: #343a40;
-      color: #adb5bd;
-      padding: 25px;
-      text-align: center;
-      font-size: 13px;
+    .btn:hover { background: #e86a0f; transform: translateY(-3px); }
+    .footer { background: #2d3436; color: #b2bec3; padding: 30px 20px; text-align: center; font-size: 13px; line-height: 1.7; }
+    .brand { color: #f39c12; font-weight: bold; }
+    @media (max-width: 480px) {
+      .waybill { font-size: 28px; letter-spacing: 2px; }
+      .header { padding: 35px 20px; }
+      .content { padding: 25px 20px; }
     }
   </style>
 </head>
-
 <body>
   <div class="container">
     <div class="header">
+      <div class="icon">Xe máy</div>
       <h1>Đơn hàng đang trên đường!</h1>
+      <p style="margin:10px 0 0; font-size:16px; opacity:0.95;">Shipper đang lao vút tới chỗ bạn đây!</p>
     </div>
+
     <div class="content">
       <p>Xin chào <strong>{{name}}</strong>,</p>
-      <p>Shiper đã nhận hàng và đang mang đến cho bạn rồi đây!</p>
-
-      <div style="text-align: center; margin: 30px 0;">
+      <p>Hàng đã được shipper nhận và <strong>đang giao đến bạn ngay bây giờ</strong>!</p>
+      
+      <div class="waybill-box">
         <div class="waybill">{{waybill}}</div>
+        <div class="waybill-label">Mã vận đơn đang bay đến tay bạn</div>
       </div>
 
-      <div style="background: #fff3cd; padding: 20px; border-radius: 10px; border-left: 5px solid #ffc107;">
-        <p>Thời gian dự kiến giao: <strong>trong 1-2 giờ tới</strong></p>
-        <p>Vui lòng giữ điện thoại để shipper liên lạc nhé!</p>
+      <div class="alert-box">
+        <p style="margin:0 0 10px 0;"><strong>Thời gian dự kiến giao:</strong> trong <span style="color:#d35400; font-size:18px;">1-2 giờ tới</span></p>
+        <p style="margin:0;"><strong>Vui lòng chuẩn bị:</strong></p>
+        <ul style="margin:8px 0; padding-left:20px;">
+          <li>Giữ điện thoại thông thoáng để shipper gọi</li>
+          {{#if codValue}}
+          <li style="color:#e74c3c; font-weight:bold;">Chuẩn bị đúng <strong>{{codValue}} ₫</strong> (tiền hàng + phí ship nếu có)</li>
+          {{else}}
+          <li>Chỉ cần nhận hàng và kiểm tra kỹ trước khi ký nhận</li>
+          {{/if}}
+        </ul>
       </div>
+
+      <div style="text-align: center; margin: 35px 0;">
+        <a href="https://yourdomain.com/tracking/{{waybill}}" class="btn">
+          Xem vị trí shipper ngay
+        </a>
+      </div>
+
+      <p>Cảm ơn bạn đã chọn <strong class="brand">AP Post</strong> – Giao nhanh như tên lửa!</p>
     </div>
-    <div class='footer'>
-      Đây là email tự động, vui lòng không trả lời email này.<br />
-      Nếu bạn cần hỗ trợ, liên hệ đội ngũ CSKH của
-      <span class='brand'>AP post</span>.
+
+    <div class="footer">
+      Đây là email tự động • Không trả lời email này<br>
+      Cần hỗ trợ? Gọi ngay: <strong>1900 1234</strong> • Email: support@yourdomain.com<br>
+      © 2025 <span class="brand">AP Post</span> – Nhanh hơn, rẻ hơn, yêu thương hơn!
     </div>
   </div>
 </body>
-
 </html>

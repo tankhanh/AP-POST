@@ -1,69 +1,45 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="vi">
 <head>
   <meta charset="utf-8">
-  <title>Giao hàng thành công!</title>
+  <title>Đơn hàng {{waybill}} đã giao thành công ✓</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f6f9fc;
-      padding: 20px;
-      margin: 0;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f6f9fc; margin: 0; padding: 20px 0; }
+    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(135deg, #007bff, #6610f2); color: white; padding: 40px 30px; text-align: center; position: relative; }
+    .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+    .header .icon { font-size: 48px; margin-bottom: 10px; }
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
-    }
+    .content { padding: 35px 30px; line-height: 1.8; color: #2d3436; }
 
-    .header {
-      background: linear-gradient(135deg, #007bff, #6610f2);
-      color: white;
-      padding: 40px 30px;
-      text-align: center;
-    }
+    .waybill-box { background: #f0f4ff; border: 2px dashed #007bff; border-radius: 12px; padding: 20px; text-align: center; margin: 25px 0; }
+    .waybill { font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 3px; margin: 0; }
+    .waybill-label { font-size: 14px; color: #636e72; margin-top: 8px; }
 
-    .header h1 {
-      margin: 0;
-      font-size: 28px;
-    }
+    .info { background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 25px 0; font-size: 15px; }
 
-    .content {
-      padding: 35px;
-      line-height: 1.8;
-      color: #333;
-      text-align: center;
+    .btn { 
+      display: inline-block; 
+      background: #007bff; 
+      color: white; 
+      padding: 14px 32px; 
+      text-decoration: none; 
+      border-radius: 50px; 
+      font-weight: bold; 
+      font-size: 16px;
+      box-shadow: 0 6px 20px rgba(0,123,255,0.3);
+      transition: all 0.3s;
     }
+    .btn:hover { background: #0069d9; transform: translateY(-2px); }
 
-    .waybill {
-      font-size: 32px;
-      font-weight: bold;
-      color: #007bff;
-      letter-spacing: 2px;
-    }
+    .footer { background: #2d3436; color: #b2bec3; padding: 30px 20px; text-align: center; font-size: 13px; line-height: 1.7; }
+    .brand { color: #20c997; font-weight: bold; }
 
-    .btn {
-      display: inline-block;
-      padding: 14px 30px;
-      background: #007bff;
-      color: white;
-      text-decoration: none;
-      border-radius: 50px;
-      font-weight: bold;
-      margin: 20px 0;
-    }
-
-    .footer {
-      background: #343a40;
-      color: #adb5bd;
-      padding: 25px;
-      text-align: center;
-      font-size: 13px;
+    @media (max-width: 480px) {
+      .header { padding: 30px 20px; }
+      .content { padding: 25px 20px; }
+      .waybill { font-size: 26px; }
     }
   </style>
 </head>
@@ -71,24 +47,39 @@
 <body>
   <div class="container">
     <div class="header">
+      <div class="icon">✓</div>
       <h1>Giao hàng thành công!</h1>
     </div>
+
     <div class="content">
       <p>Xin chào <strong>{{name}}</strong>,</p>
-      <p>Cảm ơn bạn đã nhận hàng thành công!</p>
+      <p>Chúng tôi rất vui thông báo đơn hàng của bạn đã được <strong>giao thành công</strong>!</p>
 
-      <p>Mã vận đơn: <strong class="waybill">{{waybill}}</strong></p>
+      <div class="waybill-box">
+        <div class="waybill">{{waybill}}</div>
+        <div class="waybill-label">Mã vận đơn của bạn</div>
+      </div>
 
-      <p>Hy vọng bạn hài lòng với dịch vụ của chúng tôi!</p>
+      <div class="info">
+        <p>Nhân viên giao hàng đã hoàn tất việc bàn giao đến người nhận.</p>
+        <p>Cảm ơn bạn đã tin tưởng và lựa chọn dịch vụ của <strong class="brand">AP Post</strong>!</p>
+      </div>
 
-      <p>Chúc bạn một ngày vui vẻ!</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://yourdomain.com/tracking/{{waybill}}" class="btn">
+          Xem chi tiết đơn hàng
+        </a>
+      </div>
+
+      <p>Nếu có thắc mắc hay cần hỗ trợ, vui lòng liên hệ hotline: <strong>1900 1234</strong></p>
+      <p>Rất mong được tiếp tục phục vụ bạn!</p>
     </div>
-    <div class='footer'>
-      Đây là email tự động, vui lòng không trả lời email này.<br />
-      Nếu bạn cần hỗ trợ, liên hệ đội ngũ CSKH của
-      <span class='brand'>AP post</span>.
+
+    <div class="footer">
+      Đây là email tự động từ hệ thống • Vui lòng không trả lời email này<br>
+      Hỗ trợ: support@yourdomain.com • Hotline: 1900 1234<br>
+      © 2025 <span class="brand">AP Post</span> - Giao hàng nhanh • Uy tín • Tiết kiệm
     </div>
   </div>
 </body>
-
 </html>

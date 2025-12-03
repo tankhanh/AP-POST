@@ -44,29 +44,6 @@ export class OrdersService {
   private normalizeEmail(email: string) {
     return (email || '').trim().toLowerCase();
   }
-  // async sendVerificationMailOrder(params: {
-  //   email: string;
-  //   name?: string;
-  //   orderId: string;
-  //   totalPrice: number;
-  //   shippingFee: number;
-  //   codValue: number;
-  // }) {
-  //   const { email, name, orderId, totalPrice, shippingFee, codValue } = params;
-
-  //   await this.mailerService.sendMail({
-  //     to: this.normalizeEmail(email),
-  //     subject: 'Xác nhận đơn hàng của bạn',
-  //     template: 'pending.hbs',
-  //     context: {
-  //       name: name || email,
-  //       orderId,
-  //       totalPrice,
-  //       shippingFee,
-  //       codValue,
-  //     },
-  //   });
-  // }
 
   async create(dto: CreateOrderDto, user: IUser) {
     const waybill = await this.generateUniqueWaybill();
@@ -92,26 +69,30 @@ export class OrdersService {
       originProv.code === destProv.code,
     );
 
-    const activePricing = await this.pricingService[
-      'getActivePricingByServiceCode'
-    ](dto.serviceCode || 'STD');
+    const activePricing =
+      await this.pricingService.getActivePricingByServiceCode(
+        dto.serviceCode || 'STD',
+      );
 
-    const shippingFee =
-      typeof calcResult.totalPrice === 'number' ? calcResult.totalPrice : 0;
-    const totalPrice = dto.codValue + shippingFee;
+    const shippingFee = Number(calcResult.totalPrice) || 0;
+
+    // XÁC ĐỊNH AI TRẢ PHÍ VẬN CHUYỂN
+    const shippingFeePayer = dto.shippingFeePayer || 'SENDER';
+    const codValue = Number(dto.codValue) || 0;
+
+    // Tính tiền từng bên
+    const senderPayAmount = shippingFeePayer === 'SENDER' ? shippingFee : 0;
+    const receiverPayAmount =
+      codValue + (shippingFeePayer === 'RECEIVER' ? shippingFee : 0);
+    const totalOrderValue = codValue + shippingFee;
 
     // 3. Tạo địa chỉ
     const pickupAddr = await this.addressModel.create(dto.pickupAddress);
     const deliveryAddr = await this.addressModel.create(dto.deliveryAddress);
 
-    // 4. Xử lý branchId – STAFF bắt buộc có, ADMIN optional, USER bỏ qua
+    // 4. Xử lý branchId
     let branchId: Types.ObjectId | null | undefined = undefined;
-    const rawBranchId =
-      user.branchId ??
-      (user as any).branchId ??
-      user.BranchId ??
-      (user as any).BranchId ??
-      null;
+    const rawBranchId = user.branchId ?? (user as any).branchId ?? null;
 
     if (user.role === 'STAFF') {
       if (!rawBranchId) {
@@ -122,8 +103,6 @@ export class OrdersService {
       branchId = new Types.ObjectId(rawBranchId);
     } else if (user.role === 'ADMIN') {
       branchId = rawBranchId ? new Types.ObjectId(rawBranchId) : null;
-    } else {
-      branchId = undefined; // USER
     }
 
     // 5. Tạo đơn hàng
@@ -133,14 +112,21 @@ export class OrdersService {
       deliveryAddressId: deliveryAddr._id,
       userId: new Types.ObjectId(user._id),
       branchId,
-      codValue: dto.codValue,
+      codValue,
       details: dto.details || null,
       shippingFee,
-      totalPrice,
+      totalPrice: totalOrderValue, // Không còn là cod + phí nữa → là tổng giá trị đơn
       serviceCode: dto.serviceCode || 'STD',
       weightKg: dto.weightKg,
       waybill,
 
+      // Các trường mới - quan trọng
+      shippingFeePayer,
+      senderPayAmount,
+      receiverPayAmount,
+      totalOrderValue,
+
+      // Snapshot pricing
       snapshotPricingId: activePricing._id,
       snapshotBasePrice: activePricing.basePrice,
       snapshotOverweightFee: calcResult.breakdown.overweightFee || 0,
@@ -154,48 +140,42 @@ export class OrdersService {
       createdBy: { _id: new Types.ObjectId(user._id), email: user.email },
     });
 
+    // Tạo tracking
     try {
-      // Tạo tracking cho order
       await this.trackingModel.create({
         orderId: newOrder._id,
         status: OrderStatus.PENDING,
         timestamp: new Date(),
-        location: originProv?.name || 'Khách hàng đặt hàng online',
-        note: 'Đơn hàng được tạo thành công',
-        createdBy:
-          newOrder.createdBy ||
-          (user ? { _id: user._id, email: user.email } : null),
+        location: originProv?.name || 'Khách hàng mang đến bưu cục',
+        note: `Đơn hàng được tạo. Người gửi trả tại quầy: ${senderPayAmount.toLocaleString()}₫ | Người nhận trả khi nhận: ${receiverPayAmount.toLocaleString()}₫`,
+        createdBy: { _id: user._id, email: user.email },
         branchId: newOrder.branchId || null,
       });
-      console.log('TRACKING ĐÃ TẠO THÀNH CÔNG CHO ORDER:', newOrder._id);
     } catch (error) {
       console.error('Lỗi tạo tracking:', error);
     }
 
+    // Gửi email xác nhận cho khách (nếu có email)
     const customerEmail = dto.email?.trim();
-    console.log('=== KIỂM TRA EMAIL ===');
-    console.log('Email khách nhập:', customerEmail);
-    console.log('SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? 'ĐÃ CẤU HÌNH' : 'CHƯA CẤU HÌNH');
-
     if (customerEmail) {
-      console.log('ĐANG CHUẨN BỊ GỬI EMAIL ĐẾN:', customerEmail);
       try {
         await this.mailService.sendOrderConfirmation({
           to: customerEmail,
           receiverName: dto.receiverName,
           waybill: newOrder.waybill,
-          totalPrice,
           shippingFee,
-          codValue: dto.codValue,
+          codValue,
+          senderPayAmount,
+          receiverPayAmount,
+          totalOrderValue,
+          shippingFeePayer,
         });
-        console.log('ĐÃ GỬI EMAIL THÀNH CÔNG CHO:', customerEmail);
+        console.log('Email xác nhận đã được gửi đến:', customerEmail);
       } catch (err: any) {
-        console.log('GỬI EMAIL BỊ LỖI:', err.message);
+        console.log('Gửi email thất bại:', err.message);
       }
-    } else {
-      console.log('KHÔNG GỬI EMAIL: khách không nhập email');
     }
-    // Trả về order cuối cùng
+
     return newOrder;
   }
 

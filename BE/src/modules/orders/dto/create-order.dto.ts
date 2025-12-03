@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -86,4 +87,13 @@ export class CreateOrderDto {
   pricingLocked?: boolean;
   snapshotShippingFee?: number;
   pricingNote?: string;
+
+  @ApiProperty({
+    example: 'SENDER',
+    enum: ['SENDER', 'RECEIVER'],
+    default: 'SENDER',
+  })
+  @IsOptional()
+  @IsEnum(['SENDER', 'RECEIVER'])
+  shippingFeePayer?: 'SENDER' | 'RECEIVER' = 'SENDER';
 }

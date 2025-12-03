@@ -15,11 +15,20 @@ export class PaymentsService {
     const order = await this.orderModel.findById(orderId);
     if (!order) throw new NotFoundException('Order not found');
 
+    let amount: number;
+    if (method === 'CASH') {
+      amount = order.senderPayAmount;
+    } else if (method === 'COD') {
+      amount = order.receiverPayAmount;
+    } else {
+      amount = order.totalOrderValue; // fallback
+    }
+
     const payment = new this.paymentModel({
       orderId: order._id,
-      amount: order.totalPrice,
+      amount,
       method,
-      status: 'pending',
+      status: 'paid', // Giả sử paid ngay khi tạo (có thể thay đổi nếu cần pending)
     });
     return payment.save();
   }

@@ -17,9 +17,11 @@ export class MailService implements OnModuleInit {
     console.log('VERIFIED_SENDER_EMAIL:', VERIFIED_SENDER_EMAIL ? 'YES' : 'NO');
 
     if (!key || !VERIFIED_SENDER_EMAIL) {
-      console.warn('CẢNH BÁO: Thiếu SENDGRID_API_KEY hoặc VERIFIED_SENDER_EMAIL → không gửi được email!');
+      console.warn(
+        'CẢNH BÁO: Thiếu SENDGRID_API_KEY hoặc VERIFIED_SENDER_EMAIL → không gửi được email!',
+      );
     } else {
-      SendGridMail.setApiKey(key);   // DÙNG SendGridMail, không phải sgMail
+      SendGridMail.setApiKey(key);
     }
   }
 
@@ -28,7 +30,6 @@ export class MailService implements OnModuleInit {
   }
 
   private loadAllTemplates() {
-    // DÙNG process.cwd() để lấy root project, chắc chắn đúng
     const templatesDir = path.join(process.cwd(), 'src', 'mail', 'templates');
 
     const files = [
@@ -54,7 +55,7 @@ export class MailService implements OnModuleInit {
     });
   }
 
-  private getTemplate(key: string): HandlebarsTemplateDelegate {
+  private getTemplate(key: string): HandlebarsTemplateDelegate | undefined {
     const template = this.templates[key];
     if (!template) {
       console.error(`Template không tồn tại: ${key}`);
@@ -62,30 +63,42 @@ export class MailService implements OnModuleInit {
     return template;
   }
 
-  // Gửi email xác nhận đặt hàng
+  // Helper định dạng tiền (dùng chung cho cả 2 hàm)
+  private formatPrice(num: number): string {
+    return num.toLocaleString('vi-VN');
+  }
+
+  // GỬI EMAIL XÁC NHẬN ĐƠN HÀNG – ĐÃ HOÀN CHỈNH
   async sendOrderConfirmation(params: {
     to: string;
     receiverName: string;
     waybill: string;
-    totalPrice: number;
     shippingFee: number;
     codValue: number;
+    senderPayAmount: number;
+    receiverPayAmount: number;
+    totalOrderValue: number;
+    shippingFeePayer: 'SENDER' | 'RECEIVER';
   }) {
     if (!params.to || !VERIFIED_SENDER_EMAIL || !process.env.SENDGRID_API_KEY) {
       console.warn('KHÔNG GỬI EMAIL XÁC NHẬN: Thiếu thông tin');
       return;
     }
 
-    const formatPrice = (num: number) => num.toLocaleString('vi-VN');
     const template = this.getTemplate('status.pending');
     if (!template) return;
 
     const html = template({
       name: params.receiverName,
       waybill: params.waybill,
-      totalPrice: formatPrice(params.totalPrice),
-      shippingFee: formatPrice(params.shippingFee),
-      codValue: formatPrice(params.codValue),
+      totalOrderValue: this.formatPrice(params.totalOrderValue),
+      shippingFee: this.formatPrice(params.shippingFee),
+      codValue: this.formatPrice(params.codValue),
+      senderPayAmount: this.formatPrice(params.senderPayAmount),
+      receiverPayAmount: this.formatPrice(params.receiverPayAmount),
+      shippingFeePayerText: params.shippingFeePayer === 'SENDER' ? 'Người gửi' : 'Người nhận',
+      isSenderPayFee: params.shippingFeePayer === 'SENDER',
+      isReceiverPayFee: params.shippingFeePayer === 'RECEIVER',
     });
 
     await this.send({
@@ -95,7 +108,7 @@ export class MailService implements OnModuleInit {
     });
   }
 
-  // Gửi email cập nhật trạng thái
+  // GỬI EMAIL CẬP NHẬT TRẠNG THÁI – ĐÃ SỬA LỖI formatPrice
   async sendStatusUpdate(params: {
     to: string;
     receiverName: string;
@@ -111,7 +124,7 @@ export class MailService implements OnModuleInit {
 
     const statusMap: Record<string, { subject: string; templateKey: string }> = {
       PENDING: { subject: 'Đơn hàng của bạn đã được tạo', templateKey: 'status.pending' },
-      CONFIRMED: { subject: 'Đơn hàng đã được xác nhận ✓', templateKey: 'status.confirmed' },
+      CONFIRMED: { subject: 'Đơn hàng đã được xác nhận', templateKey: 'status.confirmed' },
       SHIPPING: { subject: 'Đơn hàng đang trên đường giao đến bạn', templateKey: 'status.shipping' },
       COMPLETED: { subject: 'Giao hàng thành công! Cảm ơn bạn', templateKey: 'status.completed' },
       CANCELED: { subject: 'Đơn hàng đã bị hủy', templateKey: 'status.canceled' },
@@ -128,29 +141,21 @@ export class MailService implements OnModuleInit {
       waybill: params.waybill,
       status: params.status,
       trackingUrl: params.trackingUrl,
-      codValue: params.codValue ? params.codValue.toLocaleString('vi-VN') : null,
+      codValue: params.codValue ? this.formatPrice(params.codValue) : null, // ĐÃ SỬA
     });
 
     await this.send({
       to: params.to,
-      subject: config.subject,
+      subject: `${config.subject} | ${params.waybill}`,
       html,
     });
   }
 
-  // Hàm chung gửi email
-  private async send(msg: {
-    to: string;
-    subject: string;
-    html: string;
-  }) {
+  private async send(msg: { to: string; subject: string; html: string }) {
     try {
       console.log('ĐANG GỬI EMAIL ĐẾN:', msg.to);
       const message = {
-        from: {
-          email: VERIFIED_SENDER_EMAIL!,
-          name: 'AP Post',
-        },
+        from: { email: VERIFIED_SENDER_EMAIL!, name: 'AP Post' },
         to: msg.to,
         subject: msg.subject,
         html: msg.html,
