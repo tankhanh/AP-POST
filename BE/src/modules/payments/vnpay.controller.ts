@@ -28,7 +28,7 @@ export class VnpayController {
     @InjectModel(Order.name) private orderModel: Model<Order>,
   ) {}
 
-  @Post('create')
+  @Post('')
   @Public()
   async create(@Body() body: { orderId: string }) {
     if (!body.orderId) throw new BadRequestException('orderId is required');
