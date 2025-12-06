@@ -1,4 +1,3 @@
-// src/modules/payfake/payfake.service.ts
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
