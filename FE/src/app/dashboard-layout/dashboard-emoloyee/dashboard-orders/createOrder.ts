@@ -473,7 +473,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
           });
           return;
         } else {
-          // CASH / COD / BANK_TRANSFER → hiện thông báo bình thường
           Swal.fire({
             icon: 'success',
             title: 'Tạo đơn thành công!',
