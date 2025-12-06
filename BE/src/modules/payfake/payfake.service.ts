@@ -7,7 +7,7 @@ import * as crypto from 'crypto'; // Nếu fake cần hash, giữ nguyên; nếu
 export class FakePaymentService {
   constructor(private configService: ConfigService) {}
 
-  private FAKE_BASE_URL = 'https://payfake-appost.onrender.com'; // URL deploy của bạn
+  private FAKE_BASE_URL = 'https://ap-post-api.onrender.com'; // URL deploy của bạn
 
   private sortObject(obj: Record<string, any>): Record<string, string> {
     // Giữ nguyên từ VnpayService nếu cần sort params
