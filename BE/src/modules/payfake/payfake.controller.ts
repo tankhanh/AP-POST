@@ -47,7 +47,7 @@ export class FakePaymentController {
       status: 'pending',
       transactionId: order.waybill || order._id.toString(),
     });
-
+    console.log('Generated payUrl:', payUrl);
     return { success: true, payUrl };
   }
 

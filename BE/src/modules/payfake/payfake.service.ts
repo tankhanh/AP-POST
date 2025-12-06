@@ -23,46 +23,52 @@ export class FakePaymentService {
     return sorted;
   }
 
-  buildPaymentUrl(
-    orderId: string,
-    amount: number,
-    orderInfo: string,
-    // Các params khác nếu cần, giữ tương tự VNPAY
-  ): string {
+  buildPaymentUrl(orderId: string, amount: number, orderInfo: string): string {
     const createDate = new Date();
     const inputData: Record<string, string> = {
-      vnp_Version: '2.1.0', // Giữ tương tự để fake giống VNPAY
+      vnp_Version: '2.1.0',
       vnp_Command: 'pay',
-      vnp_TmnCode: 'FAKE_TMNCODE', // Fake value
-      vnp_Amount: (amount * 100).toString(),
-      vnp_CreateDate: this.formatDate(createDate),
+      vnp_TmnCode: 'FAKE_TMNCODE',
+      vnp_Amount: (amount * 100).toString(), // Đúng
+      vnp_CreateDate: this.formatDate(createDate), // Fix format nếu cần
       vnp_CurrCode: 'VND',
-      vnp_IpAddr: '127.0.0.1',
+      vnp_IpAddr: '127.0.0.1', // Thay bằng req.ip nếu có trong controller
       vnp_Locale: 'vn',
       vnp_OrderInfo: orderInfo,
       vnp_OrderType: '250000',
-      vnp_ReturnUrl: this.configService.get<string>('FAKE_RETURN_URL') || 'http://your-backend/return', // Config env: FAKE_RETURN_URL
+      vnp_ReturnUrl:
+        this.configService.get<string>('FAKE_RETURN_URL') ||
+        'https://your-backend-domain/fake-payment/return', // Thay bằng URL thực (thêm vào .env: FAKE_RETURN_URL=https://ap-post-api.onrender.com/api/v1/fake-payment/return)
       vnp_TxnRef: orderId.substring(0, 30),
     };
 
-    // Nếu fake cần hash, tính hash (giả sử cần)
-    const hashData = Object.keys(inputData).map(key => `${key}=${encodeURIComponent(inputData[key])}`).join('&');
-    const secureHash = crypto.createHmac('sha512', 'FAKE_SECRET') // Fake secret
+    // Hash: Nếu repo không yêu cầu, bỏ phần này hoặc dùng fake hash
+    const hashData = Object.keys(inputData)
+      .sort()
+      .map((key) => `${key}=${encodeURIComponent(inputData[key])}`)
+      .join('&');
+    const secureHash = crypto
+      .createHmac('sha512', 'FAKE_SECRET')
       .update(hashData)
-      .digest('hex');
+      .digest('hex'); // Nếu cần, thay 'FAKE_SECRET' bằng giá trị từ .env
 
     const params = new URLSearchParams(inputData);
     params.append('vnp_SecureHash', secureHash);
 
-    return `${this.FAKE_BASE_URL}/payment?${params.toString()}`; // Giả sử endpoint là /payment
+    return `${this.FAKE_BASE_URL}/payment?${params.toString()}`;
   }
 
   private formatDate(date: Date): string {
-    return date.toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    return `${year}${month}${day}${hours}${minutes}${seconds}`; // Format YYYYMMDDHHmmss
   }
 
   verifySignature(data: Record<string, any>, signature: string): boolean {
-    // Giả sử luôn true cho fake, hoặc implement nếu repo yêu cầu
-    return true;
+    return true; // Luôn true cho test, sau này implement nếu cần
   }
 }

@@ -447,26 +447,26 @@ export class CreateOrder implements OnInit, AfterViewInit {
         if (paymentMethod === 'FAKE') {
           // vẫn giữ tên để không sửa UI
           Swal.fire({
-            icon: 'success',
-            title: 'Tạo đơn thành công!',
-            html: `
-      <p class="mb-3 fs-5">Mã vận đơn:</p>
-      <h2 class="display-5 fw-bold text-primary">${this.createdWaybill}</h2>
-      <p class="mt-3">Sẵn sàng chuyển sang thanh toán online</p>
-    `,
-            confirmButtonText: 'Thanh toán Fake ngay',
+            icon: 'info',
+            title: 'Chuyển hướng đến thanh toán giả...',
+            html: '<p>Trang có thể mất vài giây để load vì đang thức dậy trên Render. Vui lòng chờ!</p>',
+            confirmButtonText: 'Tiếp tục',
             allowOutsideClick: false,
           }).then((result) => {
             if (result.isConfirmed) {
               this.ordersService.createFakePayment(res.data._id || res.data.id).subscribe({
-                next: (payRes: any) => {
-                  const payUrl = payRes?.payUrl || payRes?.data?.payUrl;
+                next: (fakeRes: any) => {
+                  const payUrl = fakeRes?.data?.payUrl || fakeRes?.payUrl;
                   if (payUrl) {
-                    window.location.href = payUrl; // Chuyển sang PayFake
+                    window.location.href = payUrl; // Redirect
                   }
                 },
                 error: () => {
-                  Swal.fire('Lỗi', 'Không thể tạo link Fake Payment', 'error');
+                  Swal.fire(
+                    'Lỗi',
+                    'Không thể tạo link thanh toán giả. Kiểm tra console backend!',
+                    'error'
+                  );
                 },
               });
             }
