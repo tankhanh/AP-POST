@@ -446,37 +446,33 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
         // createOrder.ts – trong hàm submit(), phần VNPAY
         if (paymentMethod === 'VNPAY') {
-          // Bước 1: Tạo đơn thành công → hiện popup như bình thường
+          // vẫn giữ tên để không sửa UI
           Swal.fire({
             icon: 'success',
             title: 'Tạo đơn thành công!',
             html: `
-      <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
+      <p class="mb-3 fs-5">Mã vận đơn:</p>
       <h2 class="display-5 fw-bold text-primary">${this.createdWaybill}</h2>
-      <p class="text-muted mt-4 small">
-        Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
-      </p>
+      <p class="mt-3">Sẵn sàng chuyển sang thanh toán online</p>
     `,
-            confirmButtonText: 'Thanh toán VNPay ngay',
+            confirmButtonText: 'Thanh toán ngay',
             allowOutsideClick: false,
           }).then((result) => {
             if (result.isConfirmed) {
-              // Bước 2: Người dùng bấm nút → mới gọi VNPay
-              this.ordersService.createVnpayPayment(res.data._id || res.data.id).subscribe({
-                next: (vnpayRes: any) => {
-                  const payUrl = vnpayRes?.data?.payUrl || vnpayRes?.payUrl;
+              this.ordersService.createPayfakePayment(res.data._id || res.data.id).subscribe({
+                next: (payRes: any) => {
+                  const payUrl = payRes?.payUrl || payRes?.data?.payUrl;
                   if (payUrl) {
-                    window.location.href = payUrl;
+                    window.location.href = payUrl; // Chuyển sang PayFake
                   }
                 },
                 error: () => {
-                  Swal.fire('Lỗi', 'Không thể tạo link VNPay', 'error');
+                  Swal.fire('Lỗi', 'Không thể tạo link thanh toán', 'error');
                 },
               });
             }
           });
-
-          return; // Dừng lại, không hiện popup lần 2
+          return;
         } else {
           // CASH / COD / BANK_TRANSFER → hiện thông báo bình thường
           Swal.fire({

@@ -24,6 +24,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { OrdersModule } from './modules/orders/orders.module';
 import { LocationModule } from './modules/location/location.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { PayfakeModule } from './modules/payfake/payfake.module';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     NotificationsModule,
     LocationModule,
     DashboardModule,
+    PayfakeModule
   ],
   controllers: [AppController],
   providers: [AppService],

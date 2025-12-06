@@ -94,4 +94,14 @@ export class OrdersService {
   createVnpayPayment(orderId: string): Observable<any> {
     return this.http.post(this.api_url, { orderId }, { headers: this.getHeaders() });
   }
+
+  createPayfakePayment(orderId: string): Observable<any> {
+    return this.http.post(
+      `${env.baseUrl}/payfake`,
+      { orderId },
+      {
+        headers: this.getHeaders(),
+      }
+    );
+  }
 }
