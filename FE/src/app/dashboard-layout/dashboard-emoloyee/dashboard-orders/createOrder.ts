@@ -440,7 +440,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
         this.loading = false;
         this.createdWaybill = res.data?.waybill || res.waybill;
 
-        // LẤY PHƯƠNG THỨC THANH TOÁN TỪ FORM
         const paymentMethod = this.orderForm.get('paymentMethod')?.value;
 
         if (paymentMethod === 'FAKE') {
