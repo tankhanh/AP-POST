@@ -3,24 +3,30 @@ import {
   Post,
   Body,
   BadRequestException,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Order } from '../orders/schemas/order.schemas';
 import { Model } from 'mongoose';
 import { PaymentsService } from '../payments/payments.service';
 import { Public } from 'src/health/decorator/customize';
+import { FakePaymentService } from './payfake.service';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('fake-payment')
 export class FakePaymentController {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<Order>,
     private paymentsService: PaymentsService,
+    private fakePaymentService: FakePaymentService,
+    private configService: ConfigService,
   ) {}
 
-  @Post('')
+  @Post('create') // Đổi tên endpoint để rõ (hoặc giữ '', nhưng thêm /create cho phân biệt)
   @Public()
-  async create(@Body() body: { orderId: string }) {
-    const { orderId } = body;
+  async create(@Body() body: { orderId: string; customerEmail?: string }) { // Thêm email nếu cần
+    const { orderId, customerEmail = 'test@example.com' } = body;
     if (!orderId) throw new BadRequestException('orderId required');
 
     const order = await this.orderModel.findById(orderId);
@@ -37,24 +43,51 @@ export class FakePaymentController {
       transactionId: order.waybill || order._id.toString(),
     });
 
-    // Simulate thanh toán (80% thành công)
-    const isSuccess = Math.random() > 0.2;
+    // Build URL redirect đến fake gateway
+    const orderInfo = `Order ${order.waybill || orderId}`;
+    const paymentUrl = this.fakePaymentService.buildPaymentUrl(
+      orderId,
+      amount,
+      orderInfo,
+      customerEmail, // Từ body hoặc order.email
+    );
 
-    setTimeout(async () => {
-      const status = isSuccess ? 'paid' : 'failed';
-      await this.paymentsService.updateStatus(orderId, status);
-
-      if (isSuccess) {
-        await this.orderModel.updateOne({ _id: orderId }, { status: 'CONFIRMED' });
-      }
-    }, 2000); // Giả lập thời gian xử lý 2s
-
+    // Redirect ngay (hoặc return URL cho frontend handle)
     return {
       success: true,
-      message: isSuccess
-        ? 'Thanh toán giả thành công! Đơn hàng đã được xác nhận.'
-        : 'Thanh toán giả thất bại (test ngẫu nhiên)',
-      redirect: false,
+      message: 'Redirecting to fake payment gateway...',
+      paymentUrl, // Frontend sẽ window.location.href = paymentUrl
+      redirect: true, // Flag để frontend biết redirect
     };
+  }
+
+  @Get('return') // Handle callback từ gateway (GET params)
+  @Public()
+  async handleReturn(@Query() query: Record<string, any>) {
+    const { vnp_TxnRef: orderId, vnp_ResponseCode: responseCode, vnp_SecureHash: signature } = query;
+    if (!orderId) throw new BadRequestException('Missing orderId');
+
+    const order = await this.orderModel.findById(orderId);
+    if (!order) throw new BadRequestException('Order not found');
+
+    const secret = 'FAKE_SECRET'; // Từ config
+    const isValid = this.fakePaymentService.verifyReturnSignature(query, signature, secret);
+
+    if (!isValid) {
+      throw new BadRequestException('Invalid signature');
+    }
+
+    const status = responseCode === '00' ? 'paid' : 'failed'; // Giả sử 00 = success, theo VNPay-like
+    await this.paymentsService.updateStatus(orderId, status);
+
+    if (status === 'paid') {
+      await this.orderModel.updateOne({ _id: orderId }, { status: 'CONFIRMED' });
+      // Optional: Gửi email confirm (tích hợp nodemailer nếu cần)
+    }
+
+    // Redirect về frontend success/fail page (hoặc return JSON nếu API)
+    const returnPage = `${this.configService.get('FRONTEND_URL') || 'https://your-frontend.com'}/order-success?orderId=${orderId}&status=${status}`;
+    // Trong real: res.redirect(returnPage); nhưng vì NestJS controller, return { redirect: returnPage }
+    return { success: status === 'paid', message: `Payment ${status}!`, redirect: returnPage };
   }
 }

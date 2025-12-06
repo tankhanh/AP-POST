@@ -1,65 +1,57 @@
 // src/modules/payments/fake-payment.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto'; // Nếu fake cần hash, giữ nguyên; nếu không cần, xóa
+import * as crypto from 'crypto';
 
 @Injectable()
 export class FakePaymentService {
   constructor(private configService: ConfigService) {}
 
-  private FAKE_BASE_URL =
-    'https://payfake-appost.onrender.com/api/v1/payment/card';
+  private FAKE_BASE_URL = 'https://payfake-appost.onrender.com/api/v1/payment/card'; // Hoặc /phone nếu cần
 
-  private sortObject(obj: Record<string, any>): Record<string, string> {
-    // Giữ nguyên từ VnpayService nếu cần sort params
-    const sorted: Record<string, string> = {};
-    Object.keys(obj)
-      .sort()
-      .forEach((key) => {
-        const value = obj[key];
-        if (value !== undefined && value !== null) {
-          sorted[key] = value.toString();
-        }
-      });
-    return sorted;
-  }
-
-  buildPaymentUrl(orderId: string, amount: number, orderInfo: string): string {
+  buildPaymentUrl(orderId: string, amount: number, orderInfo: string, customerEmail: string): string {
     const createDate = new Date();
     const inputData: Record<string, string> = {
-      vnp_Version: '2.1.0',
-      vnp_Command: 'pay',
-      vnp_TmnCode: 'FAKE_TMNCODE',
-      vnp_Amount: (amount * 100).toString(), // Đúng
-      vnp_CreateDate: this.formatDate(createDate), // Fix format nếu cần
-      vnp_CurrCode: 'VND',
-      vnp_IpAddr: '127.0.0.1', // Thay bằng req.ip nếu có trong controller
-      vnp_Locale: 'vn',
-      vnp_OrderInfo: orderInfo,
-      vnp_OrderType: '250000',
-      vnp_ReturnUrl:
-        this.configService.get<string>('FAKE_RETURN_URL') ||
-        'https://your-backend-domain/fake-payment/return', // Thay bằng URL thực (thêm vào .env: FAKE_RETURN_URL=https://ap-post-api.onrender.com/api/v1/fake-payment/return)
-      vnp_TxnRef: orderId.substring(0, 30),
+      app_name: 'APPost', // Theo repo sample
+      service: 'Shipping Service',
+      customer_email: customerEmail || 'test@example.com',
+      amount: amount.toFixed(2), // USD hoặc VND, theo repo dùng string
+      currency: 'VND',
+      order_id: orderId.substring(0, 30), // TxnRef
+      order_info: orderInfo,
+      return_url: this.configService.get<string>('FAKE_RETURN_URL') || 'https://your-backend-domain.com/api/v1/fake-payment/return',
+      // Không cần card details ở đây (sẽ nhập trên gateway form)
+      // Nếu muốn prefill, thêm nhưng repo expect POST body sau redirect (giả sử query cho đơn giản)
     };
 
-    // Hash: Nếu repo không yêu cầu, bỏ phần này hoặc dùng fake hash
-    const hashData = Object.keys(inputData)
-      .sort()
-      .map((key) => `${key}=${encodeURIComponent(inputData[key])}`)
+    // Fake hash đơn giản (dùng secret từ .env nếu cần verify)
+    const secret = this.configService.get<string>('FAKE_SECRET') || 'FAKE_SECRET';
+    const hashData = Object.entries(inputData)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
       .join('&');
-    const secureHash = crypto
-      .createHmac('sha512', 'FAKE_SECRET')
-      .update(hashData)
-      .digest('hex'); // Nếu cần, thay 'FAKE_SECRET' bằng giá trị từ .env
+    const secureHash = crypto.createHmac('sha256', secret).update(hashData).digest('hex'); // Đổi sha512 → sha256 cho đơn giản
 
     const params = new URLSearchParams(inputData);
-    params.append('vnp_SecureHash', secureHash);
+    params.append('vnp_SecureHash', secureHash); // Giữ tên cho tương thích, hoặc đổi thành 'signature'
 
-    return `${this.FAKE_BASE_URL}/payment?${params.toString()}`;
+    return `${this.FAKE_BASE_URL}?${params.toString()}`;
+  }
+
+  // Method để verify return từ gateway (gọi từ return controller)
+  verifyReturnSignature(data: Record<string, any>, receivedSignature: string, secret: string): boolean {
+    const inputData = { ...data };
+    delete inputData.vnp_SecureHash; // Bỏ signature khi hash lại
+    const sortedData = Object.entries(inputData)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${encodeURIComponent(value.toString())}`)
+      .join('&');
+    const computedHash = crypto.createHmac('sha256', secret).update(sortedData).digest('hex');
+    return computedHash === receivedSignature;
   }
 
   private formatDate(date: Date): string {
+    // Giữ nếu cần, nhưng repo không dùng
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -67,9 +59,5 @@ export class FakePaymentService {
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const seconds = date.getSeconds().toString().padStart(2, '0');
     return `${year}${month}${day}${hours}${minutes}${seconds}`;
-  }
-
-  verifySignature(data: Record<string, any>, signature: string): boolean {
-    return true; // Luôn true cho test, sau này implement nếu cần
   }
 }

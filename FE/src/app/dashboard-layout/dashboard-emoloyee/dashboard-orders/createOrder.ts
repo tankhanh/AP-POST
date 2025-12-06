@@ -443,27 +443,31 @@ export class CreateOrder implements OnInit, AfterViewInit {
         const paymentMethod = this.orderForm.get('paymentMethod')?.value;
 
         if (paymentMethod === 'FAKE') {
-          Swal.fire({
-            icon: 'info',
-            title: 'Đang xử lý thanh toán giả...',
-            html: 'Vui lòng chờ 2-3 giây',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading(),
-          });
-
+          // Gọi fake payment create (truyền orderId + email)
           this.ordersService.createFakePayment(res.data._id).subscribe({
             next: (fakeRes: any) => {
-              Swal.close();
-              if (fakeRes.message.includes('thành công')) {
-                Swal.fire('Thành công!', fakeRes.message, 'success').then(() => {
-                  this.router.navigate(['/orders']);
+              if (fakeRes.success && fakeRes.paymentUrl) {
+                // Redirect ngay đến gateway
+                Swal.fire({
+                  icon: 'info',
+                  title: 'Redirecting to payment...',
+                  text: 'You will be redirected to the fake payment gateway.',
+                  allowOutsideClick: false,
+                  timer: 2000,
+                  timerProgressBar: true,
+                  didOpen: () => {
+                    setTimeout(() => {
+                      window.location.href = fakeRes.paymentUrl; // Hoặc router.navigateByUrl(fakeRes.paymentUrl)
+                    }, 1500);
+                  },
                 });
               } else {
-                Swal.fire('Thất bại', fakeRes.message, 'warning');
+                Swal.fire('Error', fakeRes.message || 'Failed to initiate payment', 'error');
               }
             },
-            error: () => {
-              Swal.fire('Lỗi', 'Không thể xử lý thanh toán giả', 'error');
+            error: (err) => {
+              this.loading = false;
+              Swal.fire('Error', 'Failed to start payment', 'error');
             },
           });
           return;
