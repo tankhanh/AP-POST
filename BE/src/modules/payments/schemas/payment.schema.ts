@@ -3,6 +3,13 @@ import mongoose, { HydratedDocument } from 'mongoose';
 
 export type PaymentDocument = HydratedDocument<Payment>;
 
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  FAILED = 'failed',
+  REFUNDED = 'refunded',
+}
+
 @Schema({ timestamps: true })
 export class Payment {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true })
@@ -13,15 +20,15 @@ export class Payment {
 
   @Prop({
     required: true,
-    enum: ['COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'CREDIT_CARD'],
+    enum: ['COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'CASH'],
   })
   method: string;
 
   @Prop({
-    default: 'pending',
-    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: PaymentStatus.PENDING,
+    enum: PaymentStatus,
   })
-  status: string;
+  status: PaymentStatus;
 
   @Prop({ unique: true, sparse: true })
   transactionId?: string;
@@ -34,12 +41,9 @@ export class Payment {
 
   @Prop({ type: Object })
   createdBy?: { _id: mongoose.Types.ObjectId; email: string };
-
-  @Prop({ type: Object })
-  updatedBy?: { _id: mongoose.Types.ObjectId; email: string };
-
-  @Prop({ type: Object })
-  deletedBy?: { _id: mongoose.Types.ObjectId; email: string };
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);
+
+// Index để tìm theo transactionId nhanh
+PaymentSchema.index({ transactionId: 1 });

@@ -96,4 +96,13 @@ export class CreateOrderDto {
   @IsOptional()
   @IsEnum(['SENDER', 'RECEIVER'])
   shippingFeePayer?: 'SENDER' | 'RECEIVER' = 'SENDER';
+
+  @ApiProperty({
+    example: 'CASH',
+    enum: ['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER'],
+    description: 'Phương thức thanh toán (CASH = trả tại quầy, COD = thu hộ)',
+  })
+  @IsOptional()
+  @IsEnum(['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER'])
+  paymentMethod?: string;
 }

@@ -6,12 +6,14 @@ import { Order, OrderSchema } from './schemas/order.schemas';
 import { LocationModule } from '../location/location.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { MailService } from 'src/mail/mail.service';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
     LocationModule,
-    PricingModule
+    PricingModule,
+    PaymentsModule
   ],
   controllers: [OrdersController],
   providers: [OrdersService,MailService],

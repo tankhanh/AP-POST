@@ -36,6 +36,8 @@ export class CreateOrder implements OnInit, AfterViewInit {
   senderPay = 0;
   receiverPay = 0;
 
+  paymentNote = '';
+
   constructor(
     private fb: FormBuilder,
     private ordersService: OrdersService,
@@ -130,6 +132,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
       deliveryLat: [null],
       deliveryLng: [null],
       shippingFeePayer: ['SENDER'],
+      paymentMethod: ['CASH'],
     });
   }
 
@@ -266,8 +269,27 @@ export class CreateOrder implements OnInit, AfterViewInit {
   private updatePayments() {
     const cod = Number(this.orderForm.value.codValue || 0);
     const payer = this.orderForm.value.shippingFeePayer || 'SENDER';
-    this.senderPay = payer === 'SENDER' ? this.shippingFee : 0;
-    this.receiverPay = cod + (payer === 'RECEIVER' ? this.shippingFee : 0);
+    const method = this.orderForm.value.paymentMethod || 'CASH';
+
+    if (method === 'CASH') {
+      this.senderPay = this.shippingFee;
+      this.receiverPay = cod;
+    } else if (method === 'COD') {
+      this.senderPay = 0;
+      this.receiverPay = cod + this.shippingFee;
+    } else if (['MOMO', 'VNPAY', 'BANK_TRANSFER'].includes(method)) {
+      this.senderPay = cod + this.shippingFee; // người gửi trả hết
+      this.receiverPay = 0;
+    }
+
+    // Hiển thị thông báo
+    this.paymentNote = {
+      CASH: 'Người gửi trả phí ship tại quầy',
+      COD: 'Người nhận trả COD + phí (nếu có)',
+      MOMO: 'Thanh toán qua MoMo (người gửi trả hết)',
+      VNPAY: 'Thanh toán qua VNPay',
+      BANK_TRANSFER: 'Chuyển khoản trước',
+    }[method];
   }
 
   async calculateShippingFee() {
@@ -417,38 +439,69 @@ export class CreateOrder implements OnInit, AfterViewInit {
     this.ordersService.createOrder(data).subscribe({
       next: (res: any) => {
         this.loading = false;
+        this.createdWaybill = res.data?.waybill || res.waybill;
 
-        // Lấy mã vận đơn đúng như bạn đang làm
-        this.createdWaybill = res.data?.waybill || res.data?._id || res.waybill;
+        // LẤY PHƯƠNG THỨC THANH TOÁN TỪ FORM
+        const paymentMethod = this.orderForm.get('paymentMethod')?.value;
 
-        // DÙNG CHÍNH HÀM Swal bạn đã viết sẵn (không cần showSuccessSwal)
-        Swal.fire({
-          icon: 'success',
-          title: 'Tạo đơn thành công!',
-          showCloseButton: true,
-          html: `
-          <div class="text-center">
-            <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
-            <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill}</h2>
-            <p class="text-muted mt-4 small">
-              Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
-            </p>
-          </div>
-        `,
-          allowOutsideClick: false,
-          showConfirmButton: true,
-          confirmButtonText: 'Tạo đơn mới',
-        }).then((result) => {
-          if (result.isConfirmed) {
+        // createOrder.ts – trong hàm submit(), phần VNPAY
+        if (paymentMethod === 'VNPAY') {
+          // Bước 1: Tạo đơn thành công → hiện popup như bình thường
+          Swal.fire({
+            icon: 'success',
+            title: 'Tạo đơn thành công!',
+            html: `
+      <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
+      <h2 class="display-5 fw-bold text-primary">${this.createdWaybill}</h2>
+      <p class="text-muted mt-4 small">
+        Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
+      </p>
+    `,
+            confirmButtonText: 'Thanh toán VNPay ngay',
+            allowOutsideClick: false,
+          }).then((result) => {
+            if (result.isConfirmed) {
+              // Bước 2: Người dùng bấm nút → mới gọi VNPay
+              this.ordersService.createVnpayPayment(res.data._id || res.data.id).subscribe({
+                next: (vnpayRes: any) => {
+                  const payUrl = vnpayRes?.data?.payUrl || vnpayRes?.payUrl;
+                  if (payUrl) {
+                    window.location.href = payUrl;
+                  }
+                },
+                error: () => {
+                  Swal.fire('Lỗi', 'Không thể tạo link VNPay', 'error');
+                },
+              });
+            }
+          });
+
+          return; // Dừng lại, không hiện popup lần 2
+        } else {
+          // CASH / COD / BANK_TRANSFER → hiện thông báo bình thường
+          Swal.fire({
+            icon: 'success',
+            title: 'Tạo đơn thành công!',
+            html: `
+        <div class="text-center">
+          <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
+          <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill}</h2>
+          <p class="text-muted mt-4 small">
+            Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
+          </p>
+        </div>
+      `,
+            confirmButtonText: 'Tạo đơn mới',
+          }).then(() => {
             this.orderForm.reset();
-            this.orderForm.patchValue({ serviceCode: 'STD', weightKg: 1, codValue: 0 });
-            this.pickupCommunes = [];
-            this.deliveryCommunes = [];
-            this.shippingFee = 0;
-            this.totalPrice = 0;
-            this.createdWaybill = '';
-          }
-        });
+            this.orderForm.patchValue({
+              serviceCode: 'STD',
+              weightKg: 1,
+              codValue: 0,
+              paymentMethod: 'CASH',
+            });
+          });
+        }
       },
       error: (err) => {
         this.loading = false;

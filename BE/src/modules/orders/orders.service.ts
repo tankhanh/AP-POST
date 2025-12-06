@@ -22,6 +22,10 @@ import { ProvinceCode } from 'src/types/location.type';
 import { Tracking } from '../tracking/schemas/tracking.schemas';
 import { MailService } from 'src/mail/mail.service';
 
+// Thêm vào đầu file (nếu chưa có)
+import { PaymentsService } from '../payments/payments.service';
+import { PaymentStatus } from '../payments/schemas/payment.schema'; // sẽ tạo sau
+
 @Injectable()
 export class OrdersService {
   private trackingModel: any;
@@ -36,6 +40,7 @@ export class OrdersService {
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
     @InjectConnection() private connection: Connection,
     private pricingService: PricingService,
+    private paymentsService: PaymentsService,
     private mailService: MailService,
   ) {
     this.trackingModel = this.connection.model(Tracking.name);
@@ -174,6 +179,32 @@ export class OrdersService {
       } catch (err: any) {
         console.log('Gửi email thất bại:', err.message);
       }
+    }
+
+    // === TẠO PAYMENT TỰ ĐỘNG ===
+    let payment = null;
+    try {
+      const method =
+        dto.paymentMethod ||
+        (dto.shippingFeePayer === 'SENDER' ? 'CASH' : 'COD');
+
+      payment = await this.paymentsService.createPaymentForOrder(
+        newOrder._id.toString(),
+        {
+          method,
+          amount: method === 'CASH' ? senderPayAmount : receiverPayAmount,
+          status: method === 'COD' ? 'pending' : 'paid', // COD thì pending, còn lại paid ngay
+          createdBy: { _id: user._id, email: user.email },
+        },
+      );
+
+      console.log('Payment created:', payment._id, payment.method);
+    } catch (err: any) {
+      console.error(
+        'Tạo payment thất bại (không ảnh hưởng order):',
+        err.message,
+      );
+      // Không throw → vẫn cho tạo đơn thành công
     }
 
     return newOrder;

@@ -21,12 +21,15 @@ import { IUser } from 'src/types/user.interface';
 import { OrderStatus } from './schemas/order.schemas';
 import { OrdersService } from './orders.service';
 import { Roles } from 'src/health/decorator/roles.decorator';
+import { PaymentsService } from '../payments/payments.service';
 
 @ApiTags('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+  ) {}
 
   @Post()
   @ResponseMessage('Tạo đơn hàng mới')

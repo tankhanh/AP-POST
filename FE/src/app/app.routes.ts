@@ -41,10 +41,13 @@ import { StaffTrashComponent } from './dashboard-layout/dashboard-admin/staffs/s
 import { DashboardPricingComponent } from './dashboard-layout/dashboard-admin/dashboard-pricing/dashboard-pricing';
 import { CalculateShippingComponent } from './dashboard-layout/user-calculator/user-calculator';
 import { SupportComponent } from './dashboard-layout/dashboard-admin/support/support.component';
+import { VnpaySuccessComponent } from './payment/vnpay-success/vnpay-success';
 
 export const routes: Routes = [
   { path: 'tracking', component: TrackingComponent },
   { path: 'calculator', component: CalculateShippingComponent },
+  { path: 'payment/vnpay-success', component: VnpaySuccessComponent },
+  
   // ----- USER LAYOUT -----
   {
     path: '',
