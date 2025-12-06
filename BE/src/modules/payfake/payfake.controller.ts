@@ -23,7 +23,7 @@ export class FakePaymentController {
     private configService: ConfigService,
   ) {}
 
-  @Post('create')
+  @Post()
   @Public()
   async create(@Body() body: { orderId: string; customerEmail?: string }) {
     const { orderId, customerEmail = 'test@example.com' } = body;
