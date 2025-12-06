@@ -446,28 +446,26 @@ export class CreateOrder implements OnInit, AfterViewInit {
         if (paymentMethod === 'FAKE') {
           Swal.fire({
             icon: 'info',
-            title: 'Chuyển hướng đến thanh toán giả...',
-            html: '<p>Trang có thể mất vài giây để load vì đang thức dậy trên Render. Vui lòng chờ!</p>',
-            confirmButtonText: 'Tiếp tục',
+            title: 'Đang xử lý thanh toán giả...',
+            html: 'Vui lòng chờ 2-3 giây',
             allowOutsideClick: false,
-          }).then((result) => {
-            if (result.isConfirmed) {
-              this.ordersService.createFakePayment(res.data._id || res.data.id).subscribe({
-                next: (fakeRes: any) => {
-                  const payUrl = fakeRes?.data?.payUrl || fakeRes?.payUrl;
-                  if (payUrl) {
-                    window.location.href = payUrl;
-                  }
-                },
-                error: () => {
-                  Swal.fire(
-                    'Lỗi',
-                    'Không thể tạo link thanh toán giả. Kiểm tra console backend!',
-                    'error'
-                  );
-                },
-              });
-            }
+            didOpen: () => Swal.showLoading(),
+          });
+
+          this.ordersService.createFakePayment(res.data._id).subscribe({
+            next: (fakeRes: any) => {
+              Swal.close();
+              if (fakeRes.message.includes('thành công')) {
+                Swal.fire('Thành công!', fakeRes.message, 'success').then(() => {
+                  this.router.navigate(['/orders']);
+                });
+              } else {
+                Swal.fire('Thất bại', fakeRes.message, 'warning');
+              }
+            },
+            error: () => {
+              Swal.fire('Lỗi', 'Không thể xử lý thanh toán giả', 'error');
+            },
           });
           return;
         } else {
