@@ -456,7 +456,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
                 next: (fakeRes: any) => {
                   const payUrl = fakeRes?.data?.payUrl || fakeRes?.payUrl;
                   if (payUrl) {
-                    window.location.href = payUrl; // Redirect
+                    window.location.href = payUrl;
                   }
                 },
                 error: () => {
