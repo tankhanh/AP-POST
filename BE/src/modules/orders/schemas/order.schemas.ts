@@ -123,6 +123,13 @@ export class Order {
 
   @Prop({ required: false, min: 0 })
   totalOrderValue: number; // Tổng codValue + shippingFee
+
+  @Prop({
+    type: String,
+    enum: ['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE'],
+    default: 'CASH',
+  })
+  paymentMethod?: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

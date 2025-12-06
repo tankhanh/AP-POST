@@ -23,19 +23,34 @@ export class FakePaymentController {
     private configService: ConfigService,
   ) {}
 
-  @Post() // Đổi tên endpoint để rõ (hoặc giữ '', nhưng thêm /create cho phân biệt)
+  @Post('create')
   @Public()
-  async create(@Body() body: { orderId: string; customerEmail?: string }) { // Thêm email nếu cần
+  async create(@Body() body: { orderId: string; customerEmail?: string }) {
     const { orderId, customerEmail = 'test@example.com' } = body;
     if (!orderId) throw new BadRequestException('orderId required');
 
     const order = await this.orderModel.findById(orderId);
     if (!order) throw new BadRequestException('Order not found');
 
-    const amount = order.senderPayAmount || order.totalOrderValue || 0;
-    if (amount <= 0) throw new BadRequestException('Invalid amount');
+    // FIX CHÍNH Ở ĐÂY
+    const codValue = Number(order.codValue) || 0;
+    const shippingFee = Number(order.shippingFee) || 0;
+    const paymentMethod = order.paymentMethod || 'CASH';
 
-    // Tạo payment pending
+    let amount = 0;
+    if (['FAKE', 'MOMO', 'BANK_TRANSFER'].includes(paymentMethod)) {
+      amount = codValue + shippingFee;
+    } else if (paymentMethod === 'COD') {
+      amount = 0;
+    } else {
+      amount = shippingFee;
+    }
+
+    if (amount <= 0) {
+      throw new BadRequestException('Không có khoản nào cần thanh toán online');
+    }
+    // END FIX
+
     await this.paymentsService.createPaymentForOrder(order._id.toString(), {
       method: 'FAKE',
       amount,
@@ -43,35 +58,39 @@ export class FakePaymentController {
       transactionId: order.waybill || order._id.toString(),
     });
 
-    // Build URL redirect đến fake gateway
-    const orderInfo = `Order ${order.waybill || orderId}`;
     const paymentUrl = this.fakePaymentService.buildPaymentUrl(
-      orderId,
+      order._id.toString(),
       amount,
-      orderInfo,
-      customerEmail, // Từ body hoặc order.email
+      `Thanh toán đơn ${order.waybill || orderId} - APPost`,
+      customerEmail,
     );
 
-    // Redirect ngay (hoặc return URL cho frontend handle)
     return {
       success: true,
-      message: 'Redirecting to fake payment gateway...',
-      paymentUrl, // Frontend sẽ window.location.href = paymentUrl
-      redirect: true, // Flag để frontend biết redirect
+      message: 'Chuyển hướng đến cổng thanh toán giả lập...',
+      paymentUrl,
     };
   }
 
   @Get('return') // Handle callback từ gateway (GET params)
   @Public()
   async handleReturn(@Query() query: Record<string, any>) {
-    const { vnp_TxnRef: orderId, vnp_ResponseCode: responseCode, vnp_SecureHash: signature } = query;
+    const {
+      vnp_TxnRef: orderId,
+      vnp_ResponseCode: responseCode,
+      vnp_SecureHash: signature,
+    } = query;
     if (!orderId) throw new BadRequestException('Missing orderId');
 
     const order = await this.orderModel.findById(orderId);
     if (!order) throw new BadRequestException('Order not found');
 
     const secret = 'FAKE_SECRET'; // Từ config
-    const isValid = this.fakePaymentService.verifyReturnSignature(query, signature, secret);
+    const isValid = this.fakePaymentService.verifyReturnSignature(
+      query,
+      signature,
+      secret,
+    );
 
     if (!isValid) {
       throw new BadRequestException('Invalid signature');
@@ -81,10 +100,19 @@ export class FakePaymentController {
     await this.paymentsService.updateStatus(orderId, status);
 
     if (status === 'paid') {
-      await this.orderModel.updateOne({ _id: orderId }, { status: 'CONFIRMED' });
+      await this.orderModel.updateOne(
+        { _id: orderId },
+        { status: 'CONFIRMED' },
+      );
     }
 
-    const returnPage = `${this.configService.get('FRONTEND_URL') || 'https://your-frontend.com'}/order-success?orderId=${orderId}&status=${status}`;
-    return { success: status === 'paid', message: `Payment ${status}!`, redirect: returnPage };
+    const returnPage = `${
+      this.configService.get('FRONTEND_URL') || 'https://your-frontend.com'
+    }/order-success?orderId=${orderId}&status=${status}`;
+    return {
+      success: status === 'paid',
+      message: `Payment ${status}!`,
+      redirect: returnPage,
+    };
   }
 }
