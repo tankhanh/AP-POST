@@ -184,19 +184,42 @@ export class OrdersService {
     // === TẠO PAYMENT TỰ ĐỘNG ===
     let payment = null;
     try {
-      const method =
-        dto.paymentMethod ||
-        (dto.shippingFeePayer === 'SENDER' ? 'CASH' : 'COD');
+      const method = dto.paymentMethod || 'CASH';
 
-      payment = await this.paymentsService.createPaymentForOrder(
-        newOrder._id.toString(),
-        {
-          method: method === 'VNPAY' ? 'FAKE' : method,
-          amount: method === 'CASH' ? senderPayAmount : receiverPayAmount,
-          status: method === 'COD' ? 'pending' : 'paid', // COD thì pending, còn lại paid ngay
-          createdBy: { _id: user._id, email: user.email },
-        },
-      );
+      if (['FAKE', 'MOMO', 'VNPAY', 'BANK_TRANSFER'].includes(method)) {
+        // Thanh toán online → tạo payment pending, không đánh dấu paid
+        payment = await this.paymentsService.createPaymentForOrder(
+          newOrder._id.toString(),
+          {
+            method,
+            amount: senderPayAmount, // Người gửi trả hết
+            status: 'pending', // Chưa thanh toán
+            createdBy: { _id: user._id, email: user.email },
+          },
+        );
+      } else if (method === 'CASH') {
+        // Trả tại quầy → tạo payment paid luôn
+        payment = await this.paymentsService.createPaymentForOrder(
+          newOrder._id.toString(),
+          {
+            method: 'CASH',
+            amount: senderPayAmount,
+            status: 'paid',
+            createdBy: { _id: user._id, email: user.email },
+          },
+        );
+      } else if (method === 'COD') {
+        // Thu hộ → tạo payment pending
+        payment = await this.paymentsService.createPaymentForOrder(
+          newOrder._id.toString(),
+          {
+            method: 'COD',
+            amount: receiverPayAmount,
+            status: 'pending',
+            createdBy: { _id: user._id, email: user.email },
+          },
+        );
+      }
 
       console.log('Payment created:', payment._id, payment.method);
     } catch (err: any) {
