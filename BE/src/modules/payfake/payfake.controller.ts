@@ -23,7 +23,7 @@ export class FakePaymentController {
     private configService: ConfigService,
   ) {}
 
-  @Post('create') // Đổi tên endpoint để rõ (hoặc giữ '', nhưng thêm /create cho phân biệt)
+  @Post() // Đổi tên endpoint để rõ (hoặc giữ '', nhưng thêm /create cho phân biệt)
   @Public()
   async create(@Body() body: { orderId: string; customerEmail?: string }) { // Thêm email nếu cần
     const { orderId, customerEmail = 'test@example.com' } = body;
