@@ -77,17 +77,14 @@ export class FakePaymentController {
       throw new BadRequestException('Invalid signature');
     }
 
-    const status = responseCode === '00' ? 'paid' : 'failed'; // Giả sử 00 = success, theo VNPay-like
+    const status = responseCode === '00' ? 'paid' : 'failed';
     await this.paymentsService.updateStatus(orderId, status);
 
     if (status === 'paid') {
       await this.orderModel.updateOne({ _id: orderId }, { status: 'CONFIRMED' });
-      // Optional: Gửi email confirm (tích hợp nodemailer nếu cần)
     }
 
-    // Redirect về frontend success/fail page (hoặc return JSON nếu API)
     const returnPage = `${this.configService.get('FRONTEND_URL') || 'https://your-frontend.com'}/order-success?orderId=${orderId}&status=${status}`;
-    // Trong real: res.redirect(returnPage); nhưng vì NestJS controller, return { redirect: returnPage }
     return { success: status === 'paid', message: `Payment ${status}!`, redirect: returnPage };
   }
 }
