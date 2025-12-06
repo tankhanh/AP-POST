@@ -277,7 +277,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     } else if (method === 'COD') {
       this.senderPay = 0;
       this.receiverPay = cod + this.shippingFee;
-    } else if (['MOMO', 'VNPAY', 'BANK_TRANSFER'].includes(method)) {
+    } else if (['MOMO', 'FAKE', 'BANK_TRANSFER'].includes(method)) {
       this.senderPay = cod + this.shippingFee; // người gửi trả hết
       this.receiverPay = 0;
     }
@@ -286,8 +286,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     this.paymentNote = {
       CASH: 'Người gửi trả phí ship tại quầy',
       COD: 'Người nhận trả COD + phí (nếu có)',
-      MOMO: 'Thanh toán qua MoMo (người gửi trả hết)',
-      VNPAY: 'Thanh toán qua VNPay',
+      FAKE: 'Thanh toán qua Fake Gateway (test)',
       BANK_TRANSFER: 'Chuyển khoản trước',
     }[method];
   }
@@ -445,7 +444,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
         const paymentMethod = this.orderForm.get('paymentMethod')?.value;
 
         // createOrder.ts – trong hàm submit(), phần VNPAY
-        if (paymentMethod === 'VNPAY') {
+        if (paymentMethod === 'FAKE') {
           // vẫn giữ tên để không sửa UI
           Swal.fire({
             icon: 'success',
@@ -455,11 +454,11 @@ export class CreateOrder implements OnInit, AfterViewInit {
       <h2 class="display-5 fw-bold text-primary">${this.createdWaybill}</h2>
       <p class="mt-3">Sẵn sàng chuyển sang thanh toán online</p>
     `,
-            confirmButtonText: 'Thanh toán ngay',
+            confirmButtonText: 'Thanh toán Fake ngay',
             allowOutsideClick: false,
           }).then((result) => {
             if (result.isConfirmed) {
-              this.ordersService.createPayfakePayment(res.data._id || res.data.id).subscribe({
+              this.ordersService.createFakePayment(res.data._id || res.data.id).subscribe({
                 next: (payRes: any) => {
                   const payUrl = payRes?.payUrl || payRes?.data?.payUrl;
                   if (payUrl) {
@@ -467,7 +466,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
                   }
                 },
                 error: () => {
-                  Swal.fire('Lỗi', 'Không thể tạo link thanh toán', 'error');
+                  Swal.fire('Lỗi', 'Không thể tạo link Fake Payment', 'error');
                 },
               });
             }

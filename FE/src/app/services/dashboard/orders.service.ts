@@ -6,7 +6,7 @@ import { env } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   private readonly API_URL = `${env.baseUrl}/orders`;
-  private readonly api_url = `${env.baseUrl}/vnpay`;
+  private readonly api_url = `${env.baseUrl}/fake-payment`;
   private readonly PRICING_URL = `${env.baseUrl}/pricing/calculate`;
 
   constructor(private http: HttpClient) {}
@@ -95,13 +95,7 @@ export class OrdersService {
     return this.http.post(this.api_url, { orderId }, { headers: this.getHeaders() });
   }
 
-  createPayfakePayment(orderId: string): Observable<any> {
-    return this.http.post(
-      `${env.baseUrl}/payfake`,
-      { orderId },
-      {
-        headers: this.getHeaders(),
-      }
-    );
+  createFakePayment(orderId: string): Observable<any> {
+    return this.http.post(this.api_url, { orderId }, { headers: this.getHeaders() });
   }
 }

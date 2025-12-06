@@ -191,7 +191,7 @@ export class OrdersService {
       payment = await this.paymentsService.createPaymentForOrder(
         newOrder._id.toString(),
         {
-          method,
+          method: method === 'VNPAY' ? 'FAKE' : method,
           amount: method === 'CASH' ? senderPayAmount : receiverPayAmount,
           status: method === 'COD' ? 'pending' : 'paid', // COD thì pending, còn lại paid ngay
           createdBy: { _id: user._id, email: user.email },

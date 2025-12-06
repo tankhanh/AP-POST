@@ -156,14 +156,14 @@
             <option value="CASH">Trả tiền tại quầy (người gửi)</option>
             <option value="COD">Thu hộ COD (người nhận)</option>
             <option value="BANK_TRANSFER">Chuyển khoản ngân hàng</option>
-            <option value="VNPAY" class="text-primary fw-bold">
-              Thanh toán VNPay (người gửi trả hết)
+            <option value="FAKE" class="text-primary fw-bold">
+              Thanh toán Fake (test - người gửi trả hết)
             </option>
           </select>
           <small class="text-muted">
             {{
-              orderForm.get('paymentMethod')?.value === 'VNPAY'
-                ? 'Thanh toán online an toàn qua VNPay – chuyển ngay sang trang thanh toán'
+              orderForm.get('paymentMethod')?.value === 'FAKE'
+                ? 'Thanh toán fake để test – chuyển ngay sang trang thanh toán giả'
                 : paymentNote
             }}
           </small>

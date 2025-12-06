@@ -1,31 +1,30 @@
-// src/modules/payfake/payfake.controller.ts
+// src/modules/payments/fake-payment.controller.ts
 import {
   Controller,
   Post,
   Body,
-  Get,
   Query,
   Res,
+  Get,
   BadRequestException,
-  HttpStatus,
 } from '@nestjs/common';
-import { PayfakeService } from './payfake.service';
-import { PaymentsService } from '../payments/payments.service';
-import { Order } from '../orders/schemas/order.schemas';
 import { InjectModel } from '@nestjs/mongoose';
+import { Order } from '../orders/schemas/order.schemas';
 import { Model } from 'mongoose';
-import { Response } from 'express';
 import { Public } from 'src/health/decorator/customize';
+import type { Response } from 'express';
+import { FakePaymentService } from './payfake.service';
+import { PaymentsService } from '../payments/payments.service';
 
-@Controller('payfake')
-export class PayfakeController {
+@Controller('fake-payment') // Thay 'vnpay' bằng 'fake-payment'
+export class FakePaymentController {
   constructor(
-    private payfakeService: PayfakeService,
+    private fakePaymentService: FakePaymentService,
     private paymentsService: PaymentsService,
     @InjectModel(Order.name) private orderModel: Model<Order>,
   ) {}
 
-  @Post()
+  @Post('')
   @Public()
   async create(@Body() body: { orderId: string }) {
     if (!body.orderId) throw new BadRequestException('orderId is required');
@@ -36,48 +35,83 @@ export class PayfakeController {
     const amount = order.senderPayAmount || order.totalOrderValue || 0;
     if (amount <= 0) throw new BadRequestException('Số tiền không hợp lệ');
 
-    const returnUrl = `${process.env.FRONTEND_URL}/payment/result`;
-
-    const payUrl = this.payfakeService.buildPaymentUrl(
-      order._id.toString(),
-      order.waybill,
+    const payUrl = this.fakePaymentService.buildPaymentUrl(
+      order.waybill || order._id.toString(),
       amount,
-      returnUrl,
+      `Thanh toan don hang ${order.waybill || order._id}`,
     );
 
-    // Tạo payment record
     await this.paymentsService.createPaymentForOrder(order._id.toString(), {
-      method: 'PAYFAKE',
+      method: 'FAKE',
       amount,
       status: 'pending',
-      transactionId: order.waybill,
+      transactionId: order.waybill || order._id.toString(),
     });
 
     return { success: true, payUrl };
   }
 
-  @Get('callback')
+  // IPN và Return: Giữ tương tự, nhưng dùng verifySignature của fake
+  @Get('ipn')
   @Public()
-  async callback(
-    @Query('orderId') orderId: string,
-    @Query('status') status: string,
-    @Res() res: Response,
-  ) {
-    if (!orderId || !status) {
-      return res.redirect(`${process.env.FRONTEND_URL}/payment/fail`);
-    }
+  async ipn(@Query() query: any, @Res() res: Response) {
+    const result = await this.handleCallback(query);
+    return res.status(200).json(result);
+  }
 
-    const order = await this.orderModel.findOne({ waybill: orderId }).lean();
-    if (!order) {
-      return res.redirect(`${process.env.FRONTEND_URL}/payment/fail`);
-    }
+  @Get('return')
+  @Public()
+  async return(@Query() query: any, @Res() res: Response) {
+    const result = await this.handleCallback(query);
 
-    if (status === 'success') {
-      await this.paymentsService.updatePaymentStatus(orderId, 'success');
-      return res.redirect(`${process.env.FRONTEND_URL}/payment/success?orderId=${orderId}`);
+    if (query.vnp_ResponseCode === '00') {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/payment/success?orderId=${query.vnp_TxnRef}`,
+      );
     } else {
-      await this.paymentsService.updatePaymentStatus(orderId, 'failed');
-      return res.redirect(`${process.env.FRONTEND_URL}/payment/fail`);
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/payment/fail?code=${query.vnp_ResponseCode}`,
+      );
+    }
+  }
+
+  private async handleCallback(params: any) {
+    const secureHash = params.vnp_SecureHash;
+    delete params.vnp_SecureHash;
+    delete params.vnp_SecureHashType;
+
+    if (!secureHash) {
+      return { RspCode: '99', Message: 'Missing signature' };
+    }
+
+    const isValid = this.fakePaymentService.verifySignature(params, secureHash);
+    if (!isValid) {
+      return { RspCode: '97', Message: 'Invalid signature' };
+    }
+
+    const orderId = params.vnp_TxnRef;
+    const amount = parseInt(params.vnp_Amount) / 100;
+    const responseCode = params.vnp_ResponseCode;
+
+    const order = await this.orderModel.findOne({
+      $or: [{ waybill: orderId }, { _id: orderId }],
+    });
+
+    if (!order) return { RspCode: '01', Message: 'Order not found' };
+    if (amount !== (order.senderPayAmount || order.totalOrderValue || 0))
+      return { RspCode: '04', Message: 'Invalid amount' };
+
+    const status = responseCode === '00' ? 'paid' : 'failed';
+    await this.paymentsService.updateStatus(orderId, status); // Sử dụng updateStatus hiện có
+
+    if (responseCode === '00') {
+      await this.orderModel.updateOne(
+        { _id: order._id },
+        { status: 'CONFIRMED' },
+      );
+      return { RspCode: '00', Message: 'Confirm Success' };
+    } else {
+      return { RspCode: '02', Message: 'Payment failed' };
     }
   }
 }
