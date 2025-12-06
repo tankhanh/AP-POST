@@ -443,9 +443,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
         // LẤY PHƯƠNG THỨC THANH TOÁN TỪ FORM
         const paymentMethod = this.orderForm.get('paymentMethod')?.value;
 
-        // createOrder.ts – trong hàm submit(), phần VNPAY
         if (paymentMethod === 'FAKE') {
-          // vẫn giữ tên để không sửa UI
           Swal.fire({
             icon: 'info',
             title: 'Chuyển hướng đến thanh toán giả...',
