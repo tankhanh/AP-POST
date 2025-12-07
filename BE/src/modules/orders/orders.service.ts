@@ -186,31 +186,22 @@ export class OrdersService {
     try {
       const method = dto.paymentMethod || 'CASH';
 
-      if (['FAKE', 'MOMO', 'VNPAY', 'BANK_TRANSFER'].includes(method)) {
-        // Thanh toán online → tạo payment pending, không đánh dấu paid
-        payment = await this.paymentsService.createPaymentForOrder(
+      if (method !== 'COD') {
+        const paymentAmount =
+          method === 'CASH' ? senderPayAmount : senderPayAmount + codValue;
+
+        await this.paymentsService.createPaymentForOrder(
           newOrder._id.toString(),
           {
             method,
-            amount: senderPayAmount, // Người gửi trả hết
-            status: 'pending', // Chưa thanh toán
+            amount: paymentAmount,
+            status: method === 'CASH' ? 'paid' : 'pending', // CASH thì paid luôn
             createdBy: { _id: user._id, email: user.email },
           },
         );
-      } else if (method === 'CASH') {
-        // Trả tại quầy → tạo payment paid luôn
-        payment = await this.paymentsService.createPaymentForOrder(
-          newOrder._id.toString(),
-          {
-            method: 'CASH',
-            amount: senderPayAmount,
-            status: 'paid',
-            createdBy: { _id: user._id, email: user.email },
-          },
-        );
-      } else if (method === 'COD') {
-        // Thu hộ → tạo payment pending
-        payment = await this.paymentsService.createPaymentForOrder(
+      } else {
+        // COD → tạo payment pending với số tiền người nhận sẽ trả
+        await this.paymentsService.createPaymentForOrder(
           newOrder._id.toString(),
           {
             method: 'COD',
