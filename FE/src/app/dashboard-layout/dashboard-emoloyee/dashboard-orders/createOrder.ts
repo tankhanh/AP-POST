@@ -76,7 +76,8 @@ export class CreateOrder implements OnInit, AfterViewInit {
         this.orderForm.get('weightKg')!.valueChanges,
         this.orderForm.get('serviceCode')!.valueChanges,
         this.orderForm.get('codValue')!.valueChanges,
-        this.orderForm.get('shippingFeePayer')!.valueChanges.pipe(startWith('SENDER'))
+        this.orderForm.get('shippingFeePayer')!.valueChanges.pipe(startWith('SENDER')),
+        this.orderForm.get('paymentMethod')!.valueChanges.pipe(startWith('CASH'))
       )
         .pipe(debounceTime(300))
         .subscribe(() => {
@@ -85,6 +86,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
       // Tính lần đầu
       this.calculateShippingFee();
+
+      // Đảm bảo lần đầu cũng cập nhật đúng khi chọn FAKE
+      this.updatePayments();
     }, 100);
   }
 
