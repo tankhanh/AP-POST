@@ -14,7 +14,7 @@ import { Public } from 'src/health/decorator/customize';
 import { FakePaymentService } from './payfake.service';
 import { ConfigService } from '@nestjs/config';
 
-@Controller('payment/card')
+@Controller('payment')
 export class FakePaymentController {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<Order>,
@@ -23,7 +23,7 @@ export class FakePaymentController {
     private configService: ConfigService,
   ) {}
 
-  @Post()
+  @Post('card')
   @Public()
   async create(@Body() body: { orderId: string; customerEmail?: string }) {
     const { orderId, customerEmail = 'test@example.com' } = body;
