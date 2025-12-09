@@ -6,7 +6,7 @@ import { env } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   private readonly API_URL = `${env.baseUrl}/orders`;
-  private readonly api_url = `${env.fake_payment}/fake-payment`;
+  private readonly api_url = `${env.fake_payment}/payment/card`;
   private readonly PRICING_URL = `${env.baseUrl}/pricing/calculate`;
 
   constructor(private http: HttpClient) {}
