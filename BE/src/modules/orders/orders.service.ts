@@ -185,17 +185,14 @@ export class OrdersService {
     try {
       const method = dto.paymentMethod || 'CASH';
 
-      // Chỉ tạo payment tự động nếu là CASH hoặc COD
-      // FAKE, MOMO, VNPAY → sẽ do controller /fake-payment tạo sau
       if (['FAKE', 'MOMO', 'VNPAY', 'BANK_TRANSFER'].includes(method)) {
         console.log(
-          `Thanh toán online (${method}) → sẽ tạo payment sau khi redirect gateway`,
+          `Thanh toán online (${method}) → sẽ tạo payment sau bởi controller`,
         );
-        return newOrder; // thoát sớm, không tạo payment ở đây
-      }
-
-      if (method === 'CASH') {
-        const payment = await this.paymentsService.createPaymentForOrder(
+        // → KHÔNG return ở đây nữa! Để tiếp tục flow bình thường
+        // Chỉ thoát sớm nếu là CASH/COD thì mới tạo payment ở đây
+      } else if (method === 'CASH') {
+        await this.paymentsService.createPaymentForOrder(
           newOrder._id.toString(),
           {
             method: 'CASH',
@@ -204,18 +201,16 @@ export class OrdersService {
             createdBy: { _id: user._id, email: user.email },
           },
         );
-        console.log('Payment created (CASH):', payment._id);
       } else if (method === 'COD') {
-        const payment = await this.paymentsService.createPaymentForOrder(
+        await this.paymentsService.createPaymentForOrder(
           newOrder._id.toString(),
           {
             method: 'COD',
             amount: receiverPayAmount,
             status: 'pending',
-            createdBy: { _id: user._id, email: user.email },
+            createdBy: { _id: user[user._id], email: user.email },
           },
         );
-        console.log('Payment created (COD):', payment._id);
       }
     } catch (err: any) {
       console.error('Tạo payment thất bại:', err);
