@@ -35,20 +35,23 @@ export class FakePaymentController {
     const codValue = Number(order.codValue) || 0;
     const shippingFee = Number(order.shippingFee) || 0;
     const paymentMethod = order.paymentMethod || 'CASH';
+    const shippingFeePayer = order.shippingFeePayer || 'SENDER';
 
     let amount = 0;
+
     if (['FAKE', 'MOMO', 'BANK_TRANSFER'].includes(paymentMethod)) {
-      amount = codValue + shippingFee;
+      amount = codValue + shippingFee; // Người gửi trả hết
     } else if (paymentMethod === 'COD') {
-      amount = shippingFee; // chỉ thu hộ phí ship
+      amount = shippingFeePayer === 'RECEIVER' ? shippingFee : 0;
     } else if (paymentMethod === 'CASH') {
-      amount = shippingFee;
+      amount = 0; // Không cần thanh toán online
     }
 
     if (amount <= 0) {
       throw new BadRequestException('Không có khoản nào cần thanh toán online');
     }
 
+    // Tạo payment pending
     await this.paymentsService.createPaymentForOrder(order._id.toString(), {
       method: 'FAKE',
       amount,
