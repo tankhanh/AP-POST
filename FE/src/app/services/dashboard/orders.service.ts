@@ -16,15 +16,12 @@ export class OrdersService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  /**
-   * TẠO ORDER – PHIÊN BẢN ĐÃ FIX LOADING TREO 100%
-   */
   createOrder(data: any): Observable<any> {
     return this.http
       .post<any>(`${this.API_URL}`, data, {
         headers: this.getHeaders(),
-        observe: 'response', // ← QUAN TRỌNG: lấy full HTTP response
-        withCredentials: true, // nếu bạn dùng cookie (không bắt buộc)
+        observe: 'response',
+        withCredentials: true,
       })
       .pipe(
         map((response: HttpResponse<any>) => response.body ?? { success: true }),
@@ -34,8 +31,6 @@ export class OrdersService {
         })
       );
   }
-
-  // ==================== CÁC HÀM KHÁC GIỮ NGUYÊN, CHỈ THÊM observe nếu muốn chắc ăn hơn ====================
 
   getOrders(filters: any = {}): Observable<any> {
     let params = new HttpParams().set('pageSize', '999').set('current', '1');
