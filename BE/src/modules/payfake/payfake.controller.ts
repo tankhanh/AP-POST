@@ -14,7 +14,7 @@ import { Public } from 'src/health/decorator/customize';
 import { FakePaymentService } from './payfake.service';
 import { ConfigService } from '@nestjs/config';
 
-@Controller('fake-payment')
+@Controller('payment/card')
 export class FakePaymentController {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<Order>,
