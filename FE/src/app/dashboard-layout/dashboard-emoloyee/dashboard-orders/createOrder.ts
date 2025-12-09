@@ -86,8 +86,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
       // Tính lần đầu
       this.calculateShippingFee();
-
-      // Đảm bảo lần đầu cũng cập nhật đúng khi chọn FAKE
       this.updatePayments();
     }, 100);
   }
