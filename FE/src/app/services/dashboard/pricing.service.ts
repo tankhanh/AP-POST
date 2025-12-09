@@ -11,7 +11,6 @@ export class PricingService {
 
   constructor(private http: HttpClient) {}
 
-  /** Lấy danh sách bảng giá */
   getAll(
     current: number = 1,
     pageSize: number = 20,
