@@ -32,7 +32,6 @@ export class FakePaymentController {
     const order = await this.orderModel.findById(orderId);
     if (!order) throw new BadRequestException('Order not found');
 
-    // === TÍNH TIỀN THANH TOÁN ONLINE (giữ nguyên fix tốt của bạn) ===
     const codValue = Number(order.codValue) || 0;
     const shippingFee = Number(order.shippingFee) || 0;
     const paymentMethod = order.paymentMethod || 'CASH';
@@ -103,7 +102,6 @@ export class FakePaymentController {
       verifyResult.message || '',
     )}`;
 
-    // Nếu gọi từ browser thì redirect, nếu từ mobile app thì trả JSON
     return `
     <script>
       window.location.href = "${redirectUrl}";
