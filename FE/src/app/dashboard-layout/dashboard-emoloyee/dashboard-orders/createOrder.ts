@@ -443,34 +443,53 @@ export class CreateOrder implements OnInit, AfterViewInit {
         const paymentMethod = this.orderForm.get('paymentMethod')?.value;
 
         if (paymentMethod === 'FAKE') {
-          // Gọi fake payment create (truyền orderId + email)
+          // GỌI FAKE PAYMENT - ĐÃ SỬA ĐÚNG THEO GATEWAY MỚI
           this.ordersService.createFakePayment(res.data._id).subscribe({
             next: (fakeRes: any) => {
-              if (fakeRes.success && fakeRes.paymentUrl) {
-                // Redirect ngay đến gateway
+              if (fakeRes.success && fakeRes.paymentUrl && fakeRes.payload) {
+                // TẠO FORM ẨN ĐỂ POST DỮ LIỆU QUA GATEWAY
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = fakeRes.paymentUrl;
+                form.target = '_self'; // hoặc _blank nếu muốn mở tab mới
+
+                // Thêm tất cả các field từ payload
+                Object.keys(fakeRes.payload).forEach((key) => {
+                  const input = document.createElement('input');
+                  input.type = 'hidden';
+                  input.name = key;
+                  input.value = fakeRes.payload[key];
+                  form.appendChild(input);
+                });
+
+                // Thêm form vào body và submit tự động
+                document.body.appendChild(form);
+
                 Swal.fire({
                   icon: 'info',
-                  title: 'Redirecting to payment...',
-                  text: 'You will be redirected to the fake payment gateway.',
+                  title: 'Đang chuyển đến cổng thanh toán giả lập...',
+                  text: 'Vui lòng chờ một chút',
                   allowOutsideClick: false,
-                  timer: 2000,
+                  timer: 2500,
                   timerProgressBar: true,
                   didOpen: () => {
+                    Swal.showLoading();
                     setTimeout(() => {
-                      window.location.href = fakeRes.paymentUrl; // Hoặc router.navigateByUrl(fakeRes.paymentUrl)
-                    }, 1500);
+                      form.submit(); // CHỖ QUAN TRỌNG: POST DỮ LIỆU
+                    }, 1000);
                   },
                 });
               } else {
-                Swal.fire('Error', fakeRes.message || 'Failed to initiate payment', 'error');
+                Swal.fire('Lỗi', fakeRes.message || 'Không thể khởi tạo thanh toán', 'error');
               }
             },
             error: (err) => {
               this.loading = false;
-              Swal.fire('Error', 'Failed to start payment', 'error');
+              Swal.fire('Lỗi', 'Không thể kết nối cổng thanh toán', 'error');
+              console.error('Fake payment error:', err);
             },
           });
-          return;
+          return; // Quan trọng: không chạy xuống phần tạo đơn thành công nữa
         } else {
           Swal.fire({
             icon: 'success',

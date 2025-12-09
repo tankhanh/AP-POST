@@ -182,26 +182,31 @@ export class OrdersService {
     }
 
     // === TẠO PAYMENT TỰ ĐỘNG ===
-    let payment = null;
     try {
       const method = dto.paymentMethod || 'CASH';
 
-      if (method !== 'COD') {
-        const paymentAmount =
-          method === 'CASH' ? senderPayAmount : senderPayAmount + codValue;
+      // Chỉ tạo payment tự động nếu là CASH hoặc COD
+      // FAKE, MOMO, VNPAY → sẽ do controller /fake-payment tạo sau
+      if (['FAKE', 'MOMO', 'VNPAY', 'BANK_TRANSFER'].includes(method)) {
+        console.log(
+          `Thanh toán online (${method}) → sẽ tạo payment sau khi redirect gateway`,
+        );
+        return newOrder; // thoát sớm, không tạo payment ở đây
+      }
 
-        await this.paymentsService.createPaymentForOrder(
+      if (method === 'CASH') {
+        const payment = await this.paymentsService.createPaymentForOrder(
           newOrder._id.toString(),
           {
-            method,
-            amount: paymentAmount,
-            status: method === 'CASH' ? 'paid' : 'pending', // CASH thì paid luôn
+            method: 'CASH',
+            amount: senderPayAmount,
+            status: 'paid',
             createdBy: { _id: user._id, email: user.email },
           },
         );
-      } else {
-        // COD → tạo payment pending với số tiền người nhận sẽ trả
-        await this.paymentsService.createPaymentForOrder(
+        console.log('Payment created (CASH):', payment._id);
+      } else if (method === 'COD') {
+        const payment = await this.paymentsService.createPaymentForOrder(
           newOrder._id.toString(),
           {
             method: 'COD',
@@ -210,15 +215,10 @@ export class OrdersService {
             createdBy: { _id: user._id, email: user.email },
           },
         );
+        console.log('Payment created (COD):', payment._id);
       }
-
-      console.log('Payment created:', payment._id, payment.method);
     } catch (err: any) {
-      console.error(
-        'Tạo payment thất bại (không ảnh hưởng order):',
-        err.message,
-      );
-      // Không throw → vẫn cho tạo đơn thành công
+      console.error('Tạo payment thất bại:', err);
     }
 
     return newOrder;
