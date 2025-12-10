@@ -9,7 +9,7 @@ export class FakePaymentService {
   // URL gateway của bạn (đã sửa xong)
   private FAKE_BASE_URL = 'https://fake-payment-gateway.vercel.app/api/v1/payment/card';
 
-  buildPaymentUrl(orderId: string, amount: number, orderInfo: string, customerEmail?: string) {
+  buildPaymentUrl(orderId: string, amount: number, orderInfo: string) {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
     const returnUrl = `${frontendUrl}/order-success`;
 
