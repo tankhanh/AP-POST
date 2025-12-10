@@ -57,11 +57,10 @@ export class FakePaymentController {
     });
 
     const amountStr = Number(amountToPay).toFixed(2);
-    // Build full payload đồng bộ với gateway's Card model (hardcode defaults)
     
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
     const returnUrl = `${frontendUrl}/order-success?orderId=${orderId}`;
-    
+
     const payload = {
       app_name: 'APPost',
       service: order.details || 'Shipping Service',
@@ -72,13 +71,12 @@ export class FakePaymentController {
       expiryMonth: '12',
       expiryYear: '2030',
       cvv: '123',
-      amount: amountStr,   // phải là chuỗi
+      amount: amountStr,
       currency: 'VND',
       order_id: orderId,
       order_info: `Thanh toán đơn ${order.waybill} - APPost`,
       return_url: returnUrl,
     };
-
 
     // Gọi POST đến gateway từ server
     try {
