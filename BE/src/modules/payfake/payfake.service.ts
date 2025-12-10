@@ -6,35 +6,31 @@ import { ConfigService } from '@nestjs/config';
 export class FakePaymentService {
   constructor(private configService: ConfigService) {}
 
-  // ĐÃ DEPLOY THÀNH CÔNG - DÙNG URL NÀY
+  // URL gateway của bạn (đã sửa xong)
   private FAKE_BASE_URL = 'https://fake-payment-gateway.vercel.app/api/v1/payment/card';
 
-  // CHÍNH SỬA Ở ĐÂY: trả về URL để frontend POST trực tiếp
-  buildPaymentUrl(orderId: string, amount: number, orderInfo: string, customerEmail: string) {
-    // Không tạo URL GET có params nữa
-    // Thay vào đó trả về URL của gateway + dữ liệu để frontend POST
-    const returnUrl = this.configService.get<string>('FAKE_RETURN_URL') || 
-      `https://your-frontend.com/order-success?orderId=${orderId}`;
+  buildPaymentUrl(orderId: string, amount: number, orderInfo: string, customerEmail?: string) {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
+    const returnUrl = `${frontendUrl}/order-success`;
 
     return {
       paymentUrl: this.FAKE_BASE_URL,
       method: 'POST',
       payload: {
+        // CHỈ CẦN 3 FIELD NÀY LÀ GATEWAY CHẤP NHẬN LUÔN
+        amount: amount.toFixed(2),                                    // BẮT BUỘC
+        order_id: orderId,                                            // Để callback về đúng đơn
+        return_url: `${returnUrl}?orderId=${orderId}`,                // Gateway sẽ trả redirect_to về đây
+
+        // Các field dưới đây chỉ để đẹp, không bắt buộc
+        order_info: orderInfo || `Thanh toán đơn ${orderId}`,
         app_name: 'APPost',
-        service: 'Shipping Service',
-        customer_email: customerEmail || 'test@example.com',
-        amount: amount.toFixed(2),
         currency: 'VND',
-        // Các field này gateway sẽ tự redirect về sau khi thanh toán
-        // Repo hỗ trợ thêm custom field để trả về trong callback
-        order_id: orderId,
-        order_info: orderInfo,
-        return_url: returnUrl, // Gateway sẽ redirect về đây sau khi thanh toán
       },
     };
   }
 
-  // Verify callback (gateway trả về GET, không có signature)
+  // Verify callback từ gateway (dùng chung được)
   verifyReturn(query: Record<string, any>): {
     success: boolean;
     orderId?: string;
@@ -47,11 +43,10 @@ export class FakePaymentService {
       return { success: false, message: 'Missing order_id' };
     }
 
-    // Repo này không sign → chỉ cần kiểm tra có các field cơ bản là được
     if (status === 'success') {
       return { success: true, orderId: order_id as string, status: 'success' };
     } else {
-      return { success: false, orderId: order_id as string, status: 'failed', message: message as string };
+      return { success: false, orderId: order_id as string, status: 'failed', message: message as string || 'Thanh toán thất bại' };
     }
   }
 }

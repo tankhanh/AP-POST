@@ -21,12 +21,12 @@ export class FakePaymentController {
     private paymentsService: PaymentsService,
     private fakePaymentService: FakePaymentService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   @Post('card')
   @Public()
-  async create(@Body() body: { orderId: string; customerEmail?: string }) {
-    const { orderId, customerEmail = 'test@example.com' } = body;
+  async create(@Body() body: { orderId: string }) {
+    const { orderId } = body;
     if (!orderId) throw new BadRequestException('orderId required');
 
     const order = await this.orderModel.findById(orderId);
@@ -62,8 +62,7 @@ export class FakePaymentController {
     const result = this.fakePaymentService.buildPaymentUrl(
       order._id.toString(),
       amount,
-      `Thanh toán đơn ${order.waybill || orderId} - APPost`,
-      customerEmail,
+      `Thanh toán đơn ${order.waybill || orderId} - APPost`
     );
 
     return {
