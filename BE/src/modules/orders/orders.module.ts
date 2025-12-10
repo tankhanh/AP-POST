@@ -7,17 +7,18 @@ import { LocationModule } from '../location/location.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { MailService } from 'src/mail/mail.service';
 import { PaymentsModule } from '../payments/payments.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
     LocationModule,
     PricingModule,
-    PaymentsModule
+    PaymentsModule,
+    HttpModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService,MailService],
-
+  providers: [OrdersService, MailService],
   exports: [MongooseModule, OrdersService],
 })
 export class OrdersModule {}

@@ -125,7 +125,7 @@ export class Order {
 
   @Prop({
     type: String,
-    enum: ['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE'],
+    enum: ['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD', 'QR'],
     default: 'CASH',
   })
   paymentMethod?: string;

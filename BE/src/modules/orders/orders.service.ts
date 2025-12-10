@@ -181,45 +181,8 @@ export class OrdersService {
       }
     }
 
-    // === TẠO PAYMENT TỰ ĐỘNG ===
-    try {
-      const method = dto.paymentMethod || 'CASH';
-
-      if (['FAKE', 'MOMO', 'VNPAY', 'BANK_TRANSFER'].includes(method)) {
-        console.log(
-          `Thanh toán online (${method}) → sẽ tạo payment sau bởi controller`,
-        );
-        // → KHÔNG return ở đây nữa! Để tiếp tục flow bình thường
-        // Chỉ thoát sớm nếu là CASH/COD thì mới tạo payment ở đây
-      } else if (method === 'CASH') {
-        await this.paymentsService.createPaymentForOrder(
-          newOrder._id.toString(),
-          {
-            method: 'CASH',
-            amount: senderPayAmount,
-            status: 'paid',
-            createdBy: { _id: user._id, email: user.email },
-          },
-        );
-      } else if (method === 'COD') {
-        await this.paymentsService.createPaymentForOrder(
-          newOrder._id.toString(),
-          {
-            method: 'COD',
-            amount: receiverPayAmount,
-            status: 'pending',
-            createdBy: { _id: user._id, email: user.email },
-          },
-        );
-      }
-    } catch (err: any) {
-      console.error('Tạo payment thất bại:', err);
-    }
-
     return newOrder;
   }
-
-  ////
 
   private async generateUniqueWaybill(): Promise<string> {
     let waybill: string;

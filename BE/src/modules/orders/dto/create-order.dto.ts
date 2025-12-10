@@ -99,10 +99,10 @@ export class CreateOrderDto {
 
   @ApiProperty({
     example: 'FAKE',
-    enum: ['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE'],
+    enum: ['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD', 'QR'],
     description: 'Phương thức thanh toán',
   })
   @IsOptional()
-  @IsEnum(['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE']) // THÊM FAKE VÀO ĐÂY!!!
+  @IsEnum(['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD', 'QR'])
   paymentMethod?: string;
 }

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Payment, PaymentDocument } from './schemas/payment.schema';
-import { Order, OrderDocument } from '../orders/schemas/order.schemas';
+import { Order, OrderDocument, OrderStatus } from '../orders/schemas/order.schemas';
 
 @Injectable()
 export class PaymentsService {
@@ -124,6 +124,20 @@ export class PaymentsService {
       );
     }
 
+    return payment;
+  }
+
+  async handleGatewayCallback(txnRef: string, status: 'paid' | 'failed', extraData?: any) {
+    const payment = await this.paymentModel.findOneAndUpdate(
+      { transactionId: txnRef },
+      { status, updatedAt: new Date(), extraData },
+      { new: true },
+    );
+    if (!payment) throw new BadRequestException('Payment not found');
+    if (status === 'paid') {
+      await this.orderModel.updateOne({ _id: payment.orderId }, { status: OrderStatus.CONFIRMED });
+      // Gửi email confirm nếu cần
+    }
     return payment;
   }
 }

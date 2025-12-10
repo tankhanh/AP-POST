@@ -20,7 +20,7 @@ export class Payment {
 
   @Prop({
     required: true,
-    enum: ['COD', 'FAKE', 'BANK_TRANSFER', 'CASH'],
+    enum: ['COD', 'FAKE', 'BANK_TRANSFER', 'CASH', 'MOMO', 'VNPAY', 'CARD', 'QR'],
   })
   method: string;
 

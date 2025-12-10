@@ -1,4 +1,3 @@
-// createOrder.ts
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -360,41 +359,27 @@ export class CreateOrder implements OnInit, AfterViewInit {
     };
     this.ordersService.createOrder(data).subscribe({
       next: (res: any) => {
+        console.log('API Response:', res);  // Thêm log để debug res structure
         this.loading = false;
-        this.createdWaybill = res.data?.waybill || res.waybill;
-        const paymentMethod = this.orderForm.get('paymentMethod')?.value;
-        if (paymentMethod === 'FAKE') {
-          this.ordersService.createFakePayment(res.data._id).subscribe({
-            next: (fakeRes: any) => {
-              if (fakeRes.success && fakeRes.redirectUrl) {
-                Swal.fire({
-                  icon: 'info',
-                  title: 'Thanh toán fake thành công!',
-                  text: 'Đang chuyển hướng...',
-                  timer: 2000,
-                  timerProgressBar: true,
-                }).then(() => {
-                  window.location.href = fakeRes.redirectUrl;
-                });
-              } else {
-                Swal.fire('Lỗi', fakeRes.message || 'Thanh toán thất bại', 'error');
-              }
-            },
-            error: (err) => {
-              this.loading = false;
-              Swal.fire('Lỗi', 'Không thể kết nối thanh toán', 'error');
-              console.error('Fake payment error:', err);
-            },
+        this.createdWaybill = res.data?.waybill || res.waybill;  // Fix: Null-safe check + fallback rỗng nếu undefined
+        if (res.redirectUrl) {  
+          Swal.fire({
+            icon: 'info',
+            title: 'Đang chuyển hướng đến thanh toán...',
+            timer: 2000,
+            timerProgressBar: true,
+          }).then(() => {
+            window.location.href = res.redirectUrl;
           });
           return;
-        } else {
+        } else {  
           Swal.fire({
             icon: 'success',
             title: 'Tạo đơn thành công!',
             html: `
               <div class="text-center">
                 <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
-                <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill}</h2>
+                <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill || 'N/A'}</h2>
                 <p class="text-muted mt-4 small">
                   Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
                 </p>

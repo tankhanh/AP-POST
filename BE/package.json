@@ -21,7 +21,7 @@
   "dependencies": {
     "-": "^0.0.1",
     "@nestjs-modules/mailer": "^2.0.2",
-    "@nestjs/axios": "^1.0.0",
+    "@nestjs/axios": "^1.0.1",
     "@nestjs/common": "9.4.0",
     "@nestjs/config": "2.3.1",
     "@nestjs/core": "9.4.0",
@@ -36,7 +36,7 @@
     "@nestjs/throttler": "4.1.0",
     "@sendgrid/mail": "^8.1.6",
     "api-query-params": "^5.4.0",
-    "axios": "^1.9.0",
+    "axios": "^1.13.2",
     "bcryptjs": "2.4.3",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.0",
