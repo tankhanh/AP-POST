@@ -359,9 +359,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
     };
     this.ordersService.createOrder(data).subscribe({
       next: (res: any) => {
-        console.log('API Response:', res);  // Thêm log để debug res structure
+        console.log('API Response:', res); 
         this.loading = false;
-        this.createdWaybill = res.data?.waybill || res.waybill;  // Fix: Null-safe check + fallback rỗng nếu undefined
+        this.createdWaybill = res.data?.waybill || res.waybill; 
         if (res.redirectUrl) {  
           Swal.fire({
             icon: 'info',
