@@ -17,7 +17,6 @@ export class FakePaymentController {
     private configService: ConfigService,
   ) {}
 
-  // Endpoint FE gọi để nhận paymentUrl + payload
   @Post('card')
   @Public()
   async create(@Body() body: { orderId: string }) {
@@ -28,7 +27,6 @@ export class FakePaymentController {
     if (!order) throw new BadRequestException('Order not found');
     if ((order as any).isDeleted) throw new BadRequestException('Đơn hàng đã bị xóa');
 
-    // Tính số tiền cần thanh toán tương tự logic cũ
     let amountToPay = 0;
     if (order.shippingFeePayer === 'SENDER') {
       amountToPay = order.senderPayAmount || order.shippingFee;
@@ -40,7 +38,6 @@ export class FakePaymentController {
       throw new BadRequestException('Không có tiền cần thanh toán online');
     }
 
-    // Tạo payment pending (nếu bạn muốn)
     await this.paymentsService.createPaymentForOrder(orderId, {
       method: 'FAKE',
       amount: amountToPay,
@@ -48,7 +45,6 @@ export class FakePaymentController {
       transactionId: order.waybill,
     });
 
-    // Build paymentUrl + payload
     const ret = this.fakePaymentService.buildPaymentUrl(orderId, amountToPay, `Thanh toán đơn ${order.waybill}`, order.email);
     return {
       success: true,
@@ -59,11 +55,9 @@ export class FakePaymentController {
     };
   }
 
-  // Return handler (khi gateway redirect về /payment/return?...)
   @Get('return')
   @Public()
   async handleReturn(@Query() query: Record<string, any>) {
-    // Bạn có thể reuse fakePaymentService.verifyReturn (giống file gốc)
     const verifyResult = this.fakePaymentService.verifyReturn(query);
     if (!verifyResult.orderId) {
       throw new BadRequestException('Invalid callback');
