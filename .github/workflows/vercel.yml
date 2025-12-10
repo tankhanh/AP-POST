@@ -18,6 +18,5 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          working-directory: ./FE
-          github-token: ${{ secrets.GITHUB_TOKEN }}  # Tùy chọn: Để tích hợp với GitHub (comment URL deploy)
-          vercel-args: '--prod'  # Tùy chọn: Deploy production; bỏ nếu muốn preview
+          github-token: ${{ secrets.GITHUB_TOKEN }}  # Tùy chọn: Để comment URL deploy lên GitHub
+          vercel-args: '--prod'  # Tùy chọn: Deploy production
