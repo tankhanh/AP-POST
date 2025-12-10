@@ -33,43 +33,43 @@ export class FakePaymentController {
     if (!order) throw new BadRequestException('Order not found');
     if (order.isDeleted) throw new BadRequestException('Đơn hàng đã bị xóa');
 
-    // TỰ ĐỘNG TÍNH TIỀN NGƯỜI GỬI PHẢI TRẢ KHI DÙNG FAKE (để test dễ)
     let amountToPay = 0;
-
     if (order.shippingFeePayer === 'SENDER') {
-      amountToPay = order.senderPayAmount;                    // ví dụ: 40000
+      amountToPay = order.senderPayAmount || order.shippingFee;
     } else {
-      amountToPay = order.shippingFee;                        // nếu người nhận trả phí thì vẫn thu phí trước
+      amountToPay = order.shippingFee;
     }
-
-    // Nếu muốn test thu hết luôn cả COD thì dùng dòng này thay 2 dòng trên:
-    // amountToPay = order.senderPayAmount; // hoặc order.totalOrderValue
 
     if (amountToPay <= 0) {
       throw new BadRequestException('Không có tiền cần thanh toán online');
     }
 
-    // Tạo payment pending trước
+    // Tạo payment pending
     await this.paymentsService.createPaymentForOrder(orderId, {
       method: 'FAKE',
       amount: amountToPay,
       status: 'pending',
       transactionId: order.waybill,
-      createdBy: null,
     });
 
-    const result = this.fakePaymentService.buildPaymentUrl(
-      orderId,
-      amountToPay,
-      `Thanh toán đơn ${order.waybill || orderId} – APPost`,
-    );
+    // TẠO URL ĐÃ CÓ SẴN PARAMS → FAKE GATEWAY SẼ TỰ NHẬN
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
+    const returnUrl = `${frontendUrl}/order-success`;
+
+    const paymentUrl = `https://fake-payment-gateway.vercel.app/api/v1/payment/card?` +
+      new URLSearchParams({
+        amount: amountToPay.toString(),
+        order_id: orderId,
+        return_url: `${returnUrl}?orderId=${orderId}`,
+        order_info: `Thanh toán đơn ${order.waybill} - APPost`,
+        app_name: 'APPost',
+        currency: 'VND',
+      }).toString();
 
     return {
       success: true,
-      message: 'Đang chuyển hướng đến cổng thanh toán giả lập...',
-      paymentUrl: result.paymentUrl,
-      method: 'POST',
-      payload: result.payload,
+      message: 'Chuyển đến cổng thanh toán giả lập...',
+      paymentUrl,  // ← Frontend chỉ cần window.location = paymentUrl
     };
   }
 
