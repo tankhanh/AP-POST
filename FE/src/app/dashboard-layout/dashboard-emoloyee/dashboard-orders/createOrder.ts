@@ -45,7 +45,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private router: Router,
     private geocoding: GeocodingService,
     private http: HttpClient
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -343,9 +343,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((f.pickupLat * Math.PI) / 180) *
-        Math.cos((f.deliveryLat * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((f.deliveryLat * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -444,55 +444,60 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
         const paymentMethod = this.orderForm.get('paymentMethod')?.value;
 
+        // trong CreateOrder component (method submit() -> next handler)
         if (paymentMethod === 'FAKE') {
-          // GỌI FAKE PAYMENT - ĐÃ SỬA ĐÚNG THEO GATEWAY MỚI
+          // gọi NestJS để lấy paymentUrl + payload
           this.ordersService.createFakePayment(res.data._id).subscribe({
             next: (fakeRes: any) => {
-              if (fakeRes.success && fakeRes.paymentUrl && fakeRes.payload) {
-                // TẠO FORM ẨN ĐỂ POST DỮ LIỆU QUA GATEWAY
+              this.loading = false;
+              if (fakeRes && fakeRes.success && fakeRes.paymentUrl && fakeRes.payload) {
+                // Tạo form ẩn để POST payload sang Fake Gateway (x-www-form-urlencoded)
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = fakeRes.paymentUrl;
-                form.target = '_self'; // hoặc _blank nếu muốn mở tab mới
+                form.style.display = 'none';
 
-                // Thêm tất cả các field từ payload
-                Object.keys(fakeRes.payload).forEach((key) => {
+                // Nếu muốn mở trong cùng tab: target not needed. Nếu muốn new tab: form.target = '_blank';
+                form.target = '_self';
+
+                const payload = fakeRes.payload;
+                for (const key in payload) {
+                  if (!payload.hasOwnProperty(key)) continue;
                   const input = document.createElement('input');
                   input.type = 'hidden';
                   input.name = key;
-                  input.value = fakeRes.payload[key];
+                  input.value = String(payload[key] ?? '');
                   form.appendChild(input);
-                });
+                }
 
-                // Thêm form vào body và submit tự động
+                // Nếu gateway cần header đặc biệt, submit form sẽ tự set content-type x-www-form-urlencoded
                 document.body.appendChild(form);
 
+                // Hiển thị small loading feedback cho user
                 Swal.fire({
-                  icon: 'info',
-                  title: 'Đang chuyển đến cổng thanh toán giả lập...',
-                  text: 'Vui lòng chờ một chút',
+                  title: 'Chuyển đến cổng thanh toán...',
+                  text: 'Vui lòng chờ chuyển hướng.',
                   allowOutsideClick: false,
-                  timer: 2500,
-                  timerProgressBar: true,
                   didOpen: () => {
                     Swal.showLoading();
                     setTimeout(() => {
-                      form.submit(); // CHỖ QUAN TRỌNG: POST DỮ LIỆU
-                    }, 1000);
-                  },
+                      form.submit(); // POST dữ liệu tới fake gateway
+                    }, 200); // chút delay để UI cập nhật
+                  }
                 });
               } else {
-                Swal.fire('Lỗi', fakeRes.message || 'Không thể khởi tạo thanh toán', 'error');
+                Swal.fire('Lỗi', fakeRes?.message || 'Không thể khởi tạo thanh toán', 'error');
               }
             },
             error: (err) => {
               this.loading = false;
-              Swal.fire('Lỗi', 'Không thể kết nối cổng thanh toán', 'error');
               console.error('Fake payment error:', err);
-            },
+              Swal.fire('Lỗi', 'Không thể kết nối cổng thanh toán', 'error');
+            }
           });
-          return; // Quan trọng: không chạy xuống phần tạo đơn thành công nữa
-        } else {
+          return; // quan trọng: không chạy tiếp phần xử lý tạo đơn success UI
+        }
+        else {
           Swal.fire({
             icon: 'success',
             title: 'Tạo đơn thành công!',
