@@ -142,6 +142,7 @@ export class OrdersService {
 
       status: OrderStatus.PENDING,
       createdBy: { _id: new Types.ObjectId(user._id), email: user.email },
+      paymentMethod: dto.paymentMethod || 'CASH',
     });
 
     // Tạo tracking

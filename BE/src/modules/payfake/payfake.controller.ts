@@ -29,45 +29,44 @@ export class FakePaymentController {
     const { orderId } = body;
     if (!orderId) throw new BadRequestException('orderId required');
 
-    const order = await this.orderModel.findById(orderId);
+    const order = await this.orderModel.findById(orderId).lean();
     if (!order) throw new BadRequestException('Order not found');
+    if (order.isDeleted) throw new BadRequestException('Đơn hàng đã bị xóa');
 
-    const codValue = Number(order.codValue) || 0;
-    const shippingFee = Number(order.shippingFee) || 0;
-    const paymentMethod = order.paymentMethod || 'CASH';
-    const shippingFeePayer = order.shippingFeePayer || 'SENDER';
+    // TỰ ĐỘNG TÍNH TIỀN NGƯỜI GỬI PHẢI TRẢ KHI DÙNG FAKE (để test dễ)
+    let amountToPay = 0;
 
-    let amount = 0;
-
-    if (['FAKE', 'MOMO', 'BANK_TRANSFER'].includes(paymentMethod)) {
-      amount = codValue + shippingFee; // Người gửi trả hết
-    } else if (paymentMethod === 'COD') {
-      amount = shippingFeePayer === 'RECEIVER' ? shippingFee : 0;
-    } else if (paymentMethod === 'CASH') {
-      amount = 0; // Không cần thanh toán online
+    if (order.shippingFeePayer === 'SENDER') {
+      amountToPay = order.senderPayAmount;                    // ví dụ: 40000
+    } else {
+      amountToPay = order.shippingFee;                        // nếu người nhận trả phí thì vẫn thu phí trước
     }
 
-    if (amount <= 0) {
-      throw new BadRequestException('Không có khoản nào cần thanh toán online');
+    // Nếu muốn test thu hết luôn cả COD thì dùng dòng này thay 2 dòng trên:
+    // amountToPay = order.senderPayAmount; // hoặc order.totalOrderValue
+
+    if (amountToPay <= 0) {
+      throw new BadRequestException('Không có tiền cần thanh toán online');
     }
 
-    // Tạo payment pending
-    await this.paymentsService.createPaymentForOrder(order._id.toString(), {
+    // Tạo payment pending trước
+    await this.paymentsService.createPaymentForOrder(orderId, {
       method: 'FAKE',
-      amount,
+      amount: amountToPay,
       status: 'pending',
-      transactionId: order.waybill || order._id.toString(),
+      transactionId: order.waybill,
+      createdBy: null,
     });
 
     const result = this.fakePaymentService.buildPaymentUrl(
-      order._id.toString(),
-      amount,
-      `Thanh toán đơn ${order.waybill || orderId} - APPost`
+      orderId,
+      amountToPay,
+      `Thanh toán đơn ${order.waybill || orderId} – APPost`,
     );
 
     return {
       success: true,
-      message: 'Chuẩn bị chuyển hướng đến cổng thanh toán giả lập...',
+      message: 'Đang chuyển hướng đến cổng thanh toán giả lập...',
       paymentUrl: result.paymentUrl,
       method: 'POST',
       payload: result.payload,

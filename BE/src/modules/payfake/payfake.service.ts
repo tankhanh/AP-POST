@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class FakePaymentService {
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) { }
 
   // URL gateway của bạn (đã sửa xong)
   private FAKE_BASE_URL = 'https://fake-payment-gateway.vercel.app/api/v1/payment/card';
@@ -13,16 +13,15 @@ export class FakePaymentService {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
     const returnUrl = `${frontendUrl}/order-success`;
 
+    const cleanAmount = Math.round(amount);
+
     return {
       paymentUrl: this.FAKE_BASE_URL,
       method: 'POST',
       payload: {
-        // CHỈ CẦN 3 FIELD NÀY LÀ GATEWAY CHẤP NHẬN LUÔN
-        amount: amount.toFixed(2),                                    // BẮT BUỘC
-        order_id: orderId,                                            // Để callback về đúng đơn
-        return_url: `${returnUrl}?orderId=${orderId}`,                // Gateway sẽ trả redirect_to về đây
-
-        // Các field dưới đây chỉ để đẹp, không bắt buộc
+        amount: cleanAmount,
+        order_id: orderId,
+        return_url: `${returnUrl}?orderId=${orderId}`,
         order_info: orderInfo || `Thanh toán đơn ${orderId}`,
         app_name: 'APPost',
         currency: 'VND',
