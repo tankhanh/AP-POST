@@ -6,10 +6,10 @@ import { env } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   private readonly API_URL = `${env.baseUrl}/orders`;
-  private readonly PAYMENT_API = `${env.baseUrl}/payment`;
+  private readonly api_url = `${env.fake_payment}/payment/card`;
   private readonly PRICING_URL = `${env.baseUrl}/pricing/calculate`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   private getHeaders() {
     const token = localStorage.getItem('access_token') || '';
@@ -87,6 +87,6 @@ export class OrdersService {
   }
 
   createFakePayment(orderId: string): Observable<any> {
-    return this.http.post<any>(`${this.PAYMENT_API}/card`, { orderId });
+    return this.http.post(this.api_url, { orderId }, { headers: this.getHeaders() });
   }
 }

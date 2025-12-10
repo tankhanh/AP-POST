@@ -25,6 +25,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { LocationModule } from './modules/location/location.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PayfakeModule } from './modules/payfake/payfake.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -93,7 +94,8 @@ import { PayfakeModule } from './modules/payfake/payfake.module';
     NotificationsModule,
     LocationModule,
     DashboardModule,
-    PayfakeModule
+    PayfakeModule,
+    HttpModule
   ],
   controllers: [AppController],
   providers: [AppService],

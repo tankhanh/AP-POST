@@ -1,14 +1,14 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+// createOrder.ts
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { LocationService } from '../../../services/location.service';
-import { Router, RouterLink, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import Swal from 'sweetalert2';
 import { GeocodingService } from '../../../services/geocoding.service';
-import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators';
-import { firstValueFrom, merge } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+import { firstValueFrom, merge, startWith } from 'rxjs';
 import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
 
 @Component({
@@ -20,23 +20,14 @@ import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
 export class CreateOrder implements OnInit, AfterViewInit {
   orderForm!: FormGroup;
   loading = false;
-
   provinces: any[] = [];
   pickupCommunes: any[] = [];
   deliveryCommunes: any[] = [];
-
   shippingFee = 0;
-  totalPrice = 0;
-
-  createdWaybill: string = '';
-
-  routeDistance = 0;
-  routeTime = 0;
-
   senderPay = 0;
   receiverPay = 0;
-
   paymentNote = '';
+  createdWaybill: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -44,8 +35,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private locationService: LocationService,
     private router: Router,
     private geocoding: GeocodingService,
-    private http: HttpClient
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -54,14 +44,12 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     setTimeout(() => {
-      // Geocoding khi gõ địa chỉ
       this.orderForm
         .get('pickupDetailAddress')
         ?.valueChanges.pipe(debounceTime(800))
         .subscribe(() => {
           if (this.shouldSearch('pickup')) this.updatePickupMap();
         });
-
       this.orderForm
         .get('deliveryDetailAddress')
         ?.valueChanges.pipe(debounceTime(800))
@@ -69,7 +57,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
           if (this.shouldSearch('delivery')) this.updateDeliveryMap();
         });
 
-      // Tự động tính lại phí + tiền khi thay đổi các field quan trọng
       merge(
         this.orderForm.get('pickupProvinceId')!.valueChanges,
         this.orderForm.get('deliveryProvinceId')!.valueChanges,
@@ -81,31 +68,27 @@ export class CreateOrder implements OnInit, AfterViewInit {
       )
         .pipe(debounceTime(300))
         .subscribe(() => {
-          this.calculateShippingFee(); // → sẽ gọi updatePayments() bên trong
+          this.calculateShippingFee();
         });
 
-      // Tính lần đầu
       this.calculateShippingFee();
       this.updatePayments();
     }, 100);
   }
 
-  // Hàm kiểm tra đủ điều kiện để search (tránh gọi thừa)
   private shouldSearch(type: 'pickup' | 'delivery'): boolean {
     const f = this.orderForm.value;
     const detail = type === 'pickup' ? f.pickupDetailAddress : f.deliveryDetailAddress;
     const provinceId = type === 'pickup' ? f.pickupProvinceId : f.deliveryProvinceId;
     const communeId = type === 'pickup' ? f.pickupCommuneId : f.deliveryCommuneId;
-
     const canSearch = !!(
       detail &&
-      detail.trim().length >= 3 && // Giảm từ 6 xuống 3
+      detail.trim().length >= 3 &&
       provinceId &&
       communeId
     );
-
     if (canSearch) {
-      console.log(`✅ Can search ${type}: "${detail}"`); // Debug
+      console.log(`✅ Can search ${type}: "${detail}"`);
     }
     return canSearch;
   }
@@ -121,13 +104,10 @@ export class CreateOrder implements OnInit, AfterViewInit {
       deliveryProvinceId: ['', Validators.required],
       deliveryCommuneId: ['', Validators.required],
       deliveryDetailAddress: ['', Validators.required],
-
       serviceCode: ['STD'],
       weightKg: [1, [Validators.required, Validators.min(0.01)]],
       codValue: [0, [Validators.required, Validators.min(0)]],
-
       email: [''],
-
       details: [''],
       pickupLat: [null],
       pickupLng: [null],
@@ -155,7 +135,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
       next: (res) => {
         this.pickupCommunes = res.data || [];
         this.orderForm.get('pickupCommuneId')?.setValue('');
-
         this.orderForm.get('pickupCommuneId')?.valueChanges.subscribe(() => {
           if (this.orderForm.value.pickupDetailAddress) {
             this.updatePickupMap();
@@ -176,7 +155,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
       next: (res) => {
         this.deliveryCommunes = res.data || [];
         this.orderForm.get('deliveryCommuneId')?.setValue('');
-
         this.orderForm.get('deliveryCommuneId')?.valueChanges.subscribe(() => {
           if (this.orderForm.value.deliveryDetailAddress) {
             this.updateDeliveryMap();
@@ -187,31 +165,18 @@ export class CreateOrder implements OnInit, AfterViewInit {
     });
   }
 
-  setPickupLocation(pos: { lat: number; lng: number }) {
-    this.orderForm.patchValue({ pickupLat: pos.lat, pickupLng: pos.lng });
-  }
-
-  setDeliveryLocation(pos: { lat: number; lng: number }) {
-    this.orderForm.patchValue({ deliveryLat: pos.lat, deliveryLng: pos.lng });
-  }
-
   async updatePickupMap() {
     const f = this.orderForm.value;
     if (!f.pickupProvinceId || !f.pickupCommuneId) return;
-
     const provinceName = this.getProvinceName(f.pickupProvinceId);
     const communeName = this.getCommuneName(f.pickupCommuneId);
     const detail = f.pickupDetailAddress?.trim();
-
-    // CHIẾN LƯỢC MỚI: ƯU TIÊN TÌM THEO PHƯỜNG + TỈNH TRƯỚC
     const queries = [];
-
     if (detail) {
       queries.push(`${detail}, ${communeName}, ${provinceName}, Việt Nam`);
     }
     queries.push(`${communeName}, ${provinceName}, Việt Nam`);
-    queries.push(`${provinceName}, Việt Nam`); // fallback cuối
-
+    queries.push(`${provinceName}, Việt Nam`);
     for (const q of queries) {
       const res = await firstValueFrom(this.geocoding.search(q));
       if (res?.length > 0) {
@@ -221,7 +186,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
           pickupLng: parseFloat(lon),
         });
         console.log('Pickup geocoded:', q, '→', lat, lon);
-        return; // Thoát ngay khi tìm thấy
+        return;
       }
     }
   }
@@ -229,19 +194,15 @@ export class CreateOrder implements OnInit, AfterViewInit {
   async updateDeliveryMap() {
     const f = this.orderForm.value;
     if (!f.deliveryProvinceId || !f.deliveryCommuneId) return;
-
     const provinceName = this.getProvinceName(f.deliveryProvinceId);
     const communeName = this.getCommuneName(f.deliveryCommuneId);
     const detail = f.deliveryDetailAddress?.trim();
-
     const queries = [];
-
     if (detail) {
       queries.push(`${detail}, ${communeName}, ${provinceName}, Việt Nam`);
     }
     queries.push(`${communeName}, ${provinceName}, Việt Nam`);
     queries.push(`${provinceName}, Việt Nam`);
-
     for (const q of queries) {
       const res = await firstValueFrom(this.geocoding.search(q));
       if (res?.length > 0) {
@@ -272,19 +233,16 @@ export class CreateOrder implements OnInit, AfterViewInit {
     const cod = Number(this.orderForm.value.codValue || 0);
     const payer = this.orderForm.value.shippingFeePayer || 'SENDER';
     const method = this.orderForm.value.paymentMethod || 'CASH';
-
     if (method === 'CASH') {
-      this.senderPay = this.shippingFee;
-      this.receiverPay = cod;
+      this.senderPay = payer === 'SENDER' ? this.shippingFee : 0;
+      this.receiverPay = cod + (payer === 'RECEIVER' ? this.shippingFee : 0);
     } else if (method === 'COD') {
       this.senderPay = 0;
       this.receiverPay = cod + this.shippingFee;
     } else if (['MOMO', 'FAKE', 'BANK_TRANSFER'].includes(method)) {
-      this.senderPay = cod + this.shippingFee; // người gửi trả hết
-      this.receiverPay = 0;
+      this.senderPay = this.shippingFee + (payer === 'SENDER' ? cod : 0);
+      this.receiverPay = payer === 'RECEIVER' ? cod : 0;
     }
-
-    // Hiển thị thông báo
     this.paymentNote = {
       CASH: 'Người gửi trả phí ship tại quầy',
       COD: 'Người nhận trả COD + phí (nếu có)',
@@ -295,24 +253,19 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
   async calculateShippingFee() {
     const f = this.orderForm.value;
-
     if (!f.pickupProvinceId || !f.deliveryProvinceId || !f.weightKg) {
       this.shippingFee = 0;
       this.updatePayments();
       return;
     }
-
     const originProv = this.provinces.find((p) => p._id === f.pickupProvinceId);
     const destProv = this.provinces.find((p) => p._id === f.deliveryProvinceId);
-
     if (!originProv?.code || !destProv?.code) {
       this.shippingFee = 0;
       this.updatePayments();
       return;
     }
-
     const isSameProvince = f.pickupProvinceId === f.deliveryProvinceId;
-
     try {
       const res: any = await firstValueFrom(
         this.ordersService.calculateShippingFee({
@@ -323,36 +276,18 @@ export class CreateOrder implements OnInit, AfterViewInit {
           isLocal: isSameProvince,
         })
       );
-
       this.shippingFee = res.data?.totalPrice ?? res.totalPrice ?? 0;
     } catch (err) {
       console.warn('Lỗi tính phí:', err);
       this.shippingFee = 0;
     } finally {
-      this.updatePayments(); // Quan trọng: luôn cập nhật tiền
+      this.updatePayments();
     }
-  }
-
-  getStraightDistance(): number {
-    const f = this.orderForm.value;
-    if (!f.pickupLat || !f.deliveryLat) return 0;
-
-    const R = 6371; // Bán kính Trái Đất (km)
-    const dLat = ((f.deliveryLat - f.pickupLat) * Math.PI) / 180;
-    const dLon = ((f.deliveryLng - f.pickupLng) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((f.pickupLat * Math.PI) / 180) *
-      Math.cos((f.deliveryLat * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
   }
 
   onPickupMoved(pos: { lat: number; lng: number }) {
     this.orderForm.patchValue({ pickupLat: pos.lat, pickupLng: pos.lng });
-    this.calculateShippingFee(); // tính lại phí nếu cần
+    this.calculateShippingFee();
   }
 
   onDeliveryMoved(pos: { lat: number; lng: number }) {
@@ -367,12 +302,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     address?: string;
   }) {
     if (!event.address) return;
-
-    // Tách địa chỉ chi tiết (bỏ phường, tỉnh)
     const addr = event.address;
-    const lower = addr.toLowerCase();
-
-    // Lấy tên phường và tỉnh hiện tại
     const currentCommune = this.getCommuneName(
       event.type === 'pickup'
         ? this.orderForm.value.pickupCommuneId
@@ -383,22 +313,15 @@ export class CreateOrder implements OnInit, AfterViewInit {
         ? this.orderForm.value.pickupProvinceId
         : this.orderForm.value.deliveryProvinceId
     );
-
-    // Chỉ lấy phần trước phường/tỉnh
     let detailAddress = addr.split(currentCommune)[0] || addr.split(currentProvince)[0] || addr;
-
-    // Làm sạch
     detailAddress = detailAddress
       .replace(/, Việt Nam.*$/i, '')
       .replace(/, Hồ Chí Minh.*$/i, '')
       .replace(/, TP\.?\s?HCM.*$/i, '')
       .trim();
-
     if (detailAddress.endsWith(',')) {
       detailAddress = detailAddress.slice(0, -1).trim();
     }
-
-    // Cập nhật input địa chỉ chi tiết
     const controlName = event.type === 'pickup' ? 'pickupDetailAddress' : 'deliveryDetailAddress';
     this.orderForm.get(controlName)?.setValue(detailAddress || '');
   }
@@ -408,9 +331,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
       this.orderForm.markAllAsTouched();
       return;
     }
-
     this.loading = true;
-
     const data = {
       senderName: this.orderForm.value.senderName,
       receiverName: this.orderForm.value.receiverName,
@@ -435,81 +356,50 @@ export class CreateOrder implements OnInit, AfterViewInit {
       serviceCode: this.orderForm.value.serviceCode || 'STD',
       details: this.orderForm.value.details?.trim() || null,
       shippingFeePayer: this.orderForm.value.shippingFeePayer,
+      paymentMethod: this.orderForm.value.paymentMethod,
     };
-
     this.ordersService.createOrder(data).subscribe({
       next: (res: any) => {
         this.loading = false;
         this.createdWaybill = res.data?.waybill || res.waybill;
-
         const paymentMethod = this.orderForm.get('paymentMethod')?.value;
-
-        // trong CreateOrder component (method submit() -> next handler)
         if (paymentMethod === 'FAKE') {
-          // gọi NestJS để lấy paymentUrl + payload
           this.ordersService.createFakePayment(res.data._id).subscribe({
             next: (fakeRes: any) => {
-              this.loading = false;
-              if (fakeRes && fakeRes.success && fakeRes.paymentUrl && fakeRes.payload) {
-                // Tạo form ẩn để POST payload sang Fake Gateway (x-www-form-urlencoded)
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = fakeRes.paymentUrl;
-                form.style.display = 'none';
-
-                // Nếu muốn mở trong cùng tab: target not needed. Nếu muốn new tab: form.target = '_blank';
-                form.target = '_self';
-
-                const payload = fakeRes.payload;
-                for (const key in payload) {
-                  if (!payload.hasOwnProperty(key)) continue;
-                  const input = document.createElement('input');
-                  input.type = 'hidden';
-                  input.name = key;
-                  input.value = String(payload[key] ?? '');
-                  form.appendChild(input);
-                }
-
-                // Nếu gateway cần header đặc biệt, submit form sẽ tự set content-type x-www-form-urlencoded
-                document.body.appendChild(form);
-
-                // Hiển thị small loading feedback cho user
+              if (fakeRes.success && fakeRes.redirectUrl) {
                 Swal.fire({
-                  title: 'Chuyển đến cổng thanh toán...',
-                  text: 'Vui lòng chờ chuyển hướng.',
-                  allowOutsideClick: false,
-                  didOpen: () => {
-                    Swal.showLoading();
-                    setTimeout(() => {
-                      form.submit(); // POST dữ liệu tới fake gateway
-                    }, 200); // chút delay để UI cập nhật
-                  }
+                  icon: 'info',
+                  title: 'Thanh toán fake thành công!',
+                  text: 'Đang chuyển hướng...',
+                  timer: 2000,
+                  timerProgressBar: true,
+                }).then(() => {
+                  window.location.href = fakeRes.redirectUrl;
                 });
               } else {
-                Swal.fire('Lỗi', fakeRes?.message || 'Không thể khởi tạo thanh toán', 'error');
+                Swal.fire('Lỗi', fakeRes.message || 'Thanh toán thất bại', 'error');
               }
             },
             error: (err) => {
               this.loading = false;
+              Swal.fire('Lỗi', 'Không thể kết nối thanh toán', 'error');
               console.error('Fake payment error:', err);
-              Swal.fire('Lỗi', 'Không thể kết nối cổng thanh toán', 'error');
-            }
+            },
           });
-          return; // quan trọng: không chạy tiếp phần xử lý tạo đơn success UI
-        }
-        else {
+          return;
+        } else {
           Swal.fire({
             icon: 'success',
             title: 'Tạo đơn thành công!',
             html: `
-        <div class="text-center">
-          <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
-          <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill}</h2>
-          <p class="text-muted mt-4 small">
-            Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
-          </p>
-        </div>
-      `,
+              <div class="text-center">
+                <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
+                <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill}</h2>
+                <p class="text-muted mt-4 small">
+                  Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
+                </p>
+              </div>
+            `,
             confirmButtonText: 'Tạo đơn mới',
           }).then(() => {
             this.orderForm.reset();
@@ -528,25 +418,5 @@ export class CreateOrder implements OnInit, AfterViewInit {
         Swal.fire('Lỗi!', err.error?.message || 'Không thể tạo đơn hàng', 'error');
       },
     });
-  }
-
-  copyWaybill() {
-    if (!this.createdWaybill) return;
-
-    navigator.clipboard.writeText(this.createdWaybill);
-
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'success',
-      title: 'Đã sao chép mã vận đơn!',
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true,
-    });
-  }
-
-  printLabel() {
-    window.open(`/print-label/${this.createdWaybill}`, '_blank');
   }
 }
