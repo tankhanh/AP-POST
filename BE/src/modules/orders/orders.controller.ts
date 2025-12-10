@@ -74,7 +74,7 @@ export class OrdersController {
 
   private async initiateGateway(method: string, order: any, payment: any): Promise<string | null> {
     if (method === 'FAKE') {
-      const amountStr = Number(payment.amount).toFixed(2);
+      // const amountStr = Number(payment.amount).toFixed(2);
       const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
       const returnUrl = `${frontendUrl}/order-success?orderId=${order._id}`;
 
@@ -88,7 +88,7 @@ export class OrdersController {
         expiryMonth: '12',
         expiryYear: '2030',
         cvv: '123',
-        amount: amountStr,
+        amount: Math.round(payment.amount),
         currency: 'VND',
         order_id: order._id,
         order_info: `Thanh toán đơn ${order.waybill} - APPost`,
@@ -96,6 +96,7 @@ export class OrdersController {
       };
 
       try {
+        console.log('Sending payload to gateway:', JSON.stringify(payload));
         const gatewayResponse = await lastValueFrom(
           this.httpService.post('https://fake-payment-gateway.vercel.app/api/v1/payment/card', payload)
             .pipe(map((res: any) => res.data))

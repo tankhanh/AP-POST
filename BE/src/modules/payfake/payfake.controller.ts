@@ -25,7 +25,7 @@ export class FakePaymentController {
     private fakePaymentService: FakePaymentService,
     private configService: ConfigService,
     private httpService: HttpService,
-  ) { }
+  ) {}
 
   @Post('card')
   @Public()
@@ -56,9 +56,11 @@ export class FakePaymentController {
       transactionId: order.waybill,
     });
 
-    const amountStr = Number(amountToPay).toFixed(2);
-   
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
+    // const amountStr = Number(amountToPay).toFixed(2);
+
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
+      'https://ap-post.vercel.app';
     const returnUrl = `${frontendUrl}/order-success?orderId=${orderId}`;
 
     const payload = {
@@ -71,7 +73,7 @@ export class FakePaymentController {
       expiryMonth: '12',
       expiryYear: '2030',
       cvv: '123',
-      amount: amountStr,
+      amount: Math.round(amountToPay),
       currency: 'VND',
       order_id: orderId,
       order_info: `Thanh toán đơn ${order.waybill} - APPost`,
@@ -80,33 +82,47 @@ export class FakePaymentController {
 
     // Gọi POST đến gateway từ server
     try {
-      const gatewayResponse = await lastValueFrom(
-        this.httpService.post('https://fake-payment-gateway.vercel.app/api/v1/payment/card', payload)
-          .pipe(map((res: any) => res.data))
-      ) as { success: boolean; message?: string };
+      console.log('Sending payload to gateway:', JSON.stringify(payload));
+      const gatewayResponse = (await lastValueFrom(
+        this.httpService
+          .post(
+            'https://fake-payment-gateway.vercel.app/api/v1/payment/card',
+            payload,
+          )
+          .pipe(map((res: any) => res.data)),
+      )) as { success: boolean; message?: string };
 
       if (gatewayResponse.success) {
         // Update status
         await this.paymentsService.updateStatus(orderId, 'paid');
-        await this.orderModel.updateOne({ _id: orderId }, { status: 'CONFIRMED' });
+        await this.orderModel.updateOne(
+          { _id: orderId },
+          { status: 'CONFIRMED' },
+        );
 
         // Return redirect cho frontend
         return {
           success: true,
           message: 'Thanh toán thành công (fake)',
-          redirectUrl: `${returnUrl}&status=paid&msg=${encodeURIComponent('Thanh toán thành công')}`,
+          redirectUrl: `${returnUrl}&status=paid&msg=${encodeURIComponent(
+            'Thanh toán thành công',
+          )}`,
         };
       } else {
         await this.paymentsService.updateStatus(orderId, 'failed');
         return {
           success: false,
           message: gatewayResponse.message || 'Thanh toán thất bại',
-          redirectUrl: `${returnUrl}&status=failed&msg=${encodeURIComponent(gatewayResponse.message || 'Thanh toán thất bại')}`,
+          redirectUrl: `${returnUrl}&status=failed&msg=${encodeURIComponent(
+            gatewayResponse.message || 'Thanh toán thất bại',
+          )}`,
         };
       }
     } catch (err) {
       await this.paymentsService.updateStatus(orderId, 'failed');
-      throw new BadRequestException('Lỗi kết nối gateway: ' + (err.message || 'Unknown'));
+      throw new BadRequestException(
+        'Lỗi kết nối gateway: ' + (err.message || 'Unknown'),
+      );
     }
   }
 
