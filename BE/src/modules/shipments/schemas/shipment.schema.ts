@@ -61,13 +61,11 @@ export class Shipment {
   })
   serviceId: Types.ObjectId;
 
-  // Khối lượng/kích thước
   @Prop({ required: true, min: 0 }) weightKg: number;
   @Prop() lengthCm?: number;
   @Prop() widthCm?: number;
   @Prop() heightCm?: number;
 
-  // Thông tin tính phí (snapshot)
   @Prop() volumetricWeightKg?: number;
   @Prop() chargeableWeightKg?: number;
   @Prop() distanceKm?: number;
@@ -90,7 +88,6 @@ export class Shipment {
   })
   timeline: Array<{ status: string; timestamp: Date; note?: string }>;
 
-  // soft delete fields (plugin)
   @Prop({ default: false }) isDeleted: boolean;
   @Prop() deletedAt?: Date;
   @Prop({ type: Object }) deletedBy?: { _id: Types.ObjectId; email: string };
