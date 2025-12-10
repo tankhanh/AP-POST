@@ -208,7 +208,7 @@ export class OrdersService {
             method: 'COD',
             amount: receiverPayAmount,
             status: 'pending',
-            createdBy: { _id: user[user._id], email: user.email },
+            createdBy: { _id: user._id, email: user.email },
           },
         );
       }

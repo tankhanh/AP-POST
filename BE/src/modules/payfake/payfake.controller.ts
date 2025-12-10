@@ -38,9 +38,11 @@ export class FakePaymentController {
 
     let amountToPay = 0;
     if (order.shippingFeePayer === 'SENDER') {
-      amountToPay = order.senderPayAmount || order.shippingFee;
+      // Người gửi trả hết: phí ship + COD
+      amountToPay = (order.shippingFee || 0) + (order.codValue || 0);
     } else {
-      amountToPay = order.shippingFee;
+      // Người nhận trả COD → người gửi chỉ trả ship online
+      amountToPay = order.shippingFee || 0;
     }
     if (amountToPay <= 0) {
       throw new BadRequestException('Không có tiền cần thanh toán online');
@@ -54,25 +56,29 @@ export class FakePaymentController {
       transactionId: order.waybill,
     });
 
+    const amountStr = Number(amountToPay).toFixed(2);
     // Build full payload đồng bộ với gateway's Card model (hardcode defaults)
+    
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
+    const returnUrl = `${frontendUrl}/order-success?orderId=${orderId}`;
+    
     const payload = {
       app_name: 'APPost',
-      service: order.details || 'Shipping Service',  // Đồng bộ từ order hoặc default
-      customer_email: order.email || 'noemail@appost.com',  // Để gửi email, dùng order.email
+      service: order.details || 'Shipping Service',
+      customer_email: order.email || 'noemail@appost.com',
       card_type: 'VISA',
       card_holder_name: order.senderName || 'Test User',
-      card_number: '4242424242424242',  // Default fake
+      card_number: '4242424242424242',
       expiryMonth: '12',
       expiryYear: '2030',
       cvv: '123',
-      amount: amountToPay.toFixed(2),  // String, e.g., '5000.00'
+      amount: amountStr,   // phải là chuỗi
       currency: 'VND',
-      order_id: orderId,  // Extra, gateway ignore ok
-      order_info: `Thanh toán đơn ${order.waybill} - APPost`,  // Extra
+      order_id: orderId,
+      order_info: `Thanh toán đơn ${order.waybill} - APPost`,
+      return_url: returnUrl,
     };
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
-    const returnUrl = `${frontendUrl}/order-success?orderId=${orderId}`;
 
     // Gọi POST đến gateway từ server
     try {
