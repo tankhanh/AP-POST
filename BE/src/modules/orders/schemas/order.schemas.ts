@@ -54,7 +54,6 @@ export class Order {
   @Prop({ type: String, enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  // soft delete fields (plugin sẽ quản lý)
   @Prop({ default: false }) isDeleted: boolean;
   @Prop() deletedAt?: Date;
   @Prop({ type: Object }) deletedBy?: { _id: Types.ObjectId; email: string };

@@ -6,7 +6,7 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import aqp from 'api-query-params';
-import mongoose, { Connection, Types } from 'mongoose';
+import { Connection, Types } from 'mongoose';
 import { CreateTrackingDto } from './dto/create-tracking.dto';
 import {
   Tracking,
@@ -26,24 +26,6 @@ export class TrackingService {
     @InjectConnection() private readonly connection: Connection,
   ) { }
 
-  // private async touchShipmentTimeline(
-  //   shipmentId: string,
-  //   status: TrackingStatus,
-  //   note?: string,
-  // ) {
-  //   const ShipmentModel = this.connection.model('Shipment');
-  //   const shipment: any = await ShipmentModel.findById(shipmentId);
-  //   if (!shipment) throw new NotFoundException('Shipment not found');
-
-  //   // cập nhật status + deliveredAt nếu cần
-  //   shipment.status = status;
-  //   if (status === 'DELIVERED') shipment.deliveredAt = new Date();
-  //   if (status === 'FAILED')
-  //     shipment.failedReason = note ?? shipment.failedReason;
-
-  //   shipment.timeline.push({ status, timestamp: new Date(), note });
-  //   await shipment.save();
-  // }
 
   async create(dto: CreateTrackingDto, user: IUser) {
     // Kiểm tra order có tồn tại không
@@ -63,7 +45,7 @@ export class TrackingService {
       createdBy: { _id: new Types.ObjectId(user._id), email: user.email },
     });
 
-    // CẬP NHẬT STATUS + TIMELINE CỦA ORDER (rất quan trọng!)
+    // CẬP NHẬT STATUS + TIMELINE CỦA ORDER
     await this.orderModel.updateOne(
       { _id: dto.orderId },
       {

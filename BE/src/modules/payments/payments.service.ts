@@ -21,14 +21,14 @@ export class PaymentsService {
     } else if (method === 'COD') {
       amount = order.receiverPayAmount;
     } else {
-      amount = order.totalOrderValue; // fallback
+      amount = order.totalOrderValue;
     }
 
     const payment = new this.paymentModel({
       orderId: order._id,
       amount,
       method,
-      status: 'paid', // Giả sử paid ngay khi tạo (có thể thay đổi nếu cần pending)
+      status: 'paid',
     });
     return payment.save();
   }
@@ -78,7 +78,6 @@ export class PaymentsService {
     return payment;
   }
 
-  // Thêm hàm này vào class PaymentsService
   async updatePaymentStatusByTransaction(
     transactionId: string,
     status: string,
@@ -90,7 +89,6 @@ export class PaymentsService {
     );
 
     if (payment && status === 'paid') {
-      // Tự động xác nhận đơn hàng nếu cần
       await this.orderModel.updateOne(
         { _id: payment.orderId },
         { status: 'CONFIRMED' },
@@ -100,7 +98,6 @@ export class PaymentsService {
     return payment;
   }
 
-  // src/modules/payments/payments.service.ts
   async updatePaymentStatus(
     txnRef: string,
     status: 'success' | 'failed',
@@ -108,13 +105,12 @@ export class PaymentsService {
   ) {
     console.log('Cập nhật theo doc IPN:', { txnRef, status, vnpData });
 
-    // Tìm payment/order theo txnRef
     const payment = await this.paymentModel.findOneAndUpdate(
-      { transactionId: txnRef }, // Theo doc: dùng vnp_TxnRef
+      { transactionId: txnRef },
       {
         status,
         updatedAt: new Date(),
-        vnpData: vnpData || {}, // Lưu full data theo doc
+        vnpData: vnpData || {},
       },
       { new: true },
     );
@@ -122,7 +118,6 @@ export class PaymentsService {
     if (!payment) throw new BadRequestException('Payment not found');
 
     if (status === 'success') {
-      // Update order status theo doc
       await this.orderModel.updateOne(
         { waybill: txnRef },
         { status: 'CONFIRMED' },

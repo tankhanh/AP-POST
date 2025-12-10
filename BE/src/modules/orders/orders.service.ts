@@ -22,9 +22,8 @@ import { ProvinceCode } from 'src/types/location.type';
 import { Tracking } from '../tracking/schemas/tracking.schemas';
 import { MailService } from 'src/mail/mail.service';
 
-// Thêm vào đầu file (nếu chưa có)
 import { PaymentsService } from '../payments/payments.service';
-import { PaymentStatus } from '../payments/schemas/payment.schema'; // sẽ tạo sau
+import { PaymentStatus } from '../payments/schemas/payment.schema';
 
 @Injectable()
 export class OrdersService {

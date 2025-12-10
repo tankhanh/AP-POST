@@ -13,8 +13,6 @@ import { TrackingService } from './tracking.service';
 import { CreateTrackingDto } from './dto/create-tracking.dto';
 import { UpdateTrackingDto } from './dto/update-tracking.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Public, ResponseMessage, Users } from 'src/health/decorator/customize';
 import { IUser } from 'src/types/user.interface';
 
@@ -41,12 +39,6 @@ export class TrackingController {
     const size = pageSize ? Number(pageSize) : 10;
     return this.trackingService.findAll(page, size, query || {});
   }
-  // @Public()
-  // @Get('shipment/:shipmentId')
-  // @ResponseMessage('Lấy timeline tracking theo shipment')
-  // findByShipment(@Param('shipmentId') shipmentId: string) {
-  //   return this.trackingService.findByShipment(shipmentId);
-  // }
 
   @Public()
   @Get(':id')
@@ -61,12 +53,6 @@ export class TrackingController {
   async findByWaybill(@Param('waybill') waybill: string) {
     return this.trackingService.findByWaybill(waybill);
   }
-
-  // @Patch(':id')
-  // @ResponseMessage('Cập nhật tracking')
-  // update(@Param('id') id: string, @Body() dto: UpdateTrackingDto) {
-  //   return this.trackingService.update(id, dto);
-  // }
 
   @Delete(':id')
   @ResponseMessage('Xóa (soft) tracking')
