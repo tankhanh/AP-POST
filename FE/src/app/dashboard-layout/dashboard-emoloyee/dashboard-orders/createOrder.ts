@@ -443,15 +443,15 @@ export class CreateOrder implements OnInit, AfterViewInit {
                 .createFakePayment(orderId, cardData)
                 .toPromise()
                 .then((payRes: any) => {
-                  console.log('Received payRes full:', payRes); // Log full object để debug
+                  console.log('Received payRes full:', payRes);
                   console.log(
                     'payRes type:',
                     typeof payRes,
                     'success type:',
-                    typeof payRes?.success
-                  ); // Check type
+                    typeof payRes?.data?.success
+                  );
                   this.loading = false;
-                  if (payRes?.success === true) {
+                  if (payRes?.data?.success === true) {
                     return payRes;
                   } else {
                     Swal.showValidationMessage(payRes?.message || 'Thanh toán thất bại từ gateway');
