@@ -9,14 +9,19 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read           # bắt buộc
+      pull-requests: write     # để comment link deploy (tùy chọn nhưng nên có)
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v41.1.4
+      - name: Deploy to Vercel Production
+        uses: amondnet/vercel-action@v41.1.4   # ← Thay bằng action chính chủ mới
+        uses: vercel/action@v2                 # ← Dòng này là mới nhất (hiện tại là v2.1.0)
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}  # Tùy chọn: Để comment URL deploy lên GitHub
-          vercel-args: '--prod'  # Tùy chọn: Deploy production
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          # github-comment: true                # nếu muốn comment link lên commit/PR
+          # github-token: ${{ secrets.GITHUB_TOKEN }}  # không cần nữa vì action mới tự xử lý
