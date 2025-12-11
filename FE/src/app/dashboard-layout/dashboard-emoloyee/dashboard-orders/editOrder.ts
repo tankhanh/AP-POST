@@ -492,7 +492,6 @@ export class EditOrder implements OnInit {
     });
   }
 
-  // Thêm 2 hàm này vào class EditOrder
   copyWaybill() {
     const waybill = this.order.waybill || this.order._id;
     navigator.clipboard.writeText(waybill);

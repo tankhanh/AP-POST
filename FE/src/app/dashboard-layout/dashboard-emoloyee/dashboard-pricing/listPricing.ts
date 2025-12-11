@@ -10,17 +10,11 @@ import { PricingService } from '../../../services/dashboard/pricing.service';
   imports: [CommonModule, FormsModule],
 })
 export class ListPricing implements OnInit {
-  // ==============================
-  //  DATA
-  // ==============================
   prices: any[] = [];
   filteredPrices: any[] = [];
 
   expandedId: string | null = null;
 
-  // ==============================
-  //  FILTERS
-  // ==============================
   filters = {
     isActive: '',
     minPrice: null as number | null,
@@ -28,9 +22,6 @@ export class ListPricing implements OnInit {
     search: '',
   };
 
-  // ==============================
-  //  PAGINATION
-  // ==============================
   currentPage = 1;
   pageSize = 10;
 
@@ -40,15 +31,11 @@ export class ListPricing implements OnInit {
     this.loadPricing();
   }
 
-  // ==============================
-  //  LOAD DATA (DÙNG SERVICE)
-  // ==============================
   loadPricing() {
     this.pricingService.getAll().subscribe({
       next: (res) => {
         console.log('FULL RESPONSE:', res);
 
-        // Lấy đúng vị trí backend trả về:
         this.prices = res?.data?.results || [];
 
         this.applyFilters();
@@ -60,29 +47,21 @@ export class ListPricing implements OnInit {
       },
     });
   }
-
-  // ==============================
-  //  FILTER FUNCTION
-  // ==============================
   applyFilters() {
     let results = [...this.prices];
 
-    // Trạng thái
     if (this.filters.isActive !== '') {
       results = results.filter((p) => p.isActive === (this.filters.isActive === 'true'));
     }
 
-    // Giá min
     if (this.filters.minPrice != null) {
       results = results.filter((p) => p.basePrice >= this.filters.minPrice!);
     }
 
-    // Giá max
     if (this.filters.maxPrice != null) {
       results = results.filter((p) => p.basePrice <= this.filters.maxPrice!);
     }
 
-    // Search
     if (this.filters.search.trim() !== '') {
       const s = this.filters.search.toLowerCase();
       results = results.filter(
@@ -96,9 +75,6 @@ export class ListPricing implements OnInit {
     this.currentPage = 1;
   }
 
-  // ==============================
-  //  PAGINATION
-  // ==============================
   pagedPrices() {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredPrices.slice(start, start + this.pageSize);
@@ -114,16 +90,10 @@ export class ListPricing implements OnInit {
     this.currentPage = p;
   }
 
-  // ==============================
-  //  EXPAND + COLLAPSE
-  // ==============================
   toggleExpand(id: string) {
     this.expandedId = this.expandedId === id ? null : id;
   }
 
-  // ==============================
-  //  EDIT / DELETE PRICING
-  // ==============================
   editPricing(id: string) {
     alert('Đi tới trang sửa: ' + id);
   }

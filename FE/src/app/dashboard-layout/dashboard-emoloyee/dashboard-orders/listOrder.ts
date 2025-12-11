@@ -14,7 +14,7 @@ export class ListOrder implements OnInit {
   orders: any[] = [];
   filteredOrders: any[] = [];
   expandedOrderId: string | null = null;
-  copiedWaybill: string | null = null; // cho hiệu ứng copy
+  copiedWaybill: string | null = null;
   pageSize = 10;
   currentPage = 1;
 
