@@ -357,6 +357,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
             html: `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left; max-width: 100%;">
       <h5 class="mb-3 fw-bold text-primary">Nhập thông tin thẻ</h5>
+      <p class="text-muted small mb-3">Lưu ý: Nếu lỗi kết nối, hãy truy cập <a href="https://fake-payment-tkh.onrender.com" target="_blank">gateway</a> để đánh thức server (chờ 1 phút).</p>
       <div class="mb-3">
         <label class="d-block fw-semibold mb-1" style="font-size: 14px;">Số thẻ</label>
         <input id="cardNumber" class="swal2-input" placeholder="4242 4242 4242 4242" value="4242424242424242" maxlength="19" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
@@ -372,7 +373,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
         </div>
         <div class="col-6">
           <label class="d-block fw-semibold mb-1" style="font-size: 14px;">Năm hết hạn</label>
-          <input id="expiryYear" class="swal2-input text-center" placeholder="YYYY" value="2025" maxlength="4" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
+          <input id="expiryYear" class="swal2-input text-center" placeholder="YYYY" value="2030" maxlength="4" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
         </div>
       </div>
       <div class="mb-3">
@@ -389,7 +390,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
             cancelButtonText: 'Hủy',
             confirmButtonColor: '#007bff',
             cancelButtonColor: '#dc3545',
-            width: '1000px', // Làm form rộng hơn
+            width: '20000px', // Làm form rộng hơn
             padding: '1.5em',
             preConfirm: () => {
               // Giữ nguyên logic validate và gọi API
