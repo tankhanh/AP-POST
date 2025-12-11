@@ -443,20 +443,26 @@ export class CreateOrder implements OnInit, AfterViewInit {
                 .createFakePayment(orderId, cardData)
                 .toPromise()
                 .then((payRes: any) => {
+                  console.log('Received payRes full:', payRes); // Log full object để debug
+                  console.log(
+                    'payRes type:',
+                    typeof payRes,
+                    'success type:',
+                    typeof payRes?.success
+                  ); // Check type
                   this.loading = false;
-                  this.loading = false;
-                  if (payRes.success) {
+                  if (payRes?.success === true) {
                     return payRes;
                   } else {
-                    Swal.showValidationMessage(payRes.message || 'Thanh toán thất bại từ gateway');
+                    Swal.showValidationMessage(payRes?.message || 'Thanh toán thất bại từ gateway');
                     return false;
                   }
                 })
                 .catch((payErr) => {
                   this.loading = false;
-                  console.error('Payment error details:', payErr); // Log chi tiết error
+                  console.error('Payment HTTP error:', payErr); // Log chi tiết error
                   Swal.showValidationMessage(
-                    `Lỗi: ${payErr.error?.message || payErr.message || 'Không thể kết nối'}`
+                    `Lỗi kết nối: ${payErr.error?.message || payErr.message || 'Unknown'}`
                   );
                   return false;
                 });
