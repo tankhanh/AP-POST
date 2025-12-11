@@ -88,7 +88,7 @@ export class OrdersService {
 
   createFakePayment(orderId: string, cardData: any) {
     return this.http
-      .post(`${this.API_URL}/payment/card`, { orderId, cardData }, { observe: 'response' }) // Observe full response
+      .post(`${this.PAYMENT_URL}`, { orderId, cardData }, { headers: this.getHeaders(), observe: 'response' }) // Fix: Dùng PAYMENT_URL, thêm headers
       .pipe(
         map((res: any) => res.body), // Extract body JSON
         catchError((err) => {
