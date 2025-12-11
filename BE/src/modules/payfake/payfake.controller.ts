@@ -134,6 +134,11 @@ export class FakePaymentController {
           };
         }
       } catch (err: any) {
+        console.error('Gateway full error:', {
+          message: err.message,
+          response: err.response?.data, // Log body từ gateway nếu có
+          status: err.response?.status,
+        });
         await this.paymentsService.updatePaymentStatusByTransaction(
           order.waybill,
           'failed',

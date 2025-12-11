@@ -444,12 +444,19 @@ export class CreateOrder implements OnInit, AfterViewInit {
                 .toPromise()
                 .then((payRes: any) => {
                   this.loading = false;
-                  return payRes;
+                  this.loading = false;
+                  if (payRes.success) {
+                    return payRes;
+                  } else {
+                    Swal.showValidationMessage(payRes.message || 'Thanh toán thất bại từ gateway');
+                    return false;
+                  }
                 })
                 .catch((payErr) => {
                   this.loading = false;
+                  console.error('Payment error details:', payErr); // Log chi tiết error
                   Swal.showValidationMessage(
-                    `Lỗi: ${payErr.error?.message || 'Không thể kết nối'}`
+                    `Lỗi: ${payErr.error?.message || payErr.message || 'Không thể kết nối'}`
                   );
                   return false;
                 });
