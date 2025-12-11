@@ -25,7 +25,7 @@ export class FakePaymentController {
     private fakePaymentService: FakePaymentService,
     private configService: ConfigService,
     private httpService: HttpService,
-  ) {}
+  ) { }
 
   @Post('card')
   @Public()
@@ -71,53 +71,59 @@ export class FakePaymentController {
       returnUrl,  // Truyền returnUrl
     );
 
+    return {
+      success: true,
+      requireCardInput: true,  // ← thêm dòng này
+      message: 'Vui lòng nhập thông tin thẻ'
+    };
+
     // Gọi POST đến gateway từ server
-    try {
-      console.log('Sending payload to gateway:', JSON.stringify(payload));
-      const gatewayResponse = (await lastValueFrom(
-        this.httpService
-          .post(
-            'http://fake-payment-tkh.onrender.com/api/v1/payment/card',  // Thay bằng URL Render nếu deploy mới: 'https://fake-payment-gateway-tkh.onrender.com/api/v1/payment/card'
-            payload,
-          )
-          .pipe(map((res: any) => res.data)),
-      )) as { success: boolean; message?: string; data?: { data: any; redirectUrl: string } };  // Cấu trúc response custom
+    // try {
+    //   console.log('Sending payload to gateway:', JSON.stringify(payload));
+    //   const gatewayResponse = (await lastValueFrom(
+    //     this.httpService
+    //       .post(
+    //         'http://fake-payment-tkh.onrender.com/api/v1/payment/card',  // Thay bằng URL Render nếu deploy mới: 'https://fake-payment-gateway-tkh.onrender.com/api/v1/payment/card'
+    //         payload,
+    //       )
+    //       .pipe(map((res: any) => res.data)),
+    //   )) as { success: boolean; message?: string; data?: { data: any; redirectUrl: string } };  // Cấu trúc response custom
 
-      console.log('Gateway response:', JSON.stringify(gatewayResponse));  // Debug
+    //   console.log('Gateway response:', JSON.stringify(gatewayResponse));  // Debug
 
-      if (gatewayResponse.success) {
-        // Update status
-        await this.paymentsService.updateStatus(orderId, 'paid');
-        await this.orderModel.updateOne(
-          { _id: orderId },
-          { status: 'CONFIRMED' },
-        );
+    //   if (gatewayResponse.success) {
+    //     // Update status
+    //     await this.paymentsService.updateStatus(orderId, 'paid');
+    //     await this.orderModel.updateOne(
+    //       { _id: orderId },
+    //       { status: 'CONFIRMED' },
+    //     );
 
-        // Lấy redirectUrl từ gateway (từ custom)
-        const redirectUrl = gatewayResponse.data?.redirectUrl || `${returnUrl}&status=paid&msg=${encodeURIComponent('Thanh toán thành công')}`;  // Fallback nếu không có
+    //     // Lấy redirectUrl từ gateway (từ custom)
+    //     const redirectUrl = gatewayResponse.data?.redirectUrl || `${returnUrl}&status=paid&msg=${encodeURIComponent('Thanh toán thành công')}`;  // Fallback nếu không có
 
-        return {
-          success: true,
-          message: 'Thanh toán thành công (fake)',
-          redirectUrl,
-        };
-      } else {
-        await this.paymentsService.updateStatus(orderId, 'failed');
-        const redirectUrl = gatewayResponse.data?.redirectUrl || `${returnUrl}&status=failed&msg=${encodeURIComponent(gatewayResponse.message || 'Thanh toán thất bại')}`;  // Fallback
+    //     return {
+    //       success: true,
+    //       message: 'Thanh toán thành công (fake)',
+    //       redirectUrl,
+    //     };
+    //   } else {
+    //     await this.paymentsService.updateStatus(orderId, 'failed');
+    //     const redirectUrl = gatewayResponse.data?.redirectUrl || `${returnUrl}&status=failed&msg=${encodeURIComponent(gatewayResponse.message || 'Thanh toán thất bại')}`;  // Fallback
 
-        return {
-          success: false,
-          message: gatewayResponse.message || 'Thanh toán thất bại',
-          redirectUrl,
-        };
-      }
-    } catch (err) {
-      await this.paymentsService.updateStatus(orderId, 'failed');
-      console.error('Gateway error:', err.response?.data || err.message);  // Debug error
-      throw new BadRequestException(
-        'Lỗi kết nối gateway: ' + (err.message || 'Unknown'),
-      );
-    }
+    //     return {
+    //       success: false,
+    //       message: gatewayResponse.message || 'Thanh toán thất bại',
+    //       redirectUrl,
+    //     };
+    //   }
+    // } catch (err) {
+    //   await this.paymentsService.updateStatus(orderId, 'failed');
+    //   console.error('Gateway error:', err.response?.data || err.message);  // Debug error
+    //   throw new BadRequestException(
+    //     'Lỗi kết nối gateway: ' + (err.message || 'Unknown'),
+    //   );
+    // }
   }
 
   @Get('return')
