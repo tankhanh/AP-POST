@@ -98,7 +98,7 @@ export class OrdersController {
       try {
         console.log('Sending payload to gateway:', JSON.stringify(payload));
         const gatewayResponse = await lastValueFrom(
-          this.httpService.post('https://fake-payment-gateway.vercel.app/api/v1/payment/card', payload)
+          this.httpService.post('https://fake-payment-tkh.onrender.com/api/v1/payment/card', payload)
             .pipe(map((res: any) => res.data))
         ) as { success: boolean; message?: string };
 
