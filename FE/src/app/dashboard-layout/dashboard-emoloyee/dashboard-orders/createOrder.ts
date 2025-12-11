@@ -452,9 +452,11 @@ export class CreateOrder implements OnInit, AfterViewInit {
                   );
                   this.loading = false;
                   if (payRes?.data?.success === true) {
-                    return payRes;
+                    return payRes.data;
                   } else {
-                    Swal.showValidationMessage(payRes?.message || 'Thanh toán thất bại từ gateway');
+                    Swal.showValidationMessage(
+                      payRes?.data?.message || payRes?.message || 'Thanh toán thất bại từ gateway'
+                    );
                     return false;
                   }
                 })
