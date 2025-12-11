@@ -9,7 +9,7 @@ export class OrdersService {
   private readonly PAYMENT_URL = `${env.baseUrl}/payment/card`;
   private readonly PRICING_URL = `${env.baseUrl}/pricing/calculate`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   private getHeaders() {
     const token = localStorage.getItem('access_token') || '';
@@ -87,7 +87,15 @@ export class OrdersService {
   }
 
   createFakePayment(orderId: string, cardData: any) {
-    return this.http.post(`${this.PAYMENT_URL}`, { orderId, cardData });  // POST /payment/card với body {orderId, cardData}
+    return this.http
+      .post(`${this.PAYMENT_URL}`, { orderId, cardData }, { observe: 'body' }) // Thêm { observe: 'body' } để lấy body JSON trực tiếp
+      .pipe(
+        map((res: any) => res), // Map res để chắc body
+        catchError((err) => {
+          console.error('HTTP error in service:', err);
+          return throwError(() => err);
+        })
+      );
   }
 
   getPendingOrders(): Observable<any> {
@@ -95,13 +103,13 @@ export class OrdersService {
     const params = new HttpParams()
       .set('paymentMethod', 'FAKE')
       .set('status', 'PENDING')
-      .set('pageSize', '1')   // Chỉ cần 1 đơn mới nhất
+      .set('pageSize', '1') // Chỉ cần 1 đơn mới nhất
       .set('current', '1')
       .set('sort', '-createdAt'); // Sắp xếp mới nhất trước
 
     return this.http.get<any>(this.API_URL, {
       headers: this.getHeaders(),
-      params
+      params,
     });
   }
 }
