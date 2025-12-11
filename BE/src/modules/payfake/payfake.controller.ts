@@ -16,6 +16,7 @@ import { FakePaymentService } from './payfake.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom, map } from 'rxjs';
+import { Payment, PaymentDocument } from '../payments/schemas/payment.schema';
 
 @Controller('payment')
 export class FakePaymentController {
@@ -25,6 +26,7 @@ export class FakePaymentController {
     private fakePaymentService: FakePaymentService,
     private configService: ConfigService,
     private httpService: HttpService,
+    @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
   ) {}
 
   @Post('card')
@@ -46,20 +48,12 @@ export class FakePaymentController {
       throw new BadRequestException('Không có tiền cần thanh toán online');
     }
 
-    // Tạo payment pending
-    await this.paymentsService.createPaymentForOrder(orderId, {
-      method: 'FAKE',
-      amount: amountToPay,
-      status: 'pending',
-      transactionId: order.waybill,
-    });
-
     const frontendUrl =
       this.configService.get<string>('FRONTEND_URL') ||
       'https://ap-post.vercel.app';
     const returnUrl = `${frontendUrl}/payment-success`;
 
-    // Build payload
+    // Build payload early (used for both paths if needed)
     const payload = this.fakePaymentService.buildPaymentPayload(
       orderId,
       amountToPay,
@@ -70,7 +64,7 @@ export class FakePaymentController {
     );
 
     if (!cardData) {
-      // Nếu không có cardData → yêu cầu frontend hiện form
+      // Nếu không có cardData → yêu cầu frontend hiện form (no payment creation here)
       return {
         success: true,
         requireCardInput: true,
@@ -78,57 +72,67 @@ export class FakePaymentController {
         redirectUrl: null,
       };
     } else {
-      // Nếu có cardData → gọi gateway ngay từ backend
+      // Nếu có cardData → ensure pending payment exists (safe upsert if missing)
+      const paymentData = {
+        orderId,
+        amount: amountToPay,
+        method: 'FAKE',
+        status: 'pending',
+        transactionId: order.waybill,
+      };
+      const existingPayment = await this.paymentModel.findOneAndUpdate(
+        { transactionId: order.waybill },
+        paymentData,
+        { upsert: true, new: true, setDefaultsOnInsert: true },
+      );
+
+      // Gọi gateway
       try {
         console.log('Sending payload to gateway:', JSON.stringify(payload));
         const gatewayResponse = (await lastValueFrom(
           this.httpService
             .post(
-              'https://fake-payment-tkh.onrender.com/api/v1/payment/card', // Sửa thành HTTPS
+              'https://fake-payment-tkh.onrender.com/api/v1/payment/card',
               payload,
             )
             .pipe(map((res: any) => res.data)),
-        )) as { success: boolean; message?: string; redirectUrl?: string }; // Sửa parse response (không có data nested)
+        )) as { success: boolean; message?: string; redirectUrl?: string };
 
-        console.log('Gateway response:', JSON.stringify(gatewayResponse)); // Debug
+        console.log('Gateway response:', JSON.stringify(gatewayResponse));
+
+        const newStatus = gatewayResponse.success ? 'paid' : 'failed';
+        await this.paymentsService.updatePaymentStatusByTransaction(
+          order.waybill,
+          newStatus,
+        );
 
         if (gatewayResponse.success) {
-          // Update status
-          await this.paymentsService.updateStatus(orderId, 'paid');
           await this.orderModel.updateOne(
             { _id: orderId },
             { status: 'CONFIRMED' },
           );
-
-          // Lấy redirectUrl từ gateway
-          const redirectUrl =
-            gatewayResponse.redirectUrl ||
-            `${returnUrl}?status=paid&msg=${encodeURIComponent(
-              'Thanh toán thành công',
-            )}`; // Fallback
-
-          return {
-            success: true,
-            message: 'Thanh toán thành công (fake)',
-            redirectUrl,
-          };
-        } else {
-          await this.paymentsService.updateStatus(orderId, 'failed');
-          const redirectUrl =
-            gatewayResponse.redirectUrl ||
-            `${returnUrl}?status=failed&msg=${encodeURIComponent(
-              gatewayResponse.message || 'Thanh toán thất bại',
-            )}`; // Fallback
-
-          return {
-            success: false,
-            message: gatewayResponse.message || 'Thanh toán thất bại',
-            redirectUrl,
-          };
         }
+
+        const msg =
+          gatewayResponse.message ||
+          (gatewayResponse.success
+            ? 'Thanh toán thành công'
+            : 'Thanh toán thất bại');
+        const redirectUrl =
+          gatewayResponse.redirectUrl ||
+          `${returnUrl}?status=${newStatus}&msg=${encodeURIComponent(msg)}`;
+
+        return {
+          success: gatewayResponse.success,
+          message: msg + ' (fake)',
+          redirectUrl,
+        };
       } catch (err) {
-        await this.paymentsService.updateStatus(orderId, 'failed');
-        console.error('Gateway error:', err.response?.data || err.message); // Debug error
+        await this.paymentsService.updatePaymentStatusByTransaction(
+          order.waybill,
+          'failed',
+        );
+        console.error('Gateway error:', err.response?.data || err.message);
         throw new BadRequestException(
           'Lỗi kết nối gateway: ' + (err.message || 'Unknown'),
         );
