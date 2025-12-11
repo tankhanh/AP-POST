@@ -89,4 +89,19 @@ export class OrdersService {
   createFakePayment(orderId: string, cardData: any) {
     return this.http.post(`${this.PAYMENT_URL}/payment/card`, { orderId, cardData });  // POST /payment/card với body {orderId, cardData}
   }
+
+  getPendingOrders(): Observable<any> {
+    // Lấy đơn hàng có paymentMethod = 'FAKE' và status = 'PENDING' (chờ thanh toán)
+    const params = new HttpParams()
+      .set('paymentMethod', 'FAKE')
+      .set('status', 'PENDING')
+      .set('pageSize', '1')   // Chỉ cần 1 đơn mới nhất
+      .set('current', '1')
+      .set('sort', '-createdAt'); // Sắp xếp mới nhất trước
+
+    return this.http.get<any>(this.API_URL, {
+      headers: this.getHeaders(),
+      params
+    });
+  }
 }
