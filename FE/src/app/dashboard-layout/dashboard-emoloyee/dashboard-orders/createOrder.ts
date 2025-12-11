@@ -34,7 +34,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private locationService: LocationService,
     private router: Router,
     private geocoding: GeocodingService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -361,14 +361,27 @@ export class CreateOrder implements OnInit, AfterViewInit {
       next: (res: any) => {
         console.log('Create order response:', res);
         this.loading = false;
-        const orderId = res.data?.order?._id || res.data?._id || res._id;
-        this.createdWaybill = res.data?.order?.waybill || res.data?.waybill || res.waybill;
+        const orderId = res.data?.order?._id || res.data?._id;
+        this.createdWaybill = res.data?.order?.waybill || res.data?.waybill || '';
         if (!orderId) {
           Swal.fire('Lỗi!', 'Không lấy được orderId từ response', 'error');
           return;
         }
 
         localStorage.setItem('waybill', this.createdWaybill);
+
+        if (res.data?.redirectUrl) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Đang chuyển hướng đến thanh toán...',
+            timer: 1500,
+            timerProgressBar: true,
+            didOpen: () => Swal.showLoading()
+          }).then(() => {
+            window.location.href = res.data.redirectUrl;
+          });
+          return;
+        }
 
         if (this.orderForm.value.paymentMethod === 'FAKE' && this.senderPay > 0) {
           // Show form nhập card bằng Swal
