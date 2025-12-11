@@ -33,7 +33,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private ordersService: OrdersService,
     private locationService: LocationService,
     private router: Router,
-    private geocoding: GeocodingService,
+    private geocoding: GeocodingService
   ) {}
 
   ngOnInit(): void {
@@ -80,12 +80,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     const detail = type === 'pickup' ? f.pickupDetailAddress : f.deliveryDetailAddress;
     const provinceId = type === 'pickup' ? f.pickupProvinceId : f.deliveryProvinceId;
     const communeId = type === 'pickup' ? f.pickupCommuneId : f.deliveryCommuneId;
-    const canSearch = !!(
-      detail &&
-      detail.trim().length >= 3 &&
-      provinceId &&
-      communeId
-    );
+    const canSearch = !!(detail && detail.trim().length >= 3 && provinceId && communeId);
     if (canSearch) {
       console.log(`✅ Can search ${type}: "${detail}"`);
     }
@@ -348,7 +343,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
             title: 'Đang chuyển hướng đến thanh toán...',
             timer: 1500,
             timerProgressBar: true,
-            didOpen: () => Swal.showLoading()
+            didOpen: () => Swal.showLoading(),
           }).then(() => {
             window.location.href = res.data.redirectUrl;
           });
@@ -360,46 +355,50 @@ export class CreateOrder implements OnInit, AfterViewInit {
           Swal.fire({
             title: 'Thanh toán bằng thẻ',
             html: `
-              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                <h3 class="mb-4 text-center fw-bold text-primary">Thanh toán bằng thẻ</h3>
-                <div class="mb-3">
-                  <label class="form-label fw-semibold">Số thẻ</label>
-                  <input id="cardNumber" class="swal2-input" placeholder="4242 4242 4242 4242" value="4242424242424242" maxlength="19">
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-semibold">Tên chủ thẻ</label>
-                  <input id="cardHolder" class="swal2-input" placeholder="NGUYEN VAN A" value="Test User">
-                </div>
-                <div class="row g-2 mb-3">
-                  <div class="col-6">
-                    <label class="form-label fw-semibold">Tháng/Năm hết hạn</label>
-                    <div class="row g-1">
-                      <div class="col-5">
-                        <input id="expiryMonth" class="swal2-input text-center" placeholder="01" value="01" maxlength="2">
-                      </div>
-                      <div class="col-2 text-center pt-2">/</div>
-                      <div class="col-5">
-                        <input id="expiryYear" class="swal2-input text-center" placeholder="2025" value="2025" maxlength="4">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label fw-semibold">CVV</label>
-                    <input id="cvv" class="swal2-input text-center" placeholder="123" value="123" maxlength="3">
-                  </div>
-                </div>
-                <div class="text-center mt-4">
-                  <i class="bi bi-credit-card-2-front-fill fs-1 text-muted"></i>
-                </div>
-              </div>
-            `,
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left; max-width: 100%;">
+      <h5 class="mb-3 fw-bold text-primary">Nhập thông tin thẻ</h5>
+      <div class="mb-3">
+        <label class="d-block fw-semibold mb-1" style="font-size: 14px;">Số thẻ</label>
+        <input id="cardNumber" class="swal2-input" placeholder="4242 4242 4242 4242" value="4242424242424242" maxlength="19" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
+      </div>
+      <div class="mb-3">
+        <label class="d-block fw-semibold mb-1" style="font-size: 14px;">Tên chủ thẻ</label>
+        <input id="cardHolder" class="swal2-input" placeholder="NGUYEN VAN A" value="Test User" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
+      </div>
+      <div class="row mb-3">
+        <div class="col-6">
+          <label class="d-block fw-semibold mb-1" style="font-size: 14px;">Tháng hết hạn</label>
+          <input id="expiryMonth" class="swal2-input text-center" placeholder="MM" value="12" maxlength="2" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
+        </div>
+        <div class="col-6">
+          <label class="d-block fw-semibold mb-1" style="font-size: 14px;">Năm hết hạn</label>
+          <input id="expiryYear" class="swal2-input text-center" placeholder="YYYY" value="2025" maxlength="4" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="d-block fw-semibold mb-1" style="font-size: 14px;">CVV</label>
+        <input id="cvv" class="swal2-input text-center" placeholder="123" value="123" maxlength="3" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
+      </div>
+      <div class="text-center mt-3">
+        <i class="bi bi-credit-card-2-front-fill fs-2 text-primary"></i>
+      </div>
+    </div>
+  `,
             showCancelButton: true,
             confirmButtonText: 'Thanh toán',
             cancelButtonText: 'Hủy',
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#dc3545',
+            width: '400px', // Làm form rộng hơn
+            padding: '1.5em',
             preConfirm: () => {
-              const cardNumber = (document.getElementById('cardNumber') as HTMLInputElement).value.replace(/\s/g, '');
+              // Giữ nguyên logic validate và gọi API
+              const cardNumber = (
+                document.getElementById('cardNumber') as HTMLInputElement
+              ).value.replace(/\s/g, '');
               const cardHolder = (document.getElementById('cardHolder') as HTMLInputElement).value;
-              const expiryMonth = (document.getElementById('expiryMonth') as HTMLInputElement).value;
+              const expiryMonth = (document.getElementById('expiryMonth') as HTMLInputElement)
+                .value;
               const expiryYear = (document.getElementById('expiryYear') as HTMLInputElement).value;
               const cvv = (document.getElementById('cvv') as HTMLInputElement).value;
 
@@ -409,18 +408,27 @@ export class CreateOrder implements OnInit, AfterViewInit {
                 expiryMonth,
                 expiryYear,
                 cvv,
-                card_type: 'VISA'
+                card_type: 'VISA',
               };
 
               if (!cardNumber || cardNumber.length !== 16 || isNaN(Number(cardNumber))) {
                 Swal.showValidationMessage('Số thẻ không hợp lệ (phải là 16 chữ số)');
                 return false;
               }
-              if (!expiryMonth || expiryMonth.length !== 2 || Number(expiryMonth) < 1 || Number(expiryMonth) > 12) {
+              if (
+                !expiryMonth ||
+                expiryMonth.length !== 2 ||
+                Number(expiryMonth) < 1 ||
+                Number(expiryMonth) > 12
+              ) {
                 Swal.showValidationMessage('Tháng hết hạn không hợp lệ (01-12)');
                 return false;
               }
-              if (!expiryYear || expiryYear.length !== 4 || Number(expiryYear) < new Date().getFullYear()) {
+              if (
+                !expiryYear ||
+                expiryYear.length !== 4 ||
+                Number(expiryYear) < new Date().getFullYear()
+              ) {
                 Swal.showValidationMessage('Năm hết hạn không hợp lệ');
                 return false;
               }
@@ -430,44 +438,54 @@ export class CreateOrder implements OnInit, AfterViewInit {
               }
 
               this.loading = true;
-              return this.ordersService.createFakePayment(orderId, cardData).toPromise()
+              return this.ordersService
+                .createFakePayment(orderId, cardData)
+                .toPromise()
                 .then((payRes: any) => {
                   this.loading = false;
                   return payRes;
                 })
                 .catch((payErr) => {
                   this.loading = false;
-                  Swal.showValidationMessage(`Lỗi: ${payErr.error?.message || 'Không thể kết nối'}`);
+                  Swal.showValidationMessage(
+                    `Lỗi: ${payErr.error?.message || 'Không thể kết nối'}`
+                  );
                   return false;
                 });
-            }
-          }).then((result) => {
-            if (result.dismiss === Swal.DismissReason.cancel) {
-              Swal.fire({
-                icon: 'info',
-                title: 'Đã hủy thanh toán',
-                text: 'Đơn hàng đã được lưu với trạng thái chờ thanh toán. Bạn có thể quay lại thanh toán sau.',
-              });
-              return;
-            }
+            },
+          })
+            .then((result) => {
+              if (result.dismiss === Swal.DismissReason.cancel) {
+                Swal.fire({
+                  icon: 'info',
+                  title: 'Đã hủy thanh toán',
+                  text: 'Đơn hàng đã được lưu với trạng thái chờ thanh toán. Bạn có thể quay lại thanh toán sau.',
+                });
+                return;
+              }
 
-            if (result.value && result.value.success) {
-              Swal.fire({
-                icon: 'success',
-                title: 'Thanh toán thành công!',
-                text: result.value.message || 'Đang chuyển hướng...',
-                timer: 2000,
-                timerProgressBar: true,
-              }).then(() => {
-                window.location.href = result.value.redirectUrl;
-              });
-            } else if (result.value) {
-              Swal.fire('Lỗi thanh toán!', result.value.message || 'Thanh toán thất bại', 'error');
-            }
-          }).catch((err) => {
-            console.error('Swal error:', err);
-            Swal.fire('Lỗi!', 'Không thể xử lý thanh toán', 'error');
-          });
+              if (result.value && result.value.success) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Thanh toán thành công!',
+                  text: result.value.message || 'Đang chuyển hướng...',
+                  timer: 2000,
+                  timerProgressBar: true,
+                }).then(() => {
+                  window.location.href = result.value.redirectUrl;
+                });
+              } else if (result.value) {
+                Swal.fire(
+                  'Lỗi thanh toán!',
+                  result.value.message || 'Thanh toán thất bại',
+                  'error'
+                );
+              }
+            })
+            .catch((err) => {
+              console.error('Swal error:', err);
+              Swal.fire('Lỗi!', 'Không thể xử lý thanh toán', 'error');
+            });
         } else {
           // Thành công thông thường
           Swal.fire({
@@ -476,7 +494,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
             html: `
               <div class="text-center">
                 <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
-                <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill || 'N/A'}</h2>
+                <h2 class="display-5 fw-bold text-secondary mb-4">${
+                  this.createdWaybill || 'N/A'
+                }</h2>
                 <p class="text-muted mt-4 small">
                   Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
                 </p>
@@ -552,7 +572,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
               `,
               showCancelButton: true,
               confirmButtonText: 'Tạo đơn mới',
-              cancelButtonText: 'Xem đơn cũ'
+              cancelButtonText: 'Xem đơn cũ',
             }).then((result) => {
               if (result.isConfirmed) {
                 this.proceedCreateOrder(data);
@@ -568,7 +588,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
         error: (err) => {
           console.error('Lỗi kiểm tra đơn pending:', err);
           this.proceedCreateOrder(data); // Vẫn tạo nếu lỗi kiểm tra
-        }
+        },
       });
     } else {
       // Không phải FAKE → tạo bình thường
