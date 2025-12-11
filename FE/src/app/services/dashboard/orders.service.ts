@@ -88,9 +88,9 @@ export class OrdersService {
 
   createFakePayment(orderId: string, cardData: any) {
     return this.http
-      .post(`${this.PAYMENT_URL}`, { orderId, cardData }, { observe: 'body' }) // Thêm { observe: 'body' } để lấy body JSON trực tiếp
+      .post(`${this.API_URL}/payment/card`, { orderId, cardData }, { observe: 'response' }) // Observe full response
       .pipe(
-        map((res: any) => res), // Map res để chắc body
+        map((res: any) => res.body), // Extract body JSON
         catchError((err) => {
           console.error('HTTP error in service:', err);
           return throwError(() => err);
