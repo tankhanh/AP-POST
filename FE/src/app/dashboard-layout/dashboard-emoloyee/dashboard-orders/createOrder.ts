@@ -389,7 +389,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
             cancelButtonText: 'Hủy',
             confirmButtonColor: '#007bff',
             cancelButtonColor: '#dc3545',
-            width: '400px', // Làm form rộng hơn
+            width: '1000px', // Làm form rộng hơn
             padding: '1.5em',
             preConfirm: () => {
               // Giữ nguyên logic validate và gọi API

@@ -89,53 +89,57 @@ export class FakePaymentController {
       // Gọi gateway
       try {
         console.log('Sending payload to gateway:', JSON.stringify(payload));
-        const gatewayResponse = (await lastValueFrom(
-          this.httpService
-            .post(
-              'https://fake-payment-tkh.onrender.com/api/v1/payment/card',
-              payload,
-            )
-            .pipe(map((res: any) => res.data)),
-        )) as { success: boolean; message?: string; redirectUrl?: string };
 
-        console.log('Gateway response:', JSON.stringify(gatewayResponse));
-
-        const newStatus = gatewayResponse.success ? 'paid' : 'failed';
-        await this.paymentsService.updatePaymentStatusByTransaction(
-          order.waybill,
-          newStatus,
+        const response = await lastValueFrom(
+          this.httpService.post(
+            'https://fake-payment-tkh.onrender.com/api/v1/payment/card',
+            payload,
+          ),
         );
 
-        if (gatewayResponse.success) {
+        // ĐÚNG RỒI: response.data chính là object { success: true, message: "...", data: {...} }
+        const gatewayResponse = response.data;
+
+        console.log('Gateway response:', gatewayResponse);
+
+        // Kiểm tra success đúng cách
+        if (gatewayResponse.success === true) {
+          await this.paymentsService.updatePaymentStatusByTransaction(
+            order.waybill,
+            'paid',
+          );
           await this.orderModel.updateOne(
             { _id: orderId },
             { status: 'CONFIRMED' },
           );
+
+          return {
+            success: true,
+            message: 'Thanh toán thành công (fake)',
+            redirectUrl: `${returnUrl}?status=paid&msg=${encodeURIComponent(
+              'Thanh toán thành công',
+            )}`,
+          };
+        } else {
+          await this.paymentsService.updatePaymentStatusByTransaction(
+            order.waybill,
+            'failed',
+          );
+          return {
+            success: false,
+            message: gatewayResponse.message || 'Thanh toán thất bại',
+            redirectUrl: `${returnUrl}?status=failed&msg=${encodeURIComponent(
+              gatewayResponse.message || 'Lỗi không xác định',
+            )}`,
+          };
         }
-
-        const msg =
-          gatewayResponse.message ||
-          (gatewayResponse.success
-            ? 'Thanh toán thành công'
-            : 'Thanh toán thất bại');
-        const redirectUrl =
-          gatewayResponse.redirectUrl ||
-          `${returnUrl}?status=${newStatus}&msg=${encodeURIComponent(msg)}`;
-
-        return {
-          success: gatewayResponse.success,
-          message: msg + ' (fake)',
-          redirectUrl,
-        };
-      } catch (err) {
+      } catch (err: any) {
         await this.paymentsService.updatePaymentStatusByTransaction(
           order.waybill,
           'failed',
         );
         console.error('Gateway error:', err.response?.data || err.message);
-        throw new BadRequestException(
-          'Lỗi kết nối gateway: ' + (err.message || 'Unknown'),
-        );
+        throw new BadRequestException('Lỗi kết nối gateway');
       }
     }
   }
