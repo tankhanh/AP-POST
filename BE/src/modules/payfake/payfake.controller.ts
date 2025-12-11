@@ -29,8 +29,8 @@ export class FakePaymentController {
 
   @Post('card')
   @Public()
-  async create(@Body() body: { orderId: string }) {
-    const { orderId } = body;
+  async create(@Body() body: { orderId: string; cardData?: any }) {  // Thêm cardData optional từ form
+    const { orderId, cardData } = body;
     if (!orderId) throw new BadRequestException('orderId required');
     const order = await this.orderModel.findById(orderId).lean();
     if (!order) throw new BadRequestException('Order not found');
@@ -56,29 +56,20 @@ export class FakePaymentController {
       transactionId: order.waybill,
     });
 
-    // const amountStr = Number(amountToPay).toFixed(2);
-
     const frontendUrl =
       this.configService.get<string>('FRONTEND_URL') ||
       'https://ap-post.vercel.app';
-    const returnUrl = `${frontendUrl}/order-success?orderId=${orderId}`;
+    const returnUrl = `${frontendUrl}/payment-success`;
 
-    const payload = {
-      app_name: 'APPost',
-      service: order.details || 'Shipping Service',
-      customer_email: order.email || 'noemail@appost.com',
-      card_type: 'VISA',
-      card_holder_name: order.senderName || 'Test User',
-      card_number: '4242424242424242',
-      expiryMonth: '12',
-      expiryYear: '2030',
-      cvv: '123',
-      amount: Math.round(amountToPay),
-      currency: 'VND',
-      order_id: orderId,
-      order_info: `Thanh toán đơn ${order.waybill} - APPost`,
-      return_url: returnUrl,
-    };
+    // Build payload dùng service, merge cardData nếu có
+    const payload = this.fakePaymentService.buildPaymentPayload(
+      orderId,
+      amountToPay,
+      `Order ${order.waybill} - Shipping fee`,
+      order,
+      cardData,  // Truyền cardData để override dummy
+      returnUrl,  // Truyền returnUrl
+    );
 
     // Gọi POST đến gateway từ server
     try {
@@ -86,11 +77,13 @@ export class FakePaymentController {
       const gatewayResponse = (await lastValueFrom(
         this.httpService
           .post(
-            'https://fake-payment-gateway.vercel.app/api/v1/payment/card',
+            'http://fake-payment-tkh.onrender.com/api/v1/payment/card',  // Thay bằng URL Render nếu deploy mới: 'https://fake-payment-gateway-tkh.onrender.com/api/v1/payment/card'
             payload,
           )
           .pipe(map((res: any) => res.data)),
-      )) as { success: boolean; message?: string };
+      )) as { success: boolean; message?: string; data?: { data: any; redirectUrl: string } };  // Cấu trúc response custom
+
+      console.log('Gateway response:', JSON.stringify(gatewayResponse));  // Debug
 
       if (gatewayResponse.success) {
         // Update status
@@ -100,26 +93,27 @@ export class FakePaymentController {
           { status: 'CONFIRMED' },
         );
 
-        // Return redirect cho frontend
+        // Lấy redirectUrl từ gateway (từ custom)
+        const redirectUrl = gatewayResponse.data?.redirectUrl || `${returnUrl}&status=paid&msg=${encodeURIComponent('Thanh toán thành công')}`;  // Fallback nếu không có
+
         return {
           success: true,
           message: 'Thanh toán thành công (fake)',
-          redirectUrl: `${returnUrl}&status=paid&msg=${encodeURIComponent(
-            'Thanh toán thành công',
-          )}`,
+          redirectUrl,
         };
       } else {
         await this.paymentsService.updateStatus(orderId, 'failed');
+        const redirectUrl = gatewayResponse.data?.redirectUrl || `${returnUrl}&status=failed&msg=${encodeURIComponent(gatewayResponse.message || 'Thanh toán thất bại')}`;  // Fallback
+
         return {
           success: false,
           message: gatewayResponse.message || 'Thanh toán thất bại',
-          redirectUrl: `${returnUrl}&status=failed&msg=${encodeURIComponent(
-            gatewayResponse.message || 'Thanh toán thất bại',
-          )}`,
+          redirectUrl,
         };
       }
     } catch (err) {
       await this.paymentsService.updateStatus(orderId, 'failed');
+      console.error('Gateway error:', err.response?.data || err.message);  // Debug error
       throw new BadRequestException(
         'Lỗi kết nối gateway: ' + (err.message || 'Unknown'),
       );

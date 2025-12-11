@@ -6,11 +6,11 @@ import { ConfigService } from '@nestjs/config';
 export class FakePaymentService {
   constructor(private configService: ConfigService) { }
 
-  private FAKE_BASE_URL = 'https://fake-payment-gateway.vercel.app/api/v1/payment/card';
+  private FAKE_BASE_URL = 'http://fake-payment-tkh.onrender.com/api/v1/payment/card';  // Thay bằng URL Render nếu deploy mới
 
-  buildPaymentPayload(orderId: string, amount: number, orderInfo: string, order: any) {
-    const cleanAmount = Math.round(amount).toFixed(2);
-    return {
+  buildPaymentPayload(orderId: string, amount: number, orderInfo: string, order: any, cardData?: any, returnUrl?: string) {
+    const cleanAmount = `${Math.round(amount)}.00`;  // String với .00 đúng
+    const payload = {
       app_name: 'APPost',
       service: orderInfo || 'Shipping Service',
       customer_email: order.email || 'noemail@appost.com',
@@ -23,8 +23,21 @@ export class FakePaymentService {
       amount: cleanAmount,
       currency: 'VND',
       order_id: orderId,
-      order_info: orderInfo || `Thanh toán đơn ${orderId}`,
+      order_info: orderInfo || `Thanh toán đơn ${order.waybill}`,
+      return_url: returnUrl || 'https://ap-post.vercel.app/payment-success',  // Fields mới
     };
+
+    // Merge cardData nếu từ form frontend (override dummy)
+    if (cardData) {
+      payload.card_number = cardData.card_number || payload.card_number;
+      payload.card_holder_name = cardData.card_holder_name || payload.card_holder_name;
+      payload.expiryMonth = cardData.expiryMonth || payload.expiryMonth;
+      payload.expiryYear = cardData.expiryYear || payload.expiryYear;
+      payload.cvv = cardData.cvv || payload.cvv;
+      payload.card_type = cardData.card_type || payload.card_type;
+    }
+
+    return payload;
   }
 
   verifyReturn(query: Record<string, any>): {

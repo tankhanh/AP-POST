@@ -1,0 +1,43 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="card shadow-lg border-0 rounded-4" style="max-width: 500px; width: 92%;">
+        <div class="card-body p-5 text-center">
+
+            <!-- Icon -->
+            <div class="mb-4">
+                <i class="bi display-1" [class.bi-check-circle-fill.text-success]="status === 'paid'"
+                    [class.bi-x-circle-fill.text-danger]="status !== 'paid'"></i>
+            </div>
+
+            <!-- Tiêu đề -->
+            <h2 class="mb-3 fw-bold" [class.text-success]="status === 'paid'" [class.text-danger]="status !== 'paid'">
+                {{ status === 'paid' ? 'Thanh toán thành công!' : 'Thanh toán thất bại' }}
+            </h2>
+
+            <!-- Thông báo từ backend -->
+            @if (msg) {
+            <p class="text-muted fs-5 mb-4">{{ msg }}</p>
+            }
+
+            <!-- Mã vận đơn -->
+            <div class="bg-white border rounded-3 p-4 my-4 shadow-sm">
+                <p class="mb-2 text-muted small text-uppercase">Mã vận đơn</p>
+                <h3 class="fw-bold text-primary mb-0">{{ waybill }}</h3>
+            </div>
+
+            <!-- Nút hành động -->
+            <div class="d-grid gap-3 mt-5">
+                <button class="btn btn-primary btn-lg rounded-pill" (click)="goHome()">
+                    Tạo đơn mới
+                </button>
+                <a routerLink="/employee/orders" class="btn btn-outline-secondary rounded-pill">
+                    Xem danh sách đơn hàng
+                </a>
+            </div>
+
+            <small class="text-muted d-block mt-5">
+                Cảm ơn bạn đã sử dụng <strong>AP Post</strong>
+            </small>
+
+        </div>
+    </div>
+</div>

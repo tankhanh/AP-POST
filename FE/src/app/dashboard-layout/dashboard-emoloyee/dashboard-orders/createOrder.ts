@@ -359,20 +359,118 @@ export class CreateOrder implements OnInit, AfterViewInit {
     };
     this.ordersService.createOrder(data).subscribe({
       next: (res: any) => {
-        console.log('API Response:', res); 
+        console.log('Create order response:', res);
         this.loading = false;
-        this.createdWaybill = res.data?.waybill || res.waybill; 
-        if (res.redirectUrl) {  
-          Swal.fire({
-            icon: 'info',
-            title: 'Đang chuyển hướng đến thanh toán...',
-            timer: 2000,
-            timerProgressBar: true,
-          }).then(() => {
-            window.location.href = res.redirectUrl;
-          });
+        const orderId = res.data?._id || res._id;  // Lấy orderId từ response
+        this.createdWaybill = res.data?.waybill || res.waybill;
+        if (!orderId) {
+          Swal.fire('Lỗi!', 'Không lấy được orderId từ response', 'error');
           return;
-        } else {  
+        }
+
+        if (this.orderForm.value.paymentMethod === 'FAKE' && this.senderPay > 0) {
+          // Show form nhập card bằng Swal
+          Swal.fire({
+            title: 'Thanh toán bằng thẻ',
+            html: `
+              <form id="paymentForm" class="text-left" style="text-align: left;">
+                <div style="margin-bottom: 15px;">
+                  <label for="cardNumber" style="display: block; font-weight: bold;">Số thẻ:</label>
+                  <input type="text" id="cardNumber" class="swal2-input" placeholder="4242 4242 4242 4242" value="4242424242424242" style="width: 100%;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                  <label for="cardHolder" style="display: block; font-weight: bold;">Tên chủ thẻ:</label>
+                  <input type="text" id="cardHolder" class="swal2-input" placeholder="Nguyễn Văn A" value="Test User" style="width: 100%;">
+                </div>
+                <div style="display: flex; margin-bottom: 15px;">
+                  <div style="margin-right: 10px; flex: 1;">
+                    <label for="expiryMonth" style="display: block; font-weight: bold;">Tháng hết hạn:</label>
+                    <input type="text" id="expiryMonth" class="swal2-input" placeholder="01" value="01" style="width: 100%;">
+                  </div>
+                  <div style="flex: 1;">
+                    <label for="expiryYear" style="display: block; font-weight: bold;">Năm hết hạn:</label>
+                    <input type="text" id="expiryYear" class="swal2-input" placeholder="2025" value="2025" style="width: 100%;">
+                  </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                  <label for="cvv" style="display: block; font-weight: bold;">CVV:</label>
+                  <input type="text" id="cvv" class="swal2-input" placeholder="123" value="123" style="width: 100%;">
+                </div>
+              </form>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Thanh toán',
+            cancelButtonText: 'Hủy',
+            preConfirm: () => {
+              // Thu thập data từ form
+              const cardNumber = (document.getElementById('cardNumber') as HTMLInputElement).value.replace(/\s/g, '');
+              const cardHolder = (document.getElementById('cardHolder') as HTMLInputElement).value;
+              const expiryMonth = (document.getElementById('expiryMonth') as HTMLInputElement).value;
+              const expiryYear = (document.getElementById('expiryYear') as HTMLInputElement).value;
+              const cvv = (document.getElementById('cvv') as HTMLInputElement).value;
+
+              const cardData = {
+                card_number: cardNumber,
+                card_holder_name: cardHolder,
+                expiryMonth,
+                expiryYear,
+                cvv,
+                card_type: 'VISA'  // Fixed, hoặc thêm input nếu cần
+              };
+
+              // Validate basic
+              if (!cardNumber || cardNumber.length !== 16 || isNaN(Number(cardNumber))) {
+                Swal.showValidationMessage('Số thẻ không hợp lệ (phải là 16 chữ số)');
+                return false;
+              }
+              if (!expiryMonth || expiryMonth.length !== 2 || Number(expiryMonth) < 1 || Number(expiryMonth) > 12) {
+                Swal.showValidationMessage('Tháng hết hạn không hợp lệ (01-12)');
+                return false;
+              }
+              if (!expiryYear || expiryYear.length !== 4 || Number(expiryYear) < new Date().getFullYear()) {
+                Swal.showValidationMessage('Năm hết hạn không hợp lệ (ít nhất năm hiện tại)');
+                return false;
+              }
+              if (!cvv || cvv.length !== 3 || isNaN(Number(cvv))) {
+                Swal.showValidationMessage('CVV không hợp lệ (3 chữ số)');
+                return false;
+              }
+
+              // Gọi API backend với cardData
+              this.loading = true;  // Show loading nếu cần
+              return this.ordersService.createFakePayment(orderId, cardData).toPromise()
+                .then((payRes: any) => {
+                  this.loading = false;
+                  return payRes;
+                })
+                .catch((payErr) => {
+                  this.loading = false;
+                  Swal.showValidationMessage(`Lỗi: ${payErr.error?.message || 'Không thể kết nối'}`);
+                  return false;
+                });
+            }
+          }).then((result) => {
+            if (result.value && result.value.success) {
+              // Success: Redirect đến redirectUrl từ backend
+              Swal.fire({
+                icon: 'success',
+                title: 'Thanh toán thành công!',
+                text: result.value.message || 'Đang chuyển hướng...',
+                timer: 2000,
+                timerProgressBar: true,
+              }).then(() => {
+                window.location.href = result.value.redirectUrl;
+              });
+            } else if (result.value) {
+              // Failed nhưng có response
+              Swal.fire('Lỗi thanh toán!', result.value.message || 'Thanh toán thất bại', 'error');
+            }
+          }).catch((err) => {
+            console.error('Swal error:', err);
+            Swal.fire('Lỗi!', 'Không thể xử lý thanh toán', 'error');
+          });
+        } else {
+          // Thành công thông thường (không cần payment online)
           Swal.fire({
             icon: 'success',
             title: 'Tạo đơn thành công!',

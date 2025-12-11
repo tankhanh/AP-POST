@@ -86,7 +86,7 @@ export class OrdersService {
     );
   }
 
-  createFakePayment(orderId: string): Observable<any> {
-    return this.http.post(this.PAYMENT_URL, { orderId }, { headers: this.getHeaders() });
+  createFakePayment(orderId: string, cardData: any) {
+    return this.http.post(`${this.PAYMENT_URL}/payment/card`, { orderId, cardData });  // POST /payment/card với body {orderId, cardData}
   }
 }
