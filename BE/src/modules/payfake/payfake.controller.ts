@@ -73,8 +73,9 @@ export class FakePaymentController {
 
     return {
       success: true,
-      requireCardInput: true,  // ← thêm dòng này
-      message: 'Vui lòng nhập thông tin thẻ'
+      requireCardInput: true,
+      message: 'Vui lòng nhập thông tin thẻ để tiếp tục',
+      redirectUrl: null
     };
 
     // Gọi POST đến gateway từ server
