@@ -29,7 +29,7 @@ export class FakePaymentController {
 
   @Post('card')
   @Public()
-  async create(@Body() body: { orderId: string; cardData?: any }) {  // Thêm cardData optional từ form
+  async create(@Body() body: { orderId: string; cardData?: any }) {
     const { orderId, cardData } = body;
     if (!orderId) throw new BadRequestException('orderId required');
     const order = await this.orderModel.findById(orderId).lean();
@@ -38,10 +38,8 @@ export class FakePaymentController {
 
     let amountToPay = 0;
     if (order.shippingFeePayer === 'SENDER') {
-      // Người gửi trả hết: phí ship + COD
       amountToPay = (order.shippingFee || 0) + (order.codValue || 0);
     } else {
-      // Người nhận trả COD → người gửi chỉ trả ship online
       amountToPay = order.shippingFee || 0;
     }
     if (amountToPay <= 0) {
@@ -56,26 +54,24 @@ export class FakePaymentController {
       transactionId: order.waybill,
     });
 
-    const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') ||
-      'https://ap-post.vercel.app';
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
     const returnUrl = `${frontendUrl}/payment-success`;
 
-    // Build payload dùng service, merge cardData nếu có
+    // Build payload (giữ nguyên để dùng sau khi user nhập thẻ)
     const payload = this.fakePaymentService.buildPaymentPayload(
       orderId,
       amountToPay,
       `Order ${order.waybill} - Shipping fee`,
       order,
-      cardData,  // Truyền cardData để override dummy
-      returnUrl,  // Truyền returnUrl
+      cardData,
+      returnUrl,
     );
 
     return {
       success: true,
       requireCardInput: true,
-      message: 'Vui lòng nhập thông tin thẻ để tiếp tục',
-      redirectUrl: null
+      message: 'Vui lòng nhập thông tin thẻ để hoàn tất thanh toán',
+      redirectUrl: null  // KHÔNG TRẢ redirectUrl → frontend sẽ hiện form
     };
 
     // Gọi POST đến gateway từ server

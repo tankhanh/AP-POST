@@ -74,45 +74,44 @@ export class OrdersController {
 
   private async initiateGateway(method: string, order: any, payment: any): Promise<string | null> {
     if (method === 'FAKE') {
-      // const amountStr = Number(payment.amount).toFixed(2);
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
-      const returnUrl = `${frontendUrl}/order-success?orderId=${order._id}`;
+      // const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
+      // const returnUrl = `${frontendUrl}/order-success?orderId=${order._id}`;
 
-      const payload = {
-        app_name: 'APPost',
-        service: order.details || 'Shipping Service',
-        customer_email: order.email || 'noemail@appost.com',
-        card_type: 'VISA',
-        card_holder_name: order.senderName || 'Test User',
-        card_number: '4242424242424242',
-        expiryMonth: '12',
-        expiryYear: '2030',
-        cvv: '123',
-        amount: Math.round(payment.amount),
-        currency: 'VND',
-        order_id: order._id,
-        order_info: `Thanh toán đơn ${order.waybill} - APPost`,
-        return_url: returnUrl,
-      };
+      // const payload = {
+      //   app_name: 'APPost',
+      //   service: order.details || 'Shipping Service',
+      //   customer_email: order.email || 'noemail@appost.com',
+      //   card_type: 'VISA',
+      //   card_holder_name: order.senderName || 'Test User',
+      //   card_number: '4242424242424242',
+      //   expiryMonth: '12',
+      //   expiryYear: '2030',
+      //   cvv: '123',
+      //   amount: Math.round(payment.amount),
+      //   currency: 'VND',
+      //   order_id: order._id,
+      //   order_info: `Thanh toán đơn ${order.waybill} - APPost`,
+      //   return_url: returnUrl,
+      // };
 
-      try {
-        console.log('Sending payload to gateway:', JSON.stringify(payload));
-        const gatewayResponse = await lastValueFrom(
-          this.httpService.post('https://fake-payment-tkh.onrender.com/api/v1/payment/card', payload)
-            .pipe(map((res: any) => res.data))
-        ) as { success: boolean; message?: string };
+      // try {
+      //   console.log('Sending payload to gateway:', JSON.stringify(payload));
+      //   const gatewayResponse = await lastValueFrom(
+      //     this.httpService.post('https://fake-payment-tkh.onrender.com/api/v1/payment/card', payload)
+      //       .pipe(map((res: any) => res.data))
+      //   ) as { success: boolean; message?: string };
 
-        if (gatewayResponse.success) {
-          await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'paid');
-          return `${returnUrl}&status=paid&msg=${encodeURIComponent('Thanh toán thành công')}`;
-        } else {
-          await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'failed');
-          return `${returnUrl}&status=failed&msg=${encodeURIComponent(gatewayResponse.message || 'Thanh toán thất bại')}`;
-        }
-      } catch (err) {
-        await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'failed');
-        throw new BadRequestException('Lỗi kết nối gateway: ' + (err.message || 'Unknown'));
-      }
+      //   if (gatewayResponse.success) {
+      //     await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'paid');
+      //     return `${returnUrl}&status=paid&msg=${encodeURIComponent('Thanh toán thành công')}`;
+      //   } else {
+      //     await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'failed');
+      //     return `${returnUrl}&status=failed&msg=${encodeURIComponent(gatewayResponse.message || 'Thanh toán thất bại')}`;
+      //   }
+      // } catch (err) {
+      //   await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'failed');
+      //   throw new BadRequestException('Lỗi kết nối gateway: ' + (err.message || 'Unknown'));
+      // }
     }
     // Thêm logic cho MOMO, VNPAY, CARD, QR tương tự (sử dụng API của chúng)
     return null;
