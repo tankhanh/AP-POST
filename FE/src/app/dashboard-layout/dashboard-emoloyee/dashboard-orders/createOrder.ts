@@ -34,7 +34,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private locationService: LocationService,
     private router: Router,
     private geocoding: GeocodingService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -390,7 +390,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
             cancelButtonText: 'Hủy',
             confirmButtonColor: '#007bff',
             cancelButtonColor: '#dc3545',
-            width: '20000px', // Làm form rộng hơn
+            width: '1700px',
             padding: '1.5em',
             preConfirm: () => {
               // Giữ nguyên logic validate và gọi API
@@ -444,12 +444,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
                 .toPromise()
                 .then((payRes: any) => {
                   console.log('Received payRes full:', payRes);
-                  console.log(
-                    'payRes type:',
-                    typeof payRes,
-                    'success type:',
-                    typeof payRes?.data?.success
-                  );
                   this.loading = false;
                   if (payRes?.data?.success === true) {
                     return payRes.data;
@@ -462,9 +456,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
                 })
                 .catch((payErr) => {
                   this.loading = false;
-                  console.error('Payment HTTP error:', payErr); // Log chi tiết error
+                  console.error('Payment HTTP error:', payErr);
                   Swal.showValidationMessage(
-                    `Lỗi kết nối: ${payErr.error?.message || payErr.message || 'Unknown'}`
+                    `Lỗi kết nối: ${payErr.error?.message || payErr.message || 'Unknown error. Kiểm tra kết nối gateway (có thể server Render đang sleep, chờ 1 phút và thử lại).'}`
                   );
                   return false;
                 });
@@ -510,9 +504,8 @@ export class CreateOrder implements OnInit, AfterViewInit {
             html: `
               <div class="text-center">
                 <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
-                <h2 class="display-5 fw-bold text-secondary mb-4">${
-                  this.createdWaybill || 'N/A'
-                }</h2>
+                <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill || 'N/A'
+              }</h2>
                 <p class="text-muted mt-4 small">
                   Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
                 </p>

@@ -2,41 +2,43 @@
   <div class="card border-0 rounded-4 shadow-sm" style="max-width: 500px; width: 92%;">
     <div class="card-body p-5 text-center">
 
-      <!-- Icon check xám lớn (giống ảnh bạn gửi) -->
+      <!-- Icon check đen trong vòng tròn (giống ảnh) -->
       <div class="mb-5">
-        <i class="bi bi-check-circle-fill text-secondary" style="font-size: 80px;"></i>
+        <div class="rounded-circle bg-dark d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+          <i class="bi bi-check text-white" style="font-size: 50px;"></i>
+        </div>
       </div>
 
-      <!-- Tiêu đề lớn màu xanh lá -->
-      <h1 class="mb-2 fw-bold text-success" style="font-size: 2.8rem;">
+      <!-- Tiêu đề lớn màu xanh lá, xuống dòng -->
+      <h1 class="mb-2 fw-bold text-success" style="font-size: 2.8rem; line-height: 1.2;">
         Thanh toán<br>thành công!
       </h1>
 
-      <!-- Thông báo phụ (giống ảnh) -->
+      <!-- Dòng phụ nhỏ màu xám -->
       <p class="text-muted mb-5">Thanh toán thành công</p>
 
-      <!-- Box mã vận đơn trắng bo góc lớn -->
+      <!-- Box mã vận đơn trắng bo góc mềm -->
       @if (status === 'paid' && waybill && waybill !== 'N/A') {
-        <div class="bg-white border rounded-4 shadow-sm p-4 mb-5">
-          <p class="small text-uppercase text-muted mb-2">Mã vận đơn</p>
-          <h3 class="fw-bold text-success mb-0" style="font-size: 2rem; letter-spacing: 3px;">
+        <div class="bg-white rounded-4 shadow-sm p-4 mb-5">
+          <p class="small text-uppercase text-muted mb-2 fw-medium">Mã vận đơn</p>
+          <h3 class="fw-bold text-success mb-0" style="font-size: 2.2rem; letter-spacing: 3px;">
             {{ waybill }}
           </h3>
         </div>
       }
 
-      <!-- Nút hành động -->
-      <div class="d-grid gap-3">
-        <button class="btn btn-success btn-lg rounded-pill shadow-sm" (click)="goHome()">
+      <!-- Hai nút cùng kích thước, cùng kiểu (xanh lá nhạt, full width, bo tròn) -->
+      <div class="d-grid gap-3 mb-5">
+        <button class="btn btn-success btn-lg rounded-pill" (click)="goHome()">
           Tạo đơn mới
         </button>
-        <button class="btn btn-outline-success rounded-pill">
+        <a routerLink="/employee/order/list" class="btn btn-success btn-lg rounded-pill">
           Xem danh sách đơn hàng
-        </button>
+        </a>
       </div>
 
       <!-- Footer cảm ơn -->
-      <p class="text-muted mt-5 small">
+      <p class="text-muted small">
         Cảm ơn bạn đã sử dụng <strong class="text-success">AP Post</strong>
       </p>
 

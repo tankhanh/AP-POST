@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
@@ -14,11 +14,11 @@ import { HttpModule } from '@nestjs/axios';
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
     LocationModule,
     PricingModule,
-    PaymentsModule,
+    forwardRef(() => PaymentsModule),
     HttpModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, MailService],
   exports: [MongooseModule, OrdersService],
 })
-export class OrdersModule {}
+export class OrdersModule { }

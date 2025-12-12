@@ -162,7 +162,8 @@ export class OrdersService {
 
     // Gửi email xác nhận cho khách (nếu có email)
     const customerEmail = dto.email?.trim();
-    if (customerEmail) {
+    const isOnlinePayment = ['FAKE', 'BANK_TRANSFER', 'CARD', 'QR'].includes(dto.paymentMethod || '');
+    if (customerEmail && !isOnlinePayment) {  // Chỉ gửi nếu không phải FAKE/online
       try {
         await this.mailService.sendOrderConfirmation({
           to: customerEmail,

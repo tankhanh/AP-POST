@@ -6,9 +6,11 @@ import {
   BadRequestException,
   Get,
   Query,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order } from '../orders/schemas/order.schemas';
+import { Order, OrderStatus } from '../orders/schemas/order.schemas';
 import { Model } from 'mongoose';
 import { PaymentsService } from '../payments/payments.service';
 import { Public } from 'src/health/decorator/customize';
@@ -17,6 +19,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom, map } from 'rxjs';
 import { Payment, PaymentDocument } from '../payments/schemas/payment.schema';
+import { OrdersService } from '../orders/orders.service';
 
 @Controller('payment')
 export class FakePaymentController {
@@ -27,7 +30,9 @@ export class FakePaymentController {
     private configService: ConfigService,
     private httpService: HttpService,
     @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
-  ) {}
+    @Inject(forwardRef(() => OrdersService))
+    private ordersService: OrdersService,
+  ) { }
 
   @Post('card')
   @Public()
@@ -108,6 +113,7 @@ export class FakePaymentController {
             order.waybill,
             'paid',
           );
+          await this.ordersService.updateStatus(orderId, OrderStatus.CONFIRMED);
           await this.orderModel.updateOne(
             { _id: orderId },
             { status: 'CONFIRMED' },

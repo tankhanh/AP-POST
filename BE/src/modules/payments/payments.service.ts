@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,13 +13,16 @@ import {
   OrderDocument,
   OrderStatus,
 } from '../orders/schemas/order.schemas';
+import { OrdersService } from '../orders/orders.service';
 
 @Injectable()
 export class PaymentsService {
   constructor(
     @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
-  ) {}
+    @Inject(forwardRef(() => OrdersService))
+    private ordersService: OrdersService,
+  ) { }
 
   async create(orderId: string, method: string) {
     const order = await this.orderModel.findById(orderId);
@@ -97,10 +102,7 @@ export class PaymentsService {
     );
 
     if (payment && status === 'paid') {
-      await this.orderModel.updateOne(
-        { _id: payment.orderId },
-        { status: 'CONFIRMED' },
-      );
+      await this.ordersService.updateStatus(payment.orderId.toString(), OrderStatus.CONFIRMED);
     }
 
     return payment;

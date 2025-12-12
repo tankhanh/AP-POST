@@ -7,10 +7,11 @@ import { OrdersModule } from '../orders/orders.module';
 import { FakePaymentController } from '../payfake/payfake.controller';
 import { FakePaymentService } from '../payfake/payfake.service';
 import { HttpModule } from '@nestjs/axios';
+import { Order, OrderSchema } from '../orders/schemas/order.schemas';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
+    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }, { name: Order.name, schema: OrderSchema }]),
     forwardRef(() => OrdersModule),
     HttpModule
   ],
@@ -18,4 +19,4 @@ import { HttpModule } from '@nestjs/axios';
   providers: [PaymentsService, FakePaymentService],
   exports: [MongooseModule, PaymentsService, FakePaymentService],
 })
-export class PaymentsModule {}
+export class PaymentsModule { }
