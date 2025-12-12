@@ -1,43 +1,45 @@
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-    <div class="card shadow-lg border-0 rounded-4" style="max-width: 500px; width: 92%;">
-        <div class="card-body p-5 text-center">
+  <div class="card border-0 rounded-4 shadow-sm" style="max-width: 500px; width: 92%;">
+    <div class="card-body p-5 text-center">
 
-            <!-- Icon -->
-            <div class="mb-4">
-                <i class="bi display-1" [class.bi-check-circle-fill.text-success]="status === 'paid'"
-                    [class.bi-x-circle-fill.text-danger]="status !== 'paid'"></i>
-            </div>
+      <!-- Icon check xám lớn (giống ảnh bạn gửi) -->
+      <div class="mb-5">
+        <i class="bi bi-check-circle-fill text-secondary" style="font-size: 80px;"></i>
+      </div>
 
-            <!-- Tiêu đề -->
-            <h2 class="mb-3 fw-bold" [class.text-success]="status === 'paid'" [class.text-danger]="status !== 'paid'">
-                {{ status === 'paid' ? 'Thanh toán thành công!' : 'Thanh toán thất bại' }}
-            </h2>
+      <!-- Tiêu đề lớn màu xanh lá -->
+      <h1 class="mb-2 fw-bold text-success" style="font-size: 2.8rem;">
+        Thanh toán<br>thành công!
+      </h1>
 
-            <!-- Thông báo từ backend -->
-            @if (msg) {
-            <p class="text-muted fs-5 mb-4">{{ msg }}</p>
-            }
+      <!-- Thông báo phụ (giống ảnh) -->
+      <p class="text-muted mb-5">Thanh toán thành công</p>
 
-            <!-- Mã vận đơn -->
-            <div class="bg-white border rounded-3 p-4 my-4 shadow-sm">
-                <p class="mb-2 text-muted small text-uppercase">Mã vận đơn</p>
-                <h3 class="fw-bold text-primary mb-0">{{ waybill }}</h3>
-            </div>
-
-            <!-- Nút hành động -->
-            <div class="d-grid gap-3 mt-5">
-                <button class="btn btn-primary btn-lg rounded-pill" (click)="goHome()">
-                    Tạo đơn mới
-                </button>
-                <a routerLink="/employee/orders" class="btn btn-outline-secondary rounded-pill">
-                    Xem danh sách đơn hàng
-                </a>
-            </div>
-
-            <small class="text-muted d-block mt-5">
-                Cảm ơn bạn đã sử dụng <strong>AP Post</strong>
-            </small>
-
+      <!-- Box mã vận đơn trắng bo góc lớn -->
+      @if (status === 'paid' && waybill && waybill !== 'N/A') {
+        <div class="bg-white border rounded-4 shadow-sm p-4 mb-5">
+          <p class="small text-uppercase text-muted mb-2">Mã vận đơn</p>
+          <h3 class="fw-bold text-success mb-0" style="font-size: 2rem; letter-spacing: 3px;">
+            {{ waybill }}
+          </h3>
         </div>
+      }
+
+      <!-- Nút hành động -->
+      <div class="d-grid gap-3">
+        <button class="btn btn-success btn-lg rounded-pill shadow-sm" (click)="goHome()">
+          Tạo đơn mới
+        </button>
+        <button class="btn btn-outline-success rounded-pill">
+          Xem danh sách đơn hàng
+        </button>
+      </div>
+
+      <!-- Footer cảm ơn -->
+      <p class="text-muted mt-5 small">
+        Cảm ơn bạn đã sử dụng <strong class="text-success">AP Post</strong>
+      </p>
+
     </div>
+  </div>
 </div>
