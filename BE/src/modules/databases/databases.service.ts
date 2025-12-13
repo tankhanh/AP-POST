@@ -96,18 +96,18 @@ export class DatabasesService implements OnModuleInit {
     );
     const { svcSTD, svcEXP } = await this.seedServices();
     await this.seedPricing(svcSTD._id, svcEXP._id);
-    const { order1, customer } = await this.seedOrders(addrHn2, addrHcm1);
-    await this.seedShipments(
-      order1,
-      customer,
-      branchHN,
-      branchHCM,
-      svcSTD,
-      addrHn2,
-      addrHcm1,
-    );
-    await this.seedTrackings();
-    await this.seedNotifications(customer);
+    // const { order1, customer } = await this.seedOrders(addrHn2, addrHcm1);
+    // await this.seedShipments(
+    //   order1,
+    //   customer,
+    //   branchHN,
+    //   branchHCM,
+    //   svcSTD,
+    //   addrHn2,
+    //   addrHcm1,
+    // );
+    // await this.seedTrackings();
+    // await this.seedNotifications(customer);
 
     this.logger.log('DATABASE SEEDING COMPLETED');
   }
@@ -4015,157 +4015,157 @@ export class DatabasesService implements OnModuleInit {
     return { order1, customer: customer as any };
   }
 
-  /* ---------------- SHIPMENTS ---------------- */
-  private async seedShipments(
-    order1: OrderDocument,
-    customer: UserDocument,
-    branchHN: BranchDocument,
-    branchHCM: BranchDocument,
-    svcSTD: ServiceDocument,
-    pickupAddr: SeedAddress,
-    deliveryAddr: SeedAddress,
-  ) {
-    if (await this.shipmentModel.countDocuments()) return;
+  // /* ---------------- SHIPMENTS ---------------- */
+  // private async seedShipments(
+  //   order1: OrderDocument,
+  //   customer: UserDocument,
+  //   branchHN: BranchDocument,
+  //   branchHCM: BranchDocument,
+  //   svcSTD: ServiceDocument,
+  //   pickupAddr: SeedAddress,
+  //   deliveryAddr: SeedAddress,
+  // ) {
+  //   if (await this.shipmentModel.countDocuments()) return;
 
-    // 1) Vẫn tính khoảng cách cho vui, lưu vào shipment (không dùng để tính tiền)
-    const km = this.haversineKm(
-      pickupAddr.lat ?? 0,
-      pickupAddr.lng ?? 0,
-      deliveryAddr.lat ?? 0,
-      deliveryAddr.lng ?? 0,
-    );
+  //   // 1) Vẫn tính khoảng cách cho vui, lưu vào shipment (không dùng để tính tiền)
+  //   const km = this.haversineKm(
+  //     pickupAddr.lat ?? 0,
+  //     pickupAddr.lng ?? 0,
+  //     deliveryAddr.lat ?? 0,
+  //     deliveryAddr.lng ?? 0,
+  //   );
 
-    // 2) Fee theo công thức mới – ở đây đơn seed cố định HN -> HCM, STD, 1.5kg
-    const fee = 35000; // 20k (STD) + 15k (North <-> South), không overweight
+  //   // 2) Fee theo công thức mới – ở đây đơn seed cố định HN -> HCM, STD, 1.5kg
+  //   const fee = 35000; // 20k (STD) + 15k (North <-> South), không overweight
 
-    // 3) Tạo shipment
-    const [shipment] = await this.shipmentModel.insertMany([
-      {
-        trackingNumber: 'VNSEED001',
-        senderName: 'Nguyễn Văn A',
-        senderPhone: '0909090909',
-        receiverName: 'Trần Thị B',
-        receiverPhone: '0911222333',
-        pickupAddressId: pickupAddr._id,
-        deliveryAddressId: deliveryAddr._id,
-        originBranchId: branchHN._id,
-        destinationBranchId: branchHCM._id,
-        serviceId: svcSTD._id,
-        weightKg: 1.5,
-        shippingFee: fee,
-        codValue: 155000,
-        chargeableWeightKg: 1.5,
-        distanceKm: km,
-        status: ShipmentStatus.PENDING,
-        createdBy: customer._id as Types.ObjectId,
-        timeline: [
-          {
-            status: ShipmentStatus.PENDING,
-            timestamp: new Date(),
-            note: 'Đơn tạo (seed)',
-          },
-          {
-            status: ShipmentStatus.IN_TRANSIT,
-            timestamp: new Date(),
-            note: 'Đang trung chuyển',
-          },
-        ],
-      },
-    ]);
+  //   // 3) Tạo shipment
+  //   const [shipment] = await this.shipmentModel.insertMany([
+  //     {
+  //       trackingNumber: 'VNSEED001',
+  //       senderName: 'Nguyễn Văn A',
+  //       senderPhone: '0909090909',
+  //       receiverName: 'Trần Thị B',
+  //       receiverPhone: '0911222333',
+  //       pickupAddressId: pickupAddr._id,
+  //       deliveryAddressId: deliveryAddr._id,
+  //       originBranchId: branchHN._id,
+  //       destinationBranchId: branchHCM._id,
+  //       serviceId: svcSTD._id,
+  //       weightKg: 1.5,
+  //       shippingFee: fee,
+  //       codValue: 155000,
+  //       chargeableWeightKg: 1.5,
+  //       distanceKm: km,
+  //       status: ShipmentStatus.PENDING,
+  //       createdBy: customer._id as Types.ObjectId,
+  //       timeline: [
+  //         {
+  //           status: ShipmentStatus.PENDING,
+  //           timestamp: new Date(),
+  //           note: 'Đơn tạo (seed)',
+  //         },
+  //         {
+  //           status: ShipmentStatus.IN_TRANSIT,
+  //           timestamp: new Date(),
+  //           note: 'Đang trung chuyển',
+  //         },
+  //       ],
+  //     },
+  //   ]);
 
-    // 4) Payment (snapshot theo shipment)
-    await this.paymentModel.insertMany([
-      {
-        orderId: order1._id,
-        shipmentId: shipment._id,
-        userId: customer._id,
-        method: 'COD',
-        amount: fee,
-        status: 'pending',
-        provider: 'seed',
-      },
-    ]);
+  //   // 4) Payment (snapshot theo shipment)
+  //   await this.paymentModel.insertMany([
+  //     {
+  //       orderId: order1._id,
+  //       shipmentId: shipment._id,
+  //       userId: customer._id,
+  //       method: 'COD',
+  //       amount: fee,
+  //       status: 'pending',
+  //       provider: 'seed',
+  //     },
+  //   ]);
 
-    this.logger.log('>>> INIT SHIPMENTS & PAYMENTS DONE');
-  }
+  //   this.logger.log('>>> INIT SHIPMENTS & PAYMENTS DONE');
+  // }
 
-  /* ---------------- TRACKINGS ---------------- */
-  private async seedTrackings() {
+  // /* ---------------- TRACKINGS ---------------- */
+  // private async seedTrackings() {
 
-    // Lấy order đã tạo ở bước seedOrders
-    const order = await this.orderModel.findOne().lean();
-    if (!order) {
-      this.logger.warn('No order found for seeding tracking');
-      return;
-    }
+  //   // Lấy order đã tạo ở bước seedOrders
+  //   const order = await this.orderModel.findOne().lean();
+  //   if (!order) {
+  //     this.logger.warn('No order found for seeding tracking');
+  //     return;
+  //   }
 
-    // Lấy branch HN để gán
-    const branchHN = await this.branchModel.findOne({ code: 'HN01' }).lean();
-    if (!branchHN) {
-      this.logger.warn('Branch HN not found');
-      return;
-    }
-    if (await this.trackingModel.countDocuments()) return;
+  //   // Lấy branch HN để gán
+  //   const branchHN = await this.branchModel.findOne({ code: 'HN01' }).lean();
+  //   if (!branchHN) {
+  //     this.logger.warn('Branch HN not found');
+  //     return;
+  //   }
+  //   if (await this.trackingModel.countDocuments()) return;
 
-    const shipment = await this.shipmentModel.findOne();
-    if (!shipment) return;
+  //   const shipment = await this.shipmentModel.findOne();
+  //   if (!shipment) return;
 
-    await this.trackingModel.insertMany([
-      {
-        orderId: order._id,
-        status: OrderStatus.PENDING,        // Phải dùng OrderStatus
-        location: 'Bưu cục Hà Nội Center',
-        branchId: branchHN._id,
-        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 phút trước
-        note: 'Đơn hàng đã được tạo',
-        createdBy: { _id: new Types.ObjectId(), email: 'system@vtpost.local' },
-      },
-      {
-        orderId: order._id,
-        status: OrderStatus.CONFIRMED,
-        location: 'Bưu cục Hà Nội Center',
-        branchId: branchHN._id,
-        timestamp: new Date(Date.now() - 2 * 60 * 1000),
-        note: 'Đơn hàng đã được xác nhận và tiếp nhận',
-        createdBy: { _id: new Types.ObjectId(), email: 'staff.hn@vtpost.local' },
-      },
-      {
-        orderId: order._id,
-        status: OrderStatus.SHIPPING,
-        location: 'Trạm trung chuyển Huế',
-        branchId: branchHN._id, // hoặc branch khác nếu cần
-        timestamp: new Date(),
-        note: 'Đơn hàng đang được vận chuyển',
-        createdBy: { _id: new Types.ObjectId(), email: 'system@vtpost.local' },
-      },
-    ]);
+  //   await this.trackingModel.insertMany([
+  //     {
+  //       orderId: order._id,
+  //       status: OrderStatus.PENDING,        // Phải dùng OrderStatus
+  //       location: 'Bưu cục Hà Nội Center',
+  //       branchId: branchHN._id,
+  //       timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 phút trước
+  //       note: 'Đơn hàng đã được tạo',
+  //       createdBy: { _id: new Types.ObjectId(), email: 'system@vtpost.local' },
+  //     },
+  //     {
+  //       orderId: order._id,
+  //       status: OrderStatus.CONFIRMED,
+  //       location: 'Bưu cục Hà Nội Center',
+  //       branchId: branchHN._id,
+  //       timestamp: new Date(Date.now() - 2 * 60 * 1000),
+  //       note: 'Đơn hàng đã được xác nhận và tiếp nhận',
+  //       createdBy: { _id: new Types.ObjectId(), email: 'staff.hn@vtpost.local' },
+  //     },
+  //     {
+  //       orderId: order._id,
+  //       status: OrderStatus.SHIPPING,
+  //       location: 'Trạm trung chuyển Huế',
+  //       branchId: branchHN._id, // hoặc branch khác nếu cần
+  //       timestamp: new Date(),
+  //       note: 'Đơn hàng đang được vận chuyển',
+  //       createdBy: { _id: new Types.ObjectId(), email: 'system@vtpost.local' },
+  //     },
+  //   ]);
 
-    this.logger.log('>>> INIT TRACKINGS DONE');
-  }
+  //   this.logger.log('>>> INIT TRACKINGS DONE');
+  // }
 
-  /* ---------------- NOTIFICATIONS ---------------- */
-  private async seedNotifications(customer: UserDocument) {
-    if (await this.notificationModel.countDocuments()) return;
+  // /* ---------------- NOTIFICATIONS ---------------- */
+  // private async seedNotifications(customer: UserDocument) {
+  //   if (await this.notificationModel.countDocuments()) return;
 
-    await this.notificationModel.insertMany([
-      {
-        recipient: customer.email,
-        title: 'Chào mừng',
-        message: 'Tài khoản đã kích hoạt.',
-        type: NotificationType.EMAIL,
-        status: NotificationStatus.SENT,
-      },
-      {
-        recipient: customer.email,
-        title: 'Thông báo vận đơn',
-        message: 'Vận đơn VNSEED001 đã được khởi tạo.',
-        type: NotificationType.EMAIL,
-        status: NotificationStatus.PENDING,
-      },
-    ]);
+  //   await this.notificationModel.insertMany([
+  //     {
+  //       recipient: customer.email,
+  //       title: 'Chào mừng',
+  //       message: 'Tài khoản đã kích hoạt.',
+  //       type: NotificationType.EMAIL,
+  //       status: NotificationStatus.SENT,
+  //     },
+  //     {
+  //       recipient: customer.email,
+  //       title: 'Thông báo vận đơn',
+  //       message: 'Vận đơn VNSEED001 đã được khởi tạo.',
+  //       type: NotificationType.EMAIL,
+  //       status: NotificationStatus.PENDING,
+  //     },
+  //   ]);
 
-    this.logger.log('>>> INIT NOTIFICATIONS DONE');
-  }
+  //   this.logger.log('>>> INIT NOTIFICATIONS DONE');
+  // }
 
   /* ---------------- helpers ---------------- */
   private haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
