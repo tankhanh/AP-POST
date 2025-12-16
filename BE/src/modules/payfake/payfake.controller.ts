@@ -32,7 +32,7 @@ export class FakePaymentController {
     @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
     @Inject(forwardRef(() => OrdersService))
     private ordersService: OrdersService,
-  ) { }
+  ) {}
 
   @Post('card')
   @Public()
@@ -102,7 +102,7 @@ export class FakePaymentController {
           ),
         );
 
-        // ĐÚNG RỒI: response.data chính là object { success: true, message: "...", data: {...} }
+        // response.data chính là object { success: true, message: "...", data: {...} }
         const gatewayResponse = response.data;
 
         console.log('Gateway response:', gatewayResponse);
@@ -112,11 +112,6 @@ export class FakePaymentController {
           await this.paymentsService.updatePaymentStatusByTransaction(
             order.waybill,
             'paid',
-          );
-          await this.ordersService.updateStatus(orderId, OrderStatus.CONFIRMED);
-          await this.orderModel.updateOne(
-            { _id: orderId },
-            { status: 'CONFIRMED' },
           );
 
           return {

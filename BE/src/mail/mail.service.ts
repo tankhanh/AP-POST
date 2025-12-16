@@ -48,7 +48,7 @@ export class MailService implements OnModuleInit {
         const template = Handlebars.compile(source);
         const key = file.replace('.hbs', '').replace(/\//g, '.');
         this.templates[key] = template;
-        console.log(`Template loaded: ${file} → ${key}`);
+        // console.log(`Template loaded: ${file} → ${key}`);
       } else {
         console.error(`KHÔNG TÌM THẤY FILE TEMPLATE: ${fullPath}`);
       }
@@ -96,7 +96,8 @@ export class MailService implements OnModuleInit {
       codValue: this.formatPrice(params.codValue),
       senderPayAmount: this.formatPrice(params.senderPayAmount),
       receiverPayAmount: this.formatPrice(params.receiverPayAmount),
-      shippingFeePayerText: params.shippingFeePayer === 'SENDER' ? 'Người gửi' : 'Người nhận',
+      shippingFeePayerText:
+        params.shippingFeePayer === 'SENDER' ? 'Người gửi' : 'Người nhận',
       isSenderPayFee: params.shippingFeePayer === 'SENDER',
       isReceiverPayFee: params.shippingFeePayer === 'RECEIVER',
     });
@@ -122,13 +123,29 @@ export class MailService implements OnModuleInit {
       return;
     }
 
-    const statusMap: Record<string, { subject: string; templateKey: string }> = {
-      PENDING: { subject: 'Đơn hàng của bạn đã được tạo', templateKey: 'status.pending' },
-      CONFIRMED: { subject: 'Đơn hàng đã được xác nhận', templateKey: 'status.confirmed' },
-      SHIPPING: { subject: 'Đơn hàng đang trên đường giao đến bạn', templateKey: 'status.shipping' },
-      COMPLETED: { subject: 'Giao hàng thành công! Cảm ơn bạn', templateKey: 'status.completed' },
-      CANCELED: { subject: 'Đơn hàng đã bị hủy', templateKey: 'status.canceled' },
-    };
+    const statusMap: Record<string, { subject: string; templateKey: string }> =
+      {
+        PENDING: {
+          subject: 'Đơn hàng của bạn đã được tạo',
+          templateKey: 'status.pending',
+        },
+        CONFIRMED: {
+          subject: 'Đơn hàng đã được xác nhận',
+          templateKey: 'status.confirmed',
+        },
+        SHIPPING: {
+          subject: 'Đơn hàng đang trên đường giao đến bạn',
+          templateKey: 'status.shipping',
+        },
+        COMPLETED: {
+          subject: 'Giao hàng thành công! Cảm ơn bạn',
+          templateKey: 'status.completed',
+        },
+        CANCELED: {
+          subject: 'Đơn hàng đã bị hủy',
+          templateKey: 'status.canceled',
+        },
+      };
 
     const config = statusMap[params.status];
     if (!config) return;
@@ -162,7 +179,9 @@ export class MailService implements OnModuleInit {
       };
 
       const [response] = await SendGridMail.send(message);
-      console.log(`EMAIL GỬI THÀNH CÔNG → ${msg.to} | Status: ${response.statusCode}`);
+      console.log(
+        `EMAIL GỬI THÀNH CÔNG → ${msg.to} | Status: ${response.statusCode}`,
+      );
     } catch (err: any) {
       const errorDetail = err.response?.body?.errors
         ? JSON.stringify(err.response.body.errors)

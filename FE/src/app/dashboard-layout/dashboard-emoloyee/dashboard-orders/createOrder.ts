@@ -27,6 +27,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
   receiverPay = 0;
   paymentNote = '';
   createdWaybill: string = '';
+  submitting = false;
 
   constructor(
     private fb: FormBuilder,
@@ -34,7 +35,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private locationService: LocationService,
     private router: Router,
     private geocoding: GeocodingService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -393,6 +394,11 @@ export class CreateOrder implements OnInit, AfterViewInit {
             width: '1700px',
             padding: '1.5em',
             preConfirm: () => {
+              if (this.submitting) {
+                Swal.showValidationMessage('Đang xử lý, vui lòng chờ...');
+                return false;
+              }
+              this.submitting = true;
               // Giữ nguyên logic validate và gọi API
               const cardNumber = (
                 document.getElementById('cardNumber') as HTMLInputElement
@@ -443,6 +449,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
                 .createFakePayment(orderId, cardData)
                 .toPromise()
                 .then((payRes: any) => {
+                  this.submitting = false;
                   console.log('Received payRes full:', payRes);
                   this.loading = false;
                   if (payRes?.data?.success === true) {
@@ -455,10 +462,15 @@ export class CreateOrder implements OnInit, AfterViewInit {
                   }
                 })
                 .catch((payErr) => {
+                  this.submitting = false;
                   this.loading = false;
                   console.error('Payment HTTP error:', payErr);
                   Swal.showValidationMessage(
-                    `Lỗi kết nối: ${payErr.error?.message || payErr.message || 'Unknown error. Kiểm tra kết nối gateway (có thể server Render đang sleep, chờ 1 phút và thử lại).'}`
+                    `Lỗi kết nối: ${
+                      payErr.error?.message ||
+                      payErr.message ||
+                      'Unknown error. Kiểm tra kết nối gateway (có thể server Render đang sleep, chờ 1 phút và thử lại).'
+                    }`
                   );
                   return false;
                 });
@@ -504,8 +516,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
             html: `
               <div class="text-center">
                 <p class="mb-3 fs-5">Mã vận đơn của bạn là:</p>
-                <h2 class="display-5 fw-bold text-secondary mb-4">${this.createdWaybill || 'N/A'
-              }</h2>
+                <h2 class="display-5 fw-bold text-secondary mb-4">${
+                  this.createdWaybill || 'N/A'
+                }</h2>
                 <p class="text-muted mt-4 small">
                   Khách hàng có thể tra cứu tại: <strong>yourdomain.com/tracking</strong>
                 </p>
