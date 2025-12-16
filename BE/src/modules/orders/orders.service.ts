@@ -84,10 +84,23 @@ export class OrdersService {
     const shippingFeePayer = dto.shippingFeePayer || 'SENDER';
     const codValue = Number(dto.codValue) || 0;
 
-    // Tính tiền từng bên
-    const senderPayAmount = shippingFeePayer === 'SENDER' ? shippingFee : 0;
-    const receiverPayAmount =
+    // Tính tiền từng bên (logic gốc)
+    let senderPayAmount = shippingFeePayer === 'SENDER' ? shippingFee : 0;
+    let receiverPayAmount =
       codValue + (shippingFeePayer === 'RECEIVER' ? shippingFee : 0);
+
+    // SỬA: Điều chỉnh nếu là payment online (người gửi trả trước)
+    const isOnlinePayment = ['FAKE', 'BANK_TRANSFER', 'CARD', 'QR'].includes(
+      dto.paymentMethod || '',
+    );
+    if (isOnlinePayment) {
+      if (shippingFeePayer === 'SENDER') {
+        senderPayAmount += codValue; // Người gửi trả hết ship + COD
+        receiverPayAmount = 0; // Người nhận không trả gì
+      }
+      // Nếu RECEIVER, giữ nguyên: sender trả ship, receiver trả COD (vì COD thu sau)
+    }
+
     const totalOrderValue = codValue + shippingFee;
 
     // 3. Tạo địa chỉ
@@ -162,8 +175,8 @@ export class OrdersService {
 
     // Gửi email xác nhận cho khách (nếu có email)
     const customerEmail = dto.email?.trim();
-    const isOnlinePayment = ['FAKE', 'BANK_TRANSFER', 'CARD', 'QR'].includes(dto.paymentMethod || '');
-    if (customerEmail && !isOnlinePayment) {  // Chỉ gửi nếu không phải FAKE/online
+    if (customerEmail && !isOnlinePayment) {
+      // Chỉ gửi nếu không phải FAKE/online
       try {
         await this.mailService.sendOrderConfirmation({
           to: customerEmail,
@@ -396,7 +409,7 @@ export class OrdersService {
         .lean();
 
       if (!originProv?.code || !destProv?.code) {
-        throw (newShippingFee = 0);
+        newShippingFee = 0;
       } else {
         const calcResult = await this.pricingService.calculateShipping(
           originProv.code as ProvinceCode,
