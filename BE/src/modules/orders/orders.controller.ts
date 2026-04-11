@@ -10,6 +10,7 @@ import {
   UseGuards,
   BadRequestException,
   Req,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -25,6 +26,7 @@ import { PaymentsService } from '../payments/payments.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom, map } from 'rxjs';
+import { VietQrService } from '../vietqr/vietqr.service';
 
 @ApiTags('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -35,12 +37,17 @@ export class OrdersController {
     private readonly paymentsService: PaymentsService,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    private readonly vietQrService: VietQrService,
   ) {}
 
   @Post()
   @ResponseMessage('Tạo đơn hàng mới')
   async create(@Body() dto: CreateOrderDto, @Users() user: IUser) {
-    const order = await this.ordersService.create(dto, user);
+    const result = await this.ordersService.create(dto, user);
+    const order = result.order;
+    const payment = result.payment;
+    const qrUrl = result.qrUrl;
+
     const method = dto.paymentMethod || 'CASH';
 
     // Tính amount dựa trên order
@@ -48,35 +55,56 @@ export class OrdersController {
     const codValue = Number(dto.codValue) || 0;
     const shippingFee = order.shippingFee || 0;
     let amount = 0;
+
     if (shippingFeePayer === 'SENDER') {
-      amount = shippingFee + codValue;  // Người gửi trả hết
+      amount = shippingFee + codValue;
     } else {
-      amount = shippingFee;  // Người gửi trả ship, receiver trả COD
+      amount = shippingFee;
     }
 
-    // Tạo payment
-    const payment = await this.paymentsService.createPaymentForOrder(order._id.toString(), {
-      method,
-      amount,
-      status: method === 'CASH' ? 'paid' : 'pending',
-      transactionId: order.waybill,
-      createdBy: { _id: user._id, email: user.email },
-    });
+    // Nếu là QR thì không cần tạo lại payment (đã tạo trong service)
+    if (method === 'QR') {
+      return {
+        order,
+        payment,
+        qrUrl,
+        message: 'Vui lòng quét mã QR để thanh toán',
+      };
+    }
 
-    // Nếu online, initiate gateway và trả về redirectUrl
+    // Tạo payment (các phương thức khác)
+    const createdPayment = await this.paymentsService.createPaymentForOrder(
+      order._id.toString(),
+      {
+        method,
+        amount,
+        status: method === 'CASH' ? 'paid' : 'pending',
+        transactionId: order.waybill,
+        createdBy: { _id: user._id, email: user.email },
+      },
+    );
+
     let redirectUrl: string | null = null;
-    if (['MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD', 'QR'].includes(method)) {
-      redirectUrl = await this.initiateGateway(method, order, payment);
+    if (['MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD'].includes(method)) {
+      redirectUrl = await this.initiateGateway(method, order, createdPayment);
     }
 
-    return { order, payment, redirectUrl };
+    return {
+      order,
+      payment: createdPayment,
+      redirectUrl,
+      qrUrl,
+    };
   }
 
-  private async initiateGateway(method: string, order: any, payment: any): Promise<string | null> {
+  private async initiateGateway(
+    method: string,
+    order: any,
+    payment: any,
+  ): Promise<string | null> {
     if (method === 'FAKE') {
       // const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
       // const returnUrl = `${frontendUrl}/order-success?orderId=${order._id}`;
-
       // const payload = {
       //   app_name: 'APPost',
       //   service: order.details || 'Shipping Service',
@@ -93,14 +121,12 @@ export class OrdersController {
       //   order_info: `Thanh toán đơn ${order.waybill} - APPost`,
       //   return_url: returnUrl,
       // };
-
       // try {
       //   console.log('Sending payload to gateway:', JSON.stringify(payload));
       //   const gatewayResponse = await lastValueFrom(
       //     this.httpService.post('https://fake-payment-tkh.onrender.com/api/v1/payment/card', payload)
       //       .pipe(map((res: any) => res.data))
       //   ) as { success: boolean; message?: string };
-
       //   if (gatewayResponse.success) {
       //     await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'paid');
       //     return `${returnUrl}&status=paid&msg=${encodeURIComponent('Thanh toán thành công')}`;
@@ -157,6 +183,58 @@ export class OrdersController {
     return this.ordersService.findOne(id);
   }
 
+  @Public()
+  @Get(':id/qr')
+  @ResponseMessage('Lấy mã QR thanh toán')
+  async getQr(@Param('id') id: string) {
+    try {
+      const order = await this.ordersService.findOne(id);
+
+      if (!order) {
+        throw new NotFoundException('Không tìm thấy đơn hàng');
+      }
+
+      if (order.paymentMethod !== 'QR') {
+        throw new BadRequestException(
+          'Đơn hàng này không sử dụng thanh toán QR',
+        );
+      }
+
+      if (order.status !== OrderStatus.PENDING) {
+        throw new BadRequestException(
+          'Chỉ đơn hàng đang chờ (PENDING) mới có thể thanh toán bằng QR',
+        );
+      }
+
+      const amount =
+        Number(order.senderPayAmount) ||
+        Number(order.totalOrderValue) ||
+        Number(order.totalPrice) ||
+        0;
+
+      if (amount <= 0) {
+        throw new BadRequestException('Số tiền thanh toán không hợp lệ');
+      }
+
+      const qrUrl = this.vietQrService.generateQrUrl(
+        amount,
+        order.waybill,
+        `Thanh toan don hang AP Post - ${order.waybill}`,
+      );
+
+      return {
+        success: true,
+        qrUrl: qrUrl,
+        amount: amount,
+        waybill: order.waybill,
+        orderId: order._id,
+      };
+    } catch (error: any) {
+      console.error('Get QR error:', error);
+      throw error;
+    }
+  }
+
   @Patch(':id')
   @ResponseMessage('Cập nhật đơn hàng')
   update(@Param('id') id: string, @Body() dto: UpdateOrderDto) {
@@ -183,5 +261,11 @@ export class OrdersController {
   @ResponseMessage('Lấy trạng thái đơn hàng theo ID')
   getStatusById(@Param('id') id: string) {
     return this.ordersService.getStatusById(id);
+  }
+
+  @Patch(':id/confirm-payment')
+  @ResponseMessage('Xác nhận thanh toán QR thủ công')
+  async confirmPayment(@Param('id') id: string) {
+    return this.ordersService.confirmPayment(id);
   }
 }

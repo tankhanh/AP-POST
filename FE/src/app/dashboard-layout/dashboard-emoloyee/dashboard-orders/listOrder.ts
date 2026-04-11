@@ -3,6 +3,7 @@ import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-list-order',
@@ -207,7 +208,7 @@ export class ListOrder implements OnInit {
     ).toLocaleString()} đ</td></tr>
     <tr><th>Tổng tiền</th><td class="text-right"><strong>${order.totalPrice.toLocaleString()} đ</strong></td></tr>
     <tr><th>Trạng thái</th><td><span class="status status-${order.status}">${this.statusText(
-      order.status
+      order.status,
     )}</span></td></tr>
   </table>
   ${
@@ -220,9 +221,9 @@ export class ListOrder implements OnInit {
       .map(
         (it: any) => `
       <tr><td>${it.productName}</td><td class="text-right">${
-          it.quantity
-        }</td><td class="text-right">${it.price.toLocaleString()} đ</td>
-      <td class="text-right">${(it.quantity * it.price).toLocaleString()} đ</td></tr>`
+        it.quantity
+      }</td><td class="text-right">${it.price.toLocaleString()} đ</td>
+      <td class="text-right">${(it.quantity * it.price).toLocaleString()} đ</td></tr>`,
       )
       .join('')}
     </tbody>
@@ -269,5 +270,87 @@ export class ListOrder implements OnInit {
     if (i > -1) this.filters.status.splice(i, 1);
     else this.filters.status.push(value);
     this.applyFilters();
+  }
+
+  // ==================== HIỂN THỊ QR ====================
+  showQr(orderId: string, e: Event) {
+    e.stopPropagation();
+
+    this.ordersService.getQr(orderId).subscribe({
+      next: (response: any) => {
+        const res = response.data || response;
+
+        if (!res?.qrUrl) {
+          Swal.fire('Lỗi', 'Không nhận được mã QR từ server', 'error');
+          return;
+        }
+
+        const amount = Number(res.amount) || 0;
+        const waybill = res.waybill || 'N/A';
+
+        Swal.fire({
+          title: 'Mã QR thanh toán',
+          html: `
+          <div class="text-center">
+            <img src="${res.qrUrl}" 
+                 style="max-width: 320px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
+            <p class="mt-3 fs-4 fw-bold text-success">${amount.toLocaleString()} ₫</p>
+            <p class="text-muted">Mã vận đơn: <strong>${waybill}</strong></p>
+            <small class="text-success">Quét bằng app ngân hàng bất kỳ (VietQR)</small>
+          </div>
+        `,
+          confirmButtonText: 'Tôi đã thanh toán',
+          showCancelButton: true,
+          cancelButtonText: 'Để sau',
+          width: '420px',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.confirmQrPayment(orderId);
+          }
+        });
+      },
+      error: (err) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Không lấy được mã QR',
+          text: err.error?.message || 'Vui lòng thử lại sau',
+        });
+      },
+    });
+  }
+
+  // ==================== XÁC NHẬN THANH TOÁN THỦ CÔNG ====================
+  private confirmQrPayment(orderId: string) {
+    Swal.fire({
+      title: 'Xác nhận thanh toán?',
+      text: 'Đơn hàng sẽ chuyển sang trạng thái "Đã xác nhận" và gửi email thông báo.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Đã nhận tiền - Xác nhận',
+      confirmButtonColor: '#28a745',
+      cancelButtonText: 'Hủy',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.ordersService.confirmPayment(orderId).subscribe({
+          next: () => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Thành công!',
+              text: 'Đơn hàng đã chuyển sang trạng thái ĐÃ XÁC NHẬN',
+              timer: 2000,
+              timerProgressBar: true,
+            });
+            this.loadOrders(); // Refresh danh sách
+          },
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Xác nhận thất bại',
+              text: err.error?.message || 'Không thể cập nhật trạng thái',
+            });
+          },
+        });
+      }
+    });
   }
 }

@@ -1,20 +1,21 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-list-order',
   templateUrl: './adminlistOrder.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, RouterLink],
 })
 export class AdminListOrder implements OnInit {
   orders: any[] = [];
   filteredOrders: any[] = [];
   expandedOrderId: string | null = null;
-  copiedWaybill: string | null = null; // cho hiệu ứng copy
+  copiedWaybill: string | null = null;
   pageSize = 10;
   currentPage = 1;
 
@@ -37,7 +38,7 @@ export class AdminListOrder implements OnInit {
     { value: 'CANCELED', label: 'Đã hủy' },
   ];
 
-  constructor(private ordersService: OrdersService) { }
+  constructor(private ordersService: OrdersService) {}
 
   ngOnInit() {
     this.loadOrders();
@@ -72,7 +73,7 @@ export class AdminListOrder implements OnInit {
         : true;
       const searchMatch = this.filters.search
         ? (order.waybill || '').toLowerCase().includes(this.filters.search.toLowerCase()) ||
-        order._id.toLowerCase().includes(this.filters.search.toLowerCase())
+          order._id.toLowerCase().includes(this.filters.search.toLowerCase())
         : true;
       const nameMatch = this.filters.receiverName
         ? order.receiverName.toLowerCase().includes(this.filters.receiverName.toLowerCase())
@@ -160,78 +161,81 @@ export class AdminListOrder implements OnInit {
     }
 
     const printHTML = `
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Vận đơn ${order.waybill || order._id}</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 15px; width: 148mm; min-height: 210mm; background: white; }
-  .container { border: 2px solid #000; padding: 20px; border-radius: 10px; }
-  .header img { height: 60px; display: block; margin: 0 auto 10px; }
-  .header h1 { text-align: center; margin: 10px 0; color: #1976d2; font-size: 24px; }
-  .barcode { text-align: center; margin: 15px 0; }
-  .barcode img { height: 70px; }
-  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-  th, td { border: 1px solid #333; padding: 10px; text-align: left; font-size: 14px; }
-  th { background: #f0f0f0; width: 35%; }
-  .text-right { text-align: right; }
-  .status { padding: 6px 12px; border-radius: 6px; color: white; font-weight: bold; }
-  .status-PENDING { background: #ffc107; color: black; }
-  .status-CONFIRMED { background: #17a2b8; }
-  .status-SHIPPING { background: #fd7e14; }
-  .status-COMPLETED { background: #28a745; }
-  .status-CANCELED { background: #dc3545; }
-  .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #555; }
-  @media print { body { padding: 5mm; } }
-</style>
-</head>
-<body onload="window.print(); setTimeout(() => window.close(), 500);">
-<div class="container">
-  <div class="header">
-    <h1>PHIẾU GỬI HÀNG</h1>
-    <h2>Mã vận đơn: <strong>${order.waybill || 'Chưa có'}</strong></h2>
-  </div>
-  <div class="barcode">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${order.waybill || order._id
+  <!DOCTYPE html>
+  <html><head><meta charset="UTF-8"><title>Vận đơn ${order.waybill || order._id}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 15px; width: 148mm; min-height: 210mm; background: white; }
+    .container { border: 2px solid #000; padding: 20px; border-radius: 10px; }
+    .header img { height: 60px; display: block; margin: 0 auto 10px; }
+    .header h1 { text-align: center; margin: 10px 0; color: #1976d2; font-size: 24px; }
+    .barcode { text-align: center; margin: 15px 0; }
+    .barcode img { height: 70px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #333; padding: 10px; text-align: left; font-size: 14px; }
+    th { background: #f0f0f0; width: 35%; }
+    .text-right { text-align: right; }
+    .status { padding: 6px 12px; border-radius: 6px; color: white; font-weight: bold; }
+    .status-PENDING { background: #ffc107; color: black; }
+    .status-CONFIRMED { background: #17a2b8; }
+    .status-SHIPPING { background: #fd7e14; }
+    .status-COMPLETED { background: #28a745; }
+    .status-CANCELED { background: #dc3545; }
+    .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #555; }
+    @media print { body { padding: 5mm; } }
+  </style>
+  </head>
+  <body onload="window.print(); setTimeout(() => window.close(), 500);">
+  <div class="container">
+    <div class="header">
+      <h1>PHIẾU GỬI HÀNG</h1>
+      <h2>Mã vận đơn: <strong>${order.waybill || 'Chưa có'}</strong></h2>
+    </div>
+    <div class="barcode">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${
+        order.waybill || order._id
       }" alt="QR Code">
-  </div>
-  <table>
-    <tr><th>Người gửi</th><td>${order.senderName || '—'}</td></tr>
-    <tr><th>Lấy hàng</th><td>${this.formatAddress(order.pickupAddressId)}</td></tr>
-    <tr><th>Người nhận</th><td>${order.receiverName}</td></tr>
-    <tr><th>SĐT nhận</th><td>${order.receiverPhone}</td></tr>
-    <tr><th>Giao hàng</th><td>${this.formatAddress(order.deliveryAddressId)}</td></tr>
-    <tr><th>Dịch vụ</th><td>${order.serviceCode || '—'}</td></tr>
-    <tr><th>COD</th><td class="text-right">${(order.codValue || 0).toLocaleString()} đ</td></tr>
-    <tr><th>Phí ship</th><td class="text-right">${(
+    </div>
+    <table>
+      <tr><th>Người gửi</th><td>${order.senderName || '—'}</td></tr>
+      <tr><th>Lấy hàng</th><td>${this.formatAddress(order.pickupAddressId)}</td></tr>
+      <tr><th>Người nhận</th><td>${order.receiverName}</td></tr>
+      <tr><th>SĐT nhận</th><td>${order.receiverPhone}</td></tr>
+      <tr><th>Giao hàng</th><td>${this.formatAddress(order.deliveryAddressId)}</td></tr>
+      <tr><th>Dịch vụ</th><td>${order.serviceCode || '—'}</td></tr>
+      <tr><th>COD</th><td class="text-right">${(order.codValue || 0).toLocaleString()} đ</td></tr>
+      <tr><th>Phí ship</th><td class="text-right">${(
         order.shippingFee || 0
       ).toLocaleString()} đ</td></tr>
-    <tr><th>Tổng tiền</th><td class="text-right"><strong>${order.totalPrice.toLocaleString()} đ</strong></td></tr>
-    <tr><th>Trạng thái</th><td><span class="status status-${order.status}">${this.statusText(
-        order.status
+      <tr><th>Tổng tiền</th><td class="text-right"><strong>${order.totalPrice.toLocaleString()} đ</strong></td></tr>
+      <tr><th>Trạng thái</th><td><span class="status status-${order.status}">${this.statusText(
+        order.status,
       )}</span></td></tr>
-  </table>
-  ${order.items?.length
+    </table>
+    ${
+      order.items?.length
         ? `
-  <h3 style="margin: 20px 0 10px;">Sản phẩm</h3>
-  <table>
-    <thead style="background:#e9ecef;"><tr><th>Sản phẩm</th><th class="text-right">SL</th><th class="text-right">Giá</th><th class="text-right">T.Tiền</th></tr></thead>
-    <tbody>${order.items
-          .map(
-            (it: any) => `
-      <tr><td>${it.productName}</td><td class="text-right">${it.quantity
-              }</td><td class="text-right">${it.price.toLocaleString()} đ</td>
-      <td class="text-right">${(it.quantity * it.price).toLocaleString()} đ</td></tr>`
-          )
-          .join('')}
-    </tbody>
-  </table>`
+    <h3 style="margin: 20px 0 10px;">Sản phẩm</h3>
+    <table>
+      <thead style="background:#e9ecef;"><tr><th>Sản phẩm</th><th class="text-right">SL</th><th class="text-right">Giá</th><th class="text-right">T.Tiền</th></tr></thead>
+      <tbody>${order.items
+        .map(
+          (it: any) => `
+        <tr><td>${it.productName}</td><td class="text-right">${
+          it.quantity
+        }</td><td class="text-right">${it.price.toLocaleString()} đ</td>
+        <td class="text-right">${(it.quantity * it.price).toLocaleString()} đ</td></tr>`,
+        )
+        .join('')}
+      </tbody>
+    </table>`
         : ''
-      }
-  <div class="footer">
-    <p>Ngày in: ${new Date().toLocaleString('vi-VN')}</p>
-    <p>Cảm ơn Quý khách đã sử dụng dịch vụ!</p>
+    }
+    <div class="footer">
+      <p>Ngày in: ${new Date().toLocaleString('vi-VN')}</p>
+      <p>Cảm ơn Quý khách đã sử dụng dịch vụ!</p>
+    </div>
   </div>
-</div>
-</body></html>`;
+  </body></html>`;
 
     printWin.document.write(printHTML);
     printWin.document.close();
@@ -266,5 +270,87 @@ export class AdminListOrder implements OnInit {
     if (i > -1) this.filters.status.splice(i, 1);
     else this.filters.status.push(value);
     this.applyFilters();
+  }
+
+  // ==================== HIỂN THỊ QR ====================
+  showQr(orderId: string, e: Event) {
+    e.stopPropagation();
+
+    this.ordersService.getQr(orderId).subscribe({
+      next: (response: any) => {
+        const res = response.data || response;
+
+        if (!res?.qrUrl) {
+          Swal.fire('Lỗi', 'Không nhận được mã QR từ server', 'error');
+          return;
+        }
+
+        const amount = Number(res.amount) || 0;
+        const waybill = res.waybill || 'N/A';
+
+        Swal.fire({
+          title: 'Mã QR thanh toán',
+          html: `
+            <div class="text-center">
+              <img src="${res.qrUrl}" 
+                   style="max-width: 320px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
+              <p class="mt-3 fs-4 fw-bold text-success">${amount.toLocaleString()} ₫</p>
+              <p class="text-muted">Mã vận đơn: <strong>${waybill}</strong></p>
+              <small class="text-success">Quét bằng app ngân hàng bất kỳ (VietQR)</small>
+            </div>
+          `,
+          confirmButtonText: 'Tôi đã thanh toán',
+          showCancelButton: true,
+          cancelButtonText: 'Để sau',
+          width: '420px',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.confirmQrPayment(orderId);
+          }
+        });
+      },
+      error: (err) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Không lấy được mã QR',
+          text: err.error?.message || 'Vui lòng thử lại sau',
+        });
+      },
+    });
+  }
+
+  // ==================== XÁC NHẬN THANH TOÁN THỦ CÔNG ====================
+  private confirmQrPayment(orderId: string) {
+    Swal.fire({
+      title: 'Xác nhận thanh toán?',
+      text: 'Đơn hàng sẽ chuyển sang trạng thái "Đã xác nhận" và gửi email thông báo.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Đã nhận tiền - Xác nhận',
+      confirmButtonColor: '#28a745',
+      cancelButtonText: 'Hủy',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.ordersService.confirmPayment(orderId).subscribe({
+          next: () => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Thành công!',
+              text: 'Đơn hàng đã chuyển sang trạng thái ĐÃ XÁC NHẬN',
+              timer: 2000,
+              timerProgressBar: true,
+            });
+            this.loadOrders(); // Refresh danh sách
+          },
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Xác nhận thất bại',
+              text: err.error?.message || 'Không thể cập nhật trạng thái',
+            });
+          },
+        });
+      }
+    });
   }
 }

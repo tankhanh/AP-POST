@@ -24,6 +24,7 @@ import { MailService } from 'src/mail/mail.service';
 
 import { PaymentsService } from '../payments/payments.service';
 import { PaymentStatus } from '../payments/schemas/payment.schema';
+import { VietQrService } from '../vietqr/vietqr.service';
 
 @Injectable()
 export class OrdersService {
@@ -41,6 +42,7 @@ export class OrdersService {
     private pricingService: PricingService,
     private paymentsService: PaymentsService,
     private mailService: MailService,
+    private readonly vietQrService: VietQrService,
   ) {
     this.trackingModel = this.connection.model(Tracking.name);
   }
@@ -84,21 +86,19 @@ export class OrdersService {
     const shippingFeePayer = dto.shippingFeePayer || 'SENDER';
     const codValue = Number(dto.codValue) || 0;
 
-    // Tính tiền từng bên (logic gốc)
     let senderPayAmount = shippingFeePayer === 'SENDER' ? shippingFee : 0;
     let receiverPayAmount =
       codValue + (shippingFeePayer === 'RECEIVER' ? shippingFee : 0);
 
-    // SỬA: Điều chỉnh nếu là payment online (người gửi trả trước)
     const isOnlinePayment = ['FAKE', 'BANK_TRANSFER', 'CARD', 'QR'].includes(
       dto.paymentMethod || '',
     );
+
     if (isOnlinePayment) {
       if (shippingFeePayer === 'SENDER') {
-        senderPayAmount += codValue; // Người gửi trả hết ship + COD
-        receiverPayAmount = 0; // Người nhận không trả gì
+        senderPayAmount += codValue;
+        receiverPayAmount = 0;
       }
-      // Nếu RECEIVER, giữ nguyên: sender trả ship, receiver trả COD (vì COD thu sau)
     }
 
     const totalOrderValue = codValue + shippingFee;
@@ -113,9 +113,7 @@ export class OrdersService {
 
     if (user.role === 'STAFF') {
       if (!rawBranchId) {
-        throw new BadRequestException(
-          'Nhân viên chưa được gắn bưu cục. Vui lòng liên hệ quản trị viên.',
-        );
+        throw new BadRequestException('Nhân viên chưa được gắn bưu cục.');
       }
       branchId = new Types.ObjectId(rawBranchId);
     } else if (user.role === 'ADMIN') {
@@ -132,18 +130,16 @@ export class OrdersService {
       codValue,
       details: dto.details || null,
       shippingFee,
-      totalPrice: totalOrderValue, // Không còn là cod + phí nữa → là tổng giá trị đơn
+      totalPrice: totalOrderValue,
       serviceCode: dto.serviceCode || 'STD',
       weightKg: dto.weightKg,
       waybill,
 
-      // Các trường mới - quan trọng
       shippingFeePayer,
       senderPayAmount,
       receiverPayAmount,
       totalOrderValue,
 
-      // Snapshot pricing
       snapshotPricingId: activePricing._id,
       snapshotBasePrice: activePricing.basePrice,
       snapshotOverweightFee: calcResult.breakdown.overweightFee || 0,
@@ -173,10 +169,9 @@ export class OrdersService {
       console.error('Lỗi tạo tracking:', error);
     }
 
-    // Gửi email xác nhận cho khách (nếu có email)
+    // Gửi email xác nhận (nếu không phải online)
     const customerEmail = dto.email?.trim();
     if (customerEmail && !isOnlinePayment) {
-      // Chỉ gửi nếu không phải FAKE/online
       try {
         await this.mailService.sendOrderConfirmation({
           to: customerEmail,
@@ -189,13 +184,40 @@ export class OrdersService {
           totalOrderValue,
           shippingFeePayer,
         });
-        console.log('Email xác nhận đã được gửi đến:', customerEmail);
       } catch (err: any) {
         console.log('Gửi email thất bại:', err.message);
       }
     }
 
-    return newOrder;
+    // ==================== TẠO QR CODE NẾU LÀ QR PAYMENT ====================
+    let qrUrl: string | null = null;
+    if (dto.paymentMethod === 'QR') {
+      const amountToPay = senderPayAmount || totalOrderValue;
+      qrUrl = this.vietQrService.generateQrUrl(
+        amountToPay,
+        newOrder.waybill,
+        `Thanh toan don hang AP Post - ${newOrder.waybill}`,
+      );
+    }
+
+    // Tạo payment
+    const payment = await this.paymentsService.createPaymentForOrder(
+      newOrder._id.toString(),
+      {
+        method: dto.paymentMethod || 'CASH',
+        amount: senderPayAmount || totalOrderValue,
+        status: dto.paymentMethod === 'CASH' ? 'paid' : 'pending',
+        transactionId: newOrder.waybill,
+        createdBy: { _id: user._id, email: user.email },
+      },
+    );
+
+    return {
+      order: newOrder,
+      payment,
+      redirectUrl: null,
+      qrUrl,
+    };
   }
 
   private async generateUniqueWaybill(): Promise<string> {
@@ -662,6 +684,55 @@ export class OrdersService {
     return {
       id: order._id.toString(),
       status: order.status as OrderStatus,
+    };
+  }
+
+  // ==================== XÁC NHẬN THANH TOÁN QR THỦ CÔNG ====================
+  async confirmPayment(orderId: string) {
+    const order = await this.orderModel.findById(orderId);
+    if (!order) {
+      throw new NotFoundException('Không tìm thấy đơn hàng');
+    }
+
+    if (order.paymentMethod !== 'QR') {
+      throw new BadRequestException(
+        'Chỉ hỗ trợ xác nhận thanh toán cho đơn QR',
+      );
+    }
+
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException(
+        'Chỉ đơn hàng PENDING mới có thể xác nhận thanh toán',
+      );
+    }
+
+    // Cập nhật trạng thái
+    order.status = OrderStatus.CONFIRMED;
+    order.updatedAt = new Date();
+
+    const updatedOrder = await order.save();
+
+    // Gửi email (dùng hàm có sẵn của bạn)
+    try {
+      await this.mailService.sendOrderConfirmation({
+        to: updatedOrder.email,
+        receiverName: updatedOrder.receiverName,
+        waybill: updatedOrder.waybill,
+        shippingFee: updatedOrder.shippingFee,
+        codValue: updatedOrder.codValue,
+        senderPayAmount: updatedOrder.senderPayAmount || 0,
+        receiverPayAmount: updatedOrder.receiverPayAmount || 0,
+        totalOrderValue: updatedOrder.totalOrderValue || 0,
+        shippingFeePayer: updatedOrder.shippingFeePayer,
+      });
+    } catch (error) {
+      console.warn('Gửi email confirmed thất bại:', error);
+    }
+
+    return {
+      success: true,
+      message: 'Đơn hàng đã được xác nhận thanh toán thành công',
+      order: updatedOrder,
     };
   }
 }

@@ -1,4 +1,5 @@
 export const env = {
-    production: true,
-    baseUrl: 'https://ap-post-api.onrender.com/api/v1',
-}
+  production: true,
+  // baseUrl: 'http://localhost:8000/api/v1',
+  baseUrl: 'https://ap-post-api.onrender.com/api/v1',
+};

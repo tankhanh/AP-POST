@@ -193,8 +193,8 @@
           <td>
             <span [ngClass]="statusClass(order.status)">{{ statusText(order.status) }}</span>
           </td>
-          <td>{{ order.createdAt | date : 'dd/MM/yyyy HH:mm' }}</td>
-          <td>{{ order.updatedAt | date : 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ order.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
 
           <!-- Thao tác -->
           <td (click)="$event.stopPropagation()">
@@ -233,6 +233,14 @@
                 />
               </svg>
               In
+            </button>
+
+            <button
+              *ngIf="order.paymentMethod === 'QR' && order.status === 'PENDING'"
+              class="btn btn-info btn-sm py-2 px-3 text-white ms-1"
+              (click)="showQr(order._id, $event)"
+            >
+              <i class="bi bi-qr-code-scan"></i> QR
             </button>
           </td>
         </tr>

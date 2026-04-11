@@ -2,7 +2,7 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0 fw-bold">Danh sách đơn hàng của bạn</h2>
     <a
-      routerLink="/admin/order/create"
+      routerLink="/admin/orders/create"
       class="btn btn-success btn-lg shadow-sm d-flex align-items-center gap-2"
     >
       <svg
@@ -193,51 +193,55 @@
           <td>
             <span [ngClass]="statusClass(order.status)">{{ statusText(order.status) }}</span>
           </td>
-          <td>{{ order.createdAt | date : 'dd/MM/yyyy HH:mm' }}</td>
-          <td>{{ order.updatedAt | date : 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ order.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
 
           <!-- Thao tác -->
           <td (click)="$event.stopPropagation()">
-            <div class="table-actions">
-              <button
-                *ngIf="canEdit(order)"
-                class="btn-sm btn-edit"
-                [routerLink]="['/admin/order/edit', order._id]"
-                title="Sửa đơn"
-              >
-                Sửa
-              </button>
+            <button
+              *ngIf="canEdit(order)"
+              class="btn btn-warning btn-sm py-2 px-3 me-1"
+              [routerLink]="['/admin/order/edit', order._id]"
+            >
+              Sửa
+            </button>
 
-              <button
-                *ngIf="canDelete(order)"
-                class="btn-sm btn-delete btn-sm py-2 px-3 me-1"
-                (click)="deleteOrder(order._id, $event)"
-                title="Xóa đơn"
-              >
-                Xóa
-              </button>
+            <button
+              *ngIf="canDelete(order)"
+              class="btn btn-danger btn-sm py-2 px-3 me-1"
+              (click)="deleteOrder(order._id, $event)"
+            >
+              Xóa
+            </button>
 
-              <!-- Nút In -->
-              <button
-                class="btn btn-info btn-sm py-2 px-3 text-white"
-                (click)="printOrder(order)"
-                title="In vận đơn"
+            <!-- Nút In -->
+            <button
+              class="btn btn-info btn-sm py-2 px-3 text-white"
+              (click)="printOrder(order)"
+              title="In vận đơn"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                viewBox="0 0 16 16"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z" />
-                  <path
-                    d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5z"
-                  />
-                </svg>
-                In
-              </button>
-            </div>
+                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z" />
+                <path
+                  d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5z"
+                />
+              </svg>
+              In
+            </button>
+
+            <button
+              *ngIf="order.paymentMethod === 'QR' && order.status === 'PENDING'"
+              class="btn btn-info btn-sm py-2 px-3 text-white ms-1"
+              (click)="showQr(order._id, $event)"
+            >
+              <i class="bi bi-qr-code-scan"></i> QR
+            </button>
           </td>
         </tr>
 

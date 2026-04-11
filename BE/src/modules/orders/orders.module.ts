@@ -8,6 +8,7 @@ import { PricingModule } from '../pricing/pricing.module';
 import { MailService } from 'src/mail/mail.service';
 import { PaymentsModule } from '../payments/payments.module';
 import { HttpModule } from '@nestjs/axios';
+import { VietQrModule } from '../vietqr/vietqr.module';
 
 @Module({
   imports: [
@@ -16,9 +17,10 @@ import { HttpModule } from '@nestjs/axios';
     PricingModule,
     forwardRef(() => PaymentsModule),
     HttpModule,
+    VietQrModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, MailService],
   exports: [MongooseModule, OrdersService],
 })
-export class OrdersModule { }
+export class OrdersModule {}

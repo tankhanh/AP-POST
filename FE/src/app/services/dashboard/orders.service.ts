@@ -28,7 +28,7 @@ export class OrdersService {
         catchError((err) => {
           console.error('Create order error:', err);
           return throwError(() => err);
-        })
+        }),
       );
   }
 
@@ -64,7 +64,7 @@ export class OrdersService {
     return this.http.patch(
       `${this.API_URL}/${id}/status/${status}`,
       {},
-      { headers: this.getHeaders() }
+      { headers: this.getHeaders() },
     );
   }
 
@@ -82,19 +82,23 @@ export class OrdersService {
     return this.http.post(
       `${this.API_URL}/${orderId}/resend-email`,
       {},
-      { headers: this.getHeaders() }
+      { headers: this.getHeaders() },
     );
   }
 
   createFakePayment(orderId: string, cardData: any) {
     return this.http
-      .post(`${this.PAYMENT_URL}`, { orderId, cardData }, { headers: this.getHeaders(), observe: 'response' }) // Fix: Dùng PAYMENT_URL, thêm headers
+      .post(
+        `${this.PAYMENT_URL}`,
+        { orderId, cardData },
+        { headers: this.getHeaders(), observe: 'response' },
+      ) // Fix: Dùng PAYMENT_URL, thêm headers
       .pipe(
         map((res: any) => res.body), // Extract body JSON
         catchError((err) => {
           console.error('HTTP error in service:', err);
           return throwError(() => err);
-        })
+        }),
       );
   }
 
@@ -111,5 +115,17 @@ export class OrdersService {
       headers: this.getHeaders(),
       params,
     });
+  }
+
+  getQr(orderId: string): Observable<any> {
+    return this.http.get(`${this.API_URL}/${orderId}/qr`, { headers: this.getHeaders() });
+  }
+
+  confirmPayment(orderId: string): Observable<any> {
+    return this.http.patch(
+      `${this.API_URL}/${orderId}/confirm-payment`,
+      {},
+      { headers: this.getHeaders() },
+    );
   }
 }
