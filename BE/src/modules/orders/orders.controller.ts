@@ -1,3 +1,4 @@
+// src/orders/orders.controller.ts
 import {
   Controller,
   Get,
@@ -22,10 +23,6 @@ import { IUser } from 'src/types/user.interface';
 import { OrderStatus } from './schemas/order.schemas';
 import { OrdersService } from './orders.service';
 import { Roles } from 'src/health/decorator/roles.decorator';
-import { PaymentsService } from '../payments/payments.service';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom, map } from 'rxjs';
 import { VietQrService } from '../vietqr/vietqr.service';
 
 @ApiTags('orders')
@@ -34,9 +31,6 @@ import { VietQrService } from '../vietqr/vietqr.service';
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly paymentsService: PaymentsService,
-    private readonly configService: ConfigService,
-    private readonly httpService: HttpService,
     private readonly vietQrService: VietQrService,
   ) {}
 
@@ -44,103 +38,26 @@ export class OrdersController {
   @ResponseMessage('Tạo đơn hàng mới')
   async create(@Body() dto: CreateOrderDto, @Users() user: IUser) {
     const result = await this.ordersService.create(dto, user);
-    const order = result.order;
-    const payment = result.payment;
-    const qrUrl = result.qrUrl;
 
     const method = dto.paymentMethod || 'CASH';
 
-    // Tính amount dựa trên order
-    const shippingFeePayer = dto.shippingFeePayer || 'SENDER';
-    const codValue = Number(dto.codValue) || 0;
-    const shippingFee = order.shippingFee || 0;
-    let amount = 0;
-
-    if (shippingFeePayer === 'SENDER') {
-      amount = shippingFee + codValue;
-    } else {
-      amount = shippingFee;
-    }
-
-    // Nếu là QR thì không cần tạo lại payment (đã tạo trong service)
-    if (method === 'QR') {
-      return {
-        order,
-        payment,
-        qrUrl,
-        message: 'Vui lòng quét mã QR để thanh toán',
-      };
-    }
-
-    // Tạo payment (các phương thức khác)
-    const createdPayment = await this.paymentsService.createPaymentForOrder(
-      order._id.toString(),
-      {
-        method,
-        amount,
-        status: method === 'CASH' ? 'paid' : 'pending',
-        transactionId: order.waybill,
-        createdBy: { _id: user._id, email: user.email },
-      },
-    );
-
+    // Redirect URL chỉ cần thiết cho các cổng thanh toán gateway
     let redirectUrl: string | null = null;
     if (['MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD'].includes(method)) {
-      redirectUrl = await this.initiateGateway(method, order, createdPayment);
+      // TODO: Nếu bạn còn dùng gateway thật thì implement initiateGateway ở đây
+      // redirectUrl = await this.initiateGateway(method, result.order, result.payment);
     }
 
     return {
-      order,
-      payment: createdPayment,
+      order: result.order,
+      payment: result.payment,
+      qrUrl: result.qrUrl,
       redirectUrl,
-      qrUrl,
+      message:
+        method === 'QR'
+          ? 'Vui lòng quét mã QR để thanh toán'
+          : 'Tạo đơn hàng thành công',
     };
-  }
-
-  private async initiateGateway(
-    method: string,
-    order: any,
-    payment: any,
-  ): Promise<string | null> {
-    if (method === 'FAKE') {
-      // const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ap-post.vercel.app';
-      // const returnUrl = `${frontendUrl}/order-success?orderId=${order._id}`;
-      // const payload = {
-      //   app_name: 'APPost',
-      //   service: order.details || 'Shipping Service',
-      //   customer_email: order.email || 'noemail@appost.com',
-      //   card_type: 'VISA',
-      //   card_holder_name: order.senderName || 'Test User',
-      //   card_number: '4242424242424242',
-      //   expiryMonth: '12',
-      //   expiryYear: '2030',
-      //   cvv: '123',
-      //   amount: Math.round(payment.amount),
-      //   currency: 'VND',
-      //   order_id: order._id,
-      //   order_info: `Thanh toán đơn ${order.waybill} - APPost`,
-      //   return_url: returnUrl,
-      // };
-      // try {
-      //   console.log('Sending payload to gateway:', JSON.stringify(payload));
-      //   const gatewayResponse = await lastValueFrom(
-      //     this.httpService.post('https://fake-payment-tkh.onrender.com/api/v1/payment/card', payload)
-      //       .pipe(map((res: any) => res.data))
-      //   ) as { success: boolean; message?: string };
-      //   if (gatewayResponse.success) {
-      //     await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'paid');
-      //     return `${returnUrl}&status=paid&msg=${encodeURIComponent('Thanh toán thành công')}`;
-      //   } else {
-      //     await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'failed');
-      //     return `${returnUrl}&status=failed&msg=${encodeURIComponent(gatewayResponse.message || 'Thanh toán thất bại')}`;
-      //   }
-      // } catch (err) {
-      //   await this.paymentsService.updatePaymentStatusByTransaction(order.waybill, 'failed');
-      //   throw new BadRequestException('Lỗi kết nối gateway: ' + (err.message || 'Unknown'));
-      // }
-    }
-    // Thêm logic cho MOMO, VNPAY, CARD, QR tương tự (sử dụng API của chúng)
-    return null;
   }
 
   @Get()
@@ -151,13 +68,13 @@ export class OrdersController {
     @Query('pageSize') limit?: string,
     @Query() query?: any,
   ) {
-    const page = current ? Number(current) : 1;
-    const size = limit ? Number(limit) : 10;
-
     const user = req.user;
     if (!user?._id) {
       throw new BadRequestException('User không hợp lệ');
     }
+
+    const page = current ? Number(current) : 1;
+    const size = limit ? Number(limit) : 10;
 
     return this.ordersService.findAll(user, page, size, query || {});
   }
@@ -250,6 +167,7 @@ export class OrdersController {
   ) {
     return this.ordersService.updateStatus(id, status, user);
   }
+
   @Delete(':id')
   @ResponseMessage('Xóa đơn hàng (soft)')
   remove(@Param('id') id: string, @Users() user: IUser) {
@@ -268,4 +186,14 @@ export class OrdersController {
   async confirmPayment(@Param('id') id: string) {
     return this.ordersService.confirmPayment(id);
   }
+
+  // ====================== PRIVATE HELPER (nếu bạn còn dùng gateway) ======================
+  // private async initiateGateway(
+  //   method: string,
+  //   order: any,
+  //   payment: any,
+  // ): Promise<string | null> {
+  //   // Implement logic MOMO, VNPAY, FAKE... ở đây nếu cần
+  //   return null;
+  // }
 }

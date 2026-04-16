@@ -1,3 +1,4 @@
+// src/orders/orders.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -20,15 +21,14 @@ import {
 import { PricingService } from '../pricing/pricing.service';
 import { ProvinceCode } from 'src/types/location.type';
 import { Tracking } from '../tracking/schemas/tracking.schemas';
-import { MailService } from 'src/mail/mail.service';
-
 import { PaymentsService } from '../payments/payments.service';
-import { PaymentStatus } from '../payments/schemas/payment.schema';
 import { VietQrService } from '../vietqr/vietqr.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrdersService {
   private trackingModel: any;
+
   constructor(
     @InjectModel(Order.name)
     private readonly orderModel: SoftDeleteModel<OrderDocument>,
@@ -51,6 +51,7 @@ export class OrdersService {
     return (email || '').trim().toLowerCase();
   }
 
+  // ====================== TẠO ĐƠN HÀNG (ĐÃ TỐI ƯU) ======================
   async create(dto: CreateOrderDto, user: IUser) {
     const waybill = await this.generateUniqueWaybill();
 
@@ -94,21 +95,21 @@ export class OrdersService {
       dto.paymentMethod || '',
     );
 
-    if (isOnlinePayment) {
-      if (shippingFeePayer === 'SENDER') {
-        senderPayAmount += codValue;
-        receiverPayAmount = 0;
-      }
+    if (isOnlinePayment && shippingFeePayer === 'SENDER') {
+      senderPayAmount += codValue;
+      receiverPayAmount = 0;
     }
 
     const totalOrderValue = codValue + shippingFee;
 
-    // 3. Tạo địa chỉ
-    const pickupAddr = await this.addressModel.create(dto.pickupAddress);
-    const deliveryAddr = await this.addressModel.create(dto.deliveryAddress);
+    // 3. Tạo địa chỉ (song song)
+    const [pickupAddr, deliveryAddr] = await Promise.all([
+      this.addressModel.create(dto.pickupAddress),
+      this.addressModel.create(dto.deliveryAddress),
+    ]);
 
     // 4. Xử lý branchId
-    let branchId: Types.ObjectId | null | undefined = undefined;
+    let branchId: Types.ObjectId | null = null;
     const rawBranchId = user.branchId ?? (user as any).branchId ?? null;
 
     if (user.role === 'STAFF') {
@@ -116,8 +117,8 @@ export class OrdersService {
         throw new BadRequestException('Nhân viên chưa được gắn bưu cục.');
       }
       branchId = new Types.ObjectId(rawBranchId);
-    } else if (user.role === 'ADMIN') {
-      branchId = rawBranchId ? new Types.ObjectId(rawBranchId) : null;
+    } else if (user.role === 'ADMIN' && rawBranchId) {
+      branchId = new Types.ObjectId(rawBranchId);
     }
 
     // 5. Tạo đơn hàng
@@ -134,12 +135,10 @@ export class OrdersService {
       serviceCode: dto.serviceCode || 'STD',
       weightKg: dto.weightKg,
       waybill,
-
       shippingFeePayer,
       senderPayAmount,
       receiverPayAmount,
       totalOrderValue,
-
       snapshotPricingId: activePricing._id,
       snapshotBasePrice: activePricing.basePrice,
       snapshotOverweightFee: calcResult.breakdown.overweightFee || 0,
@@ -148,32 +147,29 @@ export class OrdersService {
       snapshotServiceCode: dto.serviceCode || 'STD',
       snapshotWeightKg: dto.weightKg,
       snapshotBreakdown: calcResult.breakdown,
-
       status: OrderStatus.PENDING,
       createdBy: { _id: new Types.ObjectId(user._id), email: user.email },
       paymentMethod: dto.paymentMethod || 'CASH',
     });
 
-    // Tạo tracking
-    try {
-      await this.trackingModel.create({
-        orderId: newOrder._id,
-        status: OrderStatus.PENDING,
-        timestamp: new Date(),
-        location: originProv?.name || 'Khách hàng mang đến bưu cục',
-        note: `Đơn hàng được tạo. Người gửi trả tại quầy: ${senderPayAmount.toLocaleString()}₫ | Người nhận trả khi nhận: ${receiverPayAmount.toLocaleString()}₫`,
-        createdBy: { _id: user._id, email: user.email },
-        branchId: newOrder.branchId || null,
-      });
-    } catch (error) {
-      console.error('Lỗi tạo tracking:', error);
-    }
+    // 6. Tạo tracking
+    await this.trackingModel.create({
+      orderId: newOrder._id,
+      status: OrderStatus.PENDING,
+      timestamp: new Date(),
+      location: originProv?.name || 'Khách hàng mang đến bưu cục',
+      note: `Đơn hàng được tạo. Người gửi trả: ${senderPayAmount.toLocaleString(
+        'vi-VN',
+      )}₫ | Người nhận trả: ${receiverPayAmount.toLocaleString('vi-VN')}₫`,
+      createdBy: { _id: user._id, email: user.email },
+      branchId: newOrder.branchId || null,
+    });
 
-    // Gửi email xác nhận (nếu không phải online)
-    const customerEmail = dto.email?.trim();
+    // 7. Gửi email xác nhận (chỉ khi KHÔNG thanh toán online)
+    const customerEmail = this.normalizeEmail(dto.email);
     if (customerEmail && !isOnlinePayment) {
-      try {
-        await this.mailService.sendOrderConfirmation({
+      this.mailService
+        .sendOrderConfirmation({
           to: customerEmail,
           receiverName: dto.receiverName,
           waybill: newOrder.waybill,
@@ -183,13 +179,13 @@ export class OrdersService {
           receiverPayAmount,
           totalOrderValue,
           shippingFeePayer,
-        });
-      } catch (err: any) {
-        console.log('Gửi email thất bại:', err.message);
-      }
+        })
+        .catch((err) =>
+          console.warn('Gửi email xác nhận thất bại:', err.message),
+        );
     }
 
-    // ==================== TẠO QR CODE NẾU LÀ QR PAYMENT ====================
+    // 8. Tạo QR nếu là QR Payment
     let qrUrl: string | null = null;
     if (dto.paymentMethod === 'QR') {
       const amountToPay = senderPayAmount || totalOrderValue;
@@ -200,7 +196,7 @@ export class OrdersService {
       );
     }
 
-    // Tạo payment
+    // 9. Tạo Payment (CHỈ TẠO 1 LẦN – KHÔNG DUPLICATE)
     const payment = await this.paymentsService.createPaymentForOrder(
       newOrder._id.toString(),
       {
@@ -215,8 +211,8 @@ export class OrdersService {
     return {
       order: newOrder,
       payment,
-      redirectUrl: null,
       qrUrl,
+      redirectUrl: null,
     };
   }
 
@@ -240,62 +236,41 @@ export class OrdersService {
   async findAll(user: IUser, currentPage = 1, limit = 10, queryObj: any = {}) {
     const { filter, sort } = aqp(queryObj);
 
-    // Loại bỏ params không cần thiết
     delete (filter as any).current;
     delete (filter as any).pageSize;
-
-    // Luôn loại bỏ các đơn đã xóa
     filter.isDeleted = false;
 
-    // Ép filter theo user
     if (user?.role !== 'ADMIN') {
       filter.userId = new Types.ObjectId(user._id);
     }
-
     if (filter.userId) {
       filter.userId = new Types.ObjectId(filter.userId);
     }
 
     // --- Filter nâng cao ---
-
-    // Trạng thái: hỗ trợ multi-status
     if (filter.status) {
       if (typeof filter.status === 'string' && filter.status.includes(',')) {
         filter.status = { $in: filter.status.split(',') };
       }
     }
-
-    // Ngày tạo
     if (filter.fromDate || filter.toDate) {
       filter.createdAt = {};
       if (filter.fromDate) filter.createdAt.$gte = new Date(filter.fromDate);
       if (filter.toDate) filter.createdAt.$lte = new Date(filter.toDate);
     }
-
-    // Khoảng giá
     if (filter.minPrice || filter.maxPrice) {
       filter.totalPrice = {};
       if (filter.minPrice) filter.totalPrice.$gte = Number(filter.minPrice);
       if (filter.maxPrice) filter.totalPrice.$lte = Number(filter.maxPrice);
     }
-
-    // Người gửi
     if (filter.senderName)
       filter.senderName = new RegExp(filter.senderName, 'i');
-
-    // Người nhận
     if (filter.receiverName)
       filter.receiverName = new RegExp(filter.receiverName, 'i');
-
-    // Số điện thoại người nhận
     if (filter.receiverPhone)
       filter.receiverPhone = new RegExp(filter.receiverPhone, 'i');
-
-    // Tên sản phẩm
     if (filter.productName)
       filter['items.productName'] = new RegExp(filter.productName, 'i');
-
-    // Search tổng hợp
     if (filter.search) {
       const regex = new RegExp(filter.search, 'i');
       filter.$or = [
@@ -307,19 +282,16 @@ export class OrdersService {
       ];
     }
 
-    // --- Pagination ---
     const page = Number(currentPage) > 0 ? Number(currentPage) : 1;
     const size = Number(limit) > 0 ? Number(limit) : 10;
     const skip = (page - 1) * size;
 
-    // --- Tổng số và phân trang ---
     const total = await this.orderModel.countDocuments(filter);
     const pages = Math.ceil(total / size);
 
-    // --- Truy vấn chính ---
     const results = await this.orderModel
       .find(filter)
-      .sort((sort as any) || { createdAt: -1 }) // default: mới nhất trước
+      .sort((sort as any) || { createdAt: -1 })
       .skip(skip)
       .limit(size)
       .populate({
@@ -366,7 +338,6 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    // THÊM ĐOẠN NÀY – BẮT BUỘC PHẢI CÓ
     const hasSnapshot = !!order.snapshotPricingId;
     const response: any = {
       ...order,
@@ -379,7 +350,7 @@ export class OrdersService {
 
     return response;
   }
-  // orders.service.ts
+
   async update(id: string, dto: UpdateOrderDto) {
     const order = await this.orderModel.findById(id);
     if (!order || order.isDeleted) {
@@ -387,11 +358,9 @@ export class OrdersService {
     }
 
     const hasSnapshot = !!order.snapshotPricingId;
-
     let needRecalculateFee = false;
     let newShippingFee = order.shippingFee;
 
-    // Kiểm tra xem có thay đổi gì liên quan đến phí không
     if (
       dto.pickupAddress?.provinceId ||
       dto.deliveryAddress?.provinceId ||
@@ -401,27 +370,15 @@ export class OrdersService {
       needRecalculateFee = true;
     }
 
-    if (!hasSnapshot) {
-      if (
-        dto.pickupAddress?.provinceId ||
-        dto.deliveryAddress?.provinceId ||
-        dto.serviceCode ||
-        dto.weightKg !== undefined
-      ) {
-        needRecalculateFee = true;
-      }
-    }
-
-    // Nếu có thay đổi địa chỉ, dịch vụ, cân nặng → tính lại phí
     if (needRecalculateFee) {
       const pickupProvinceId =
         dto.pickupAddress?.provinceId ||
         (await this.addressModel.findById(order.pickupAddressId).lean())
-          .provinceId;
+          ?.provinceId;
       const deliveryProvinceId =
         dto.deliveryAddress?.provinceId ||
         (await this.addressModel.findById(order.deliveryAddressId).lean())
-          .provinceId;
+          ?.provinceId;
 
       const originProv = await this.provinceModel
         .findById(pickupProvinceId)
@@ -445,7 +402,6 @@ export class OrdersService {
       }
     }
 
-    // Cập nhật địa chỉ nếu có
     if (dto.pickupAddress) {
       await this.addressModel.findByIdAndUpdate(order.pickupAddressId, {
         provinceId: dto.pickupAddress.provinceId,
@@ -466,30 +422,27 @@ export class OrdersService {
       });
     }
 
-    // Cập nhật các field khác + phí mới
     const updateData: any = {
       ...dto,
       shippingFee: newShippingFee,
       totalPrice: (dto.codValue || order.codValue || 0) + newShippingFee,
     };
 
-    // Xóa các field address để không ghi đè nhầm
     delete updateData.pickupAddress;
     delete updateData.deliveryAddress;
 
     if (dto.status && dto.status !== order.status) {
-      await this.updateStatus(id, dto.status as OrderStatus);
-    } else {
-      const updatedOrder = await this.orderModel
-        .findByIdAndUpdate(id, updateData, {
-          new: true,
-        })
-        .populate({
-          path: 'pickupAddressId deliveryAddressId',
-          populate: { path: 'provinceId communeId' },
-        });
-      return updatedOrder;
+      return this.updateStatus(id, dto.status as OrderStatus);
     }
+
+    const updatedOrder = await this.orderModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .populate({
+        path: 'pickupAddressId deliveryAddressId',
+        populate: { path: 'provinceId communeId' },
+      });
+
+    return updatedOrder;
   }
 
   async remove(id: string, user: IUser) {
@@ -497,10 +450,7 @@ export class OrdersService {
     if (!order || order.isDeleted)
       throw new NotFoundException('Order not found');
 
-    // Gọi softDelete chỉ với _id
     await this.orderModel.softDelete({ _id: id });
-
-    // Nếu muốn lưu thông tin deletedBy
     order.deletedBy = { _id: new Types.ObjectId(user._id), email: user.email };
     await order.save();
 
@@ -511,13 +461,12 @@ export class OrdersService {
     const order = await this.orderModel
       .findById(id)
       .populate('pickupAddressId deliveryAddressId')
-      .lean(); // dùng lean() để lấy dữ liệu nhanh
+      .lean();
 
     if (!order || order.isDeleted) {
       throw new NotFoundException('Order not found');
     }
 
-    // Cập nhật trạng thái (giữ nguyên logic cũ)
     if (user && ['CONFIRMED', 'SHIPPING', 'COMPLETED'].includes(status)) {
       await this.orderModel.updateOne(
         { _id: id },
@@ -527,8 +476,7 @@ export class OrdersService {
 
     await this.orderModel.updateOne({ _id: id }, { status });
 
-    // === TẠO TRACKING (giữ nguyên) ===
-    const display = {
+    const display: Record<string, { location: string; note: string }> = {
       PENDING: {
         location: 'Đơn hàng đang chờ xác nhận',
         note: 'Khách hàng đã đặt hàng',
@@ -559,30 +507,27 @@ export class OrdersService {
       branchId: order.branchId || null,
     });
 
-    // === MỚI: GỬI EMAIL CHO KHÁCH KHI CẬP NHẬT TRẠNG THÁI ===
     if (order.email) {
-      try {
-        await this.mailService.sendStatusUpdate({
+      this.mailService
+        .sendStatusUpdate({
           to: order.email.trim(),
           receiverName: order.receiverName || 'Khách hàng',
           waybill: order.waybill,
           status: status,
-          trackingUrl: `https://ap-post.vercel.app//tracking/${order.waybill}`,
+          trackingUrl: `https://ap-post.vercel.app/tracking/${order.waybill}`,
           codValue: order.codValue,
-        });
-        console.log(`ĐÃ GỬI EMAIL TRẠNG THÁI ${status} → ${order.email}`);
-      } catch (err) {
-        console.error(`GỬI EMAIL TRẠNG THÁI ${status} THẤT BẠI:`, err);
-        // Không throw → không làm hỏng flow cập nhật trạng thái
-      }
+        })
+        .catch((err) =>
+          console.error(`GỬI EMAIL TRẠNG THÁI ${status} THẤT BẠI:`, err),
+        );
     }
 
-    // Trả về order mới nhất
     return await this.orderModel.findById(id).populate({
       path: 'pickupAddressId deliveryAddressId',
       populate: { path: 'provinceId communeId' },
     });
   }
+
   async getStatistics(month?: number, year?: number, user?: IUser | null) {
     const filter: any = { isDeleted: false };
 
@@ -590,7 +535,6 @@ export class OrdersService {
       filter.userId = new Types.ObjectId(user._id);
     }
 
-    // Nếu có year hoặc month thì lọc theo createdAt
     if (year) {
       const start = new Date(year, month ? month - 1 : 0, 1);
       const end = new Date(year, month ? month : 12, 0, 23, 59, 59, 999);
@@ -599,7 +543,6 @@ export class OrdersService {
 
     const orders = await this.orderModel.find(filter).lean();
 
-    // Phần còn lại giữ nguyên
     const statusKeys = Object.values(OrderStatus);
     const statusCounts: Record<OrderStatus, number> = statusKeys.reduce(
       (acc, k) => {
@@ -638,7 +581,7 @@ export class OrdersService {
 
     for (const o of orders) {
       const created = new Date((o as any).createdAt);
-      const day = created.getDay(); // 0=CN,1=T2,...
+      const day = created.getDay();
       const key = (
         day === 0 ? 'CN' : `T${day + 1}`
       ) as keyof typeof ordersByDay;
@@ -687,7 +630,6 @@ export class OrdersService {
     };
   }
 
-  // ==================== XÁC NHẬN THANH TOÁN QR THỦ CÔNG ====================
   async confirmPayment(orderId: string) {
     const order = await this.orderModel.findById(orderId);
     if (!order) {
@@ -706,15 +648,12 @@ export class OrdersService {
       );
     }
 
-    // Cập nhật trạng thái
     order.status = OrderStatus.CONFIRMED;
     order.updatedAt = new Date();
-
     const updatedOrder = await order.save();
 
-    // Gửi email (dùng hàm có sẵn của bạn)
-    try {
-      await this.mailService.sendOrderConfirmation({
+    this.mailService
+      .sendOrderConfirmation({
         to: updatedOrder.email,
         receiverName: updatedOrder.receiverName,
         waybill: updatedOrder.waybill,
@@ -724,15 +663,21 @@ export class OrdersService {
         receiverPayAmount: updatedOrder.receiverPayAmount || 0,
         totalOrderValue: updatedOrder.totalOrderValue || 0,
         shippingFeePayer: updatedOrder.shippingFeePayer,
-      });
-    } catch (error) {
-      console.warn('Gửi email confirmed thất bại:', error);
-    }
+      })
+      .catch((error) => console.warn('Gửi email confirmed thất bại:', error));
 
     return {
       success: true,
       message: 'Đơn hàng đã được xác nhận thanh toán thành công',
       order: updatedOrder,
     };
+  }
+
+  async findByWaybill(waybill: string) {
+    const order = await this.orderModel.findOne({ waybill }).lean();
+    if (!order || order.isDeleted) {
+      throw new NotFoundException('Không tìm thấy đơn hàng');
+    }
+    return order;
   }
 }

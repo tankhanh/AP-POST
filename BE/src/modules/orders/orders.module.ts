@@ -5,10 +5,10 @@ import { OrdersService } from './orders.service';
 import { Order, OrderSchema } from './schemas/order.schemas';
 import { LocationModule } from '../location/location.module';
 import { PricingModule } from '../pricing/pricing.module';
-import { MailService } from 'src/mail/mail.service';
 import { PaymentsModule } from '../payments/payments.module';
 import { HttpModule } from '@nestjs/axios';
 import { VietQrModule } from '../vietqr/vietqr.module';
+import { MailService } from '../mail/mail.service';
 
 @Module({
   imports: [

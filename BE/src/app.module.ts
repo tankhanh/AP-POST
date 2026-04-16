@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module';
 import google_oauth_config from './config/google_oauth_config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+// import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { UsersModule } from './modules/users/users.module';
 import { FilesModule } from './modules/files/files.module';
 import { DatabasesModule } from './modules/databases/databases.module';
@@ -27,6 +28,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { PayfakeModule } from './modules/payfake/payfake.module';
 import { HttpModule } from '@nestjs/axios';
 import { VietQrModule } from './modules/vietqr/vietqr.module';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { VietQrModule } from './modules/vietqr/vietqr.module';
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URL'),
         connectionFactory: (connection) => {
@@ -45,7 +48,6 @@ import { VietQrModule } from './modules/vietqr/vietqr.module';
           return connection;
         },
       }),
-      inject: [ConfigService],
     }),
 
     ConfigModule.forRoot({
@@ -53,32 +55,32 @@ import { VietQrModule } from './modules/vietqr/vietqr.module';
       load: [google_oauth_config],
     }),
     /// mailer
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        transport: {
-          host: 'smtp.gmail.com',
-          port: 465,
-          secure: true,
-          auth: {
-            user: configService.get<string>('EMAIL_AUTH_USER'),
-            pass: configService.get<string>('EMAIL_AUTH_PASS'),
-          },
-        },
+    // MailerModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   useFactory: async (configService: ConfigService) => ({
+    //     transport: {
+    //       host: 'smtp.gmail.com',
+    //       port: 465,
+    //       secure: true,
+    //       auth: {
+    //         user: configService.get<string>('EMAIL_AUTH_USER'),
+    //         pass: configService.get<string>('EMAIL_AUTH_PASS'),
+    //       },
+    //     },
 
-        defaults: {
-          from: 'dinhtankhanh14@gmail.com',
-        },
-        template: {
-          dir: process.cwd() + '/src/mail/templates/',
-          adapter: new HandlebarsAdapter(), // or new PugAdapter() or new EjsAdapter()
-          options: {
-            strict: true,
-          },
-        },
-      }),
-      inject: [ConfigService],
-    }),
+    //     defaults: {
+    //       from: 'dinhtankhanh14@gmail.com',
+    //     },
+    //     template: {
+    //       dir: process.cwd() + '/src/mail/templates/',
+    //       adapter: new HandlebarsAdapter(), // or new PugAdapter() or new EjsAdapter()
+    //       options: {
+    //         strict: true,
+    //       },
+    //     },
+    //   }),
+    //   inject: [ConfigService],
+    // }),
     ///
     UsersModule,
     AuthModule,
@@ -98,6 +100,31 @@ import { VietQrModule } from './modules/vietqr/vietqr.module';
     PayfakeModule,
     HttpModule,
     VietQrModule,
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        transport: {
+          host: configService.get<string>('mail_host'),
+          port: configService.get<number>('mail_port'),
+          secure: false,
+          auth: {
+            user: configService.get<string>('mail_username'),
+            pass: configService.get<string>('mail_password'),
+          },
+          tls: {
+            rejectUnauthorized: false,
+          },
+        },
+        template: {
+          dir: join(process.cwd(), 'src/modules/mail/templates'),
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
+        },
+      }),
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
