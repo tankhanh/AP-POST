@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module';
 import google_oauth_config from './config/google_oauth_config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+// import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { UsersModule } from './modules/users/users.module';
 import { FilesModule } from './modules/files/files.module';
 import { DatabasesModule } from './modules/databases/databases.module';
