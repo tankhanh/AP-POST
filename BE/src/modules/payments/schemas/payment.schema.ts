@@ -41,6 +41,12 @@ export class Payment {
 
   @Prop({ type: Object })
   createdBy?: { _id: mongoose.Types.ObjectId; email: string };
+
+  @Prop({ type: Object })
+  vnpData?: Record<string, any>;
+
+  @Prop({ type: Object })
+  extraData?: Record<string, any>;
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);

@@ -165,6 +165,7 @@
             <option value="CASH">Trả tiền tại quầy (người gửi)</option>
             <option value="COD">Thu hộ COD (người nhận)</option>
             <option value="QR" class="text-success fw-bold">Thanh toán bằng QR VietQR</option>
+            <option value="VNPAY" class="text-primary fw-bold">Thanh toán VNPAY (Online)</option>
           </select>
           <small class="text-muted d-block mt-1">
             {{ paymentNote }}
@@ -188,7 +189,51 @@
     </div>
 
     <div class="text-center mt-5">
-      <button class="btn btn-danger btn-lg px-5" [disabled]="loading || orderForm.invalid">
+      <div class="mb-3" *ngIf="orderForm.value.paymentMethod === 'VNPAY'">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="me-3">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:48px;height:48px;">VN</div>
+              </div>
+              <div>
+                <div class="fw-semibold">Thanh toán trực tuyến qua VNPAY</div>
+                <small class="text-muted">Số tiền phải thanh toán: <strong>{{ (shippingFee + (orderForm.value.codValue || 0)) | number:'1.0-0' }} ₫</strong></small>
+              </div>
+            </div>
+
+            <div class="mt-3" *ngIf="orderForm.value.paymentMethod === 'VNPAY'">
+              <div class="d-flex gap-3 align-items-center">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="vnpayOption" value="SHIPPING" id="vnpayOptShipping">
+                  <label class="form-check-label" for="vnpayOptShipping">Thanh toán phí vận chuyển (Online)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="vnpayOption" value="FULL" id="vnpayOptFull">
+                  <label class="form-check-label" for="vnpayOptFull">Thanh toán toàn bộ (Online)</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3" *ngIf="vnPayCompatibilityReasons?.length > 0">
+              <div class="alert alert-danger mb-0">
+                <strong>VNPAY không khả dụng cho đơn này:</strong>
+                <ul class="mb-0 mt-2">
+                  <li *ngFor="let r of vnPayCompatibilityReasons">{{ r }}</li>
+                </ul>
+              </div>
+            </div>
+            <div class="mt-3" *ngIf="!vnPayCompatibilityReasons || vnPayCompatibilityReasons.length === 0">
+              <div class="alert alert-success mb-0">Sẵn sàng thanh toán qua VNPAY.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        class="btn btn-danger btn-lg px-5"
+        [disabled]="loading || orderForm.invalid || (orderForm.value.paymentMethod === 'VNPAY' && vnPayCompatibilityReasons.length > 0)"
+      >
         <span *ngIf="!loading">Tạo đơn hàng</span>
         <span *ngIf="loading">Đang tạo...</span>
       </button>

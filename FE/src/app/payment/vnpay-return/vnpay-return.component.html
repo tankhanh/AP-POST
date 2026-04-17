@@ -1,0 +1,241 @@
+<div class="payment-result-container">
+  <!-- Loading State -->
+  <div *ngIf="status === 'loading'" class="result-section loading">
+    <div class="loading-content">
+      <div class="spinner-border mb-4" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <h3>Processing Payment</h3>
+      <p class="text-muted">Please wait while we verify your payment...</p>
+      <div class="progress mt-4">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success State -->
+  <div *ngIf="status === 'success'" class="result-section success" [@slideUp]>
+    <div class="success-header">
+      <div class="status-icon success-icon">
+        <i class="bi bi-check-circle"></i>
+      </div>
+      <h1 class="success-title">Payment Successful!</h1>
+      <p class="success-subtitle">Your transaction has been completed successfully</p>
+    </div>
+
+    <!-- Receipt -->
+    <div class="receipt-card mt-4">
+      <div class="receipt-header">
+        <h5 class="mb-0">
+          <i class="bi bi-receipt"></i>
+          Payment Receipt
+        </h5>
+      </div>
+
+      <div class="receipt-body">
+        <!-- Transaction Info -->
+        <div class="receipt-section">
+          <div class="receipt-row">
+            <span class="receipt-label">Transaction Code:</span>
+            <span class="receipt-value">
+              <code class="receipt-code">{{ transactionCode }}</code>
+              <button class="btn btn-sm btn-link" title="Copy">
+                <i class="bi bi-clipboard"></i>
+              </button>
+            </span>
+          </div>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Amount Paid:</span>
+            <span class="receipt-value amount-paid">
+              <strong>{{ amount | number:'1.0-0' }} ₫</strong>
+            </span>
+          </div>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Payment Status:</span>
+            <span class="receipt-value">
+                <span class="badge bg-success">
+                <i class="bi bi-check-circle"></i>
+                {{ (paymentDetails?.status | uppercase) || 'PAID' }}
+              </span>
+            </span>
+          </div>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Payment Date & Time:</span>
+            <span class="receipt-value">
+              {{ paymentDetails?.createdAt | date:'medium' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Order Details (if available) -->
+        <div class="receipt-section mt-4" *ngIf="paymentDetails?.order">
+          <h6 class="receipt-section-title">Order Information</h6>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Waybill:</span>
+            <span class="receipt-value">
+              <strong>{{ paymentDetails.order.waybill }}</strong>
+            </span>
+          </div>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Receiver:</span>
+            <span class="receipt-value">
+              {{ paymentDetails.order.receiverName }}
+              <small class="text-muted">({{ paymentDetails.order.receiverPhone }})</small>
+            </span>
+          </div>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Delivery Address:</span>
+            <span class="receipt-value small">
+              {{ paymentDetails.order.deliveryAddress?.address }},
+              {{ paymentDetails.order.deliveryAddress?.communeId }},
+              {{ paymentDetails.order.deliveryAddress?.provinceId }}
+            </span>
+          </div>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Weight:</span>
+            <span class="receipt-value">
+              {{ paymentDetails.order.weightKg }} kg
+            </span>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="receipt-footer mt-4">
+          <p class="text-muted small mb-0">
+            <i class="bi bi-info-circle"></i>
+            A confirmation email has been sent to your registered email address
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions mt-5">
+      <button class="btn btn-primary btn-lg btn-block" (click)="goToDashboard()">
+        <i class="bi bi-house-fill"></i>
+        Back to Dashboard
+      </button>
+      <button class="btn btn-outline-secondary btn-lg btn-block mt-3">
+        <i class="bi bi-printer"></i>
+        Print Receipt
+      </button>
+    </div>
+  </div>
+
+  <!-- Failed State -->
+  <div *ngIf="status === 'failed'" class="result-section failed" [@shake]>
+    <div class="failed-header">
+      <div class="status-icon failed-icon">
+        <i class="bi bi-x-circle"></i>
+      </div>
+      <h1 class="failed-title">Payment Failed</h1>
+      <p class="failed-subtitle">
+        {{ message || 'Your payment could not be processed at this time' }}
+      </p>
+    </div>
+
+    <!-- Error Details -->
+    <div class="error-details card mt-4">
+      <div class="card-body">
+        <div *ngIf="transactionCode" class="detail-row">
+          <span class="detail-label">Transaction Code:</span>
+          <span class="detail-value">
+            <code>{{ transactionCode }}</code>
+          </span>
+        </div>
+
+        <div *ngIf="responseCode" class="detail-row">
+          <span class="detail-label">Error Code:</span>
+          <span class="detail-value">
+            <span class="badge bg-danger">{{ responseCode }}</span>
+          </span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">Reason:</span>
+          <span class="detail-value text-danger">
+            <strong>{{ message || 'Payment was not completed' }}</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Troubleshooting Tips -->
+    <div class="troubleshooting mt-4">
+      <h5 class="mb-3">
+        <i class="bi bi-lightbulb"></i>
+        Troubleshooting Tips
+      </h5>
+      <ul class="small">
+        <li>Check if your card has sufficient balance</li>
+        <li>Verify your card details are correct</li>
+        <li>Ensure you entered the correct OTP/2FA code</li>
+        <li>Contact your bank if you see repeated failures</li>
+        <li>Try again with a different payment method</li>
+      </ul>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions mt-5">
+      <button class="btn btn-warning btn-lg btn-block me-0 me-sm-2 mb-3 mb-sm-0" (click)="retryPayment()">
+        <i class="bi bi-arrow-repeat"></i>
+        Retry Payment
+      </button>
+      <button class="btn btn-secondary btn-lg btn-block" (click)="goToDashboard()">
+        <i class="bi bi-arrow-left"></i>
+        Back to Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="status === 'error'" class="result-section error">
+    <div class="error-header">
+      <div class="status-icon error-icon">
+        <i class="bi bi-exclamation-triangle"></i>
+      </div>
+      <h1 class="error-title">System Error</h1>
+      <p class="error-subtitle">
+        {{ message || 'An unexpected error occurred while processing your payment' }}
+      </p>
+    </div>
+
+    <!-- Error Alert -->
+    <div class="alert alert-warning mt-4">
+      <i class="bi bi-info-circle"></i>
+      <strong>What Now?</strong>
+      <p class="mb-0 mt-2">
+        Your payment may still have been processed. Please check your bank statement or contact our support team.
+      </p>
+    </div>
+
+    <!-- Support Contact -->
+    <div class="contact-support mt-4 p-3 bg-light rounded">
+      <h5 class="mb-3">
+        <i class="bi bi-headset"></i>
+        Need Assistance?
+      </h5>
+      <p class="small mb-2">
+        <strong>Support Hotline:</strong> 1900-XXXX (Available 24/7)
+      </p>
+      <p class="small mb-0">
+        <strong>Email:</strong> support@ap-post.vn
+      </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions mt-5">
+      <button class="btn btn-secondary btn-lg btn-block" (click)="goToDashboard()">
+        <i class="bi bi-house-fill"></i>
+        Back to Dashboard
+      </button>
+    </div>
+  </div>
+</div>

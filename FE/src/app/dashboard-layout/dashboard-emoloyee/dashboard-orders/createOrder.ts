@@ -9,6 +9,7 @@ import { GeocodingService } from '../../../services/geocoding.service';
 import { debounceTime } from 'rxjs/operators';
 import { firstValueFrom, merge, startWith } from 'rxjs';
 import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
+import { OrderCreateResponse } from '../../../types/payment.types';
 
 @Component({
   selector: 'app-create-order',
@@ -26,6 +27,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
   senderPay = 0;
   receiverPay = 0;
   paymentNote = '';
+  vnPayCompatibilityReasons: string[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -93,6 +95,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
       serviceCode: ['STD'],
       weightKg: [1, [Validators.required, Validators.min(0.01)]],
       codValue: [0, [Validators.required, Validators.min(0)]],
+      vnpayOption: ['SHIPPING'],
       email: [''],
       details: [''],
       pickupLat: [null],
@@ -206,6 +209,8 @@ export class CreateOrder implements OnInit, AfterViewInit {
     const payer = this.orderForm.value.shippingFeePayer || 'SENDER';
     const method = this.orderForm.value.paymentMethod || 'CASH';
 
+    // No longer force COD = 0 here — support split-payment options.
+
     if (method === 'CASH') {
       this.senderPay = payer === 'SENDER' ? this.shippingFee : 0;
       this.receiverPay = cod + (payer === 'RECEIVER' ? this.shippingFee : 0);
@@ -218,7 +223,50 @@ export class CreateOrder implements OnInit, AfterViewInit {
       this.senderPay = this.shippingFee + (payer === 'SENDER' ? cod : 0);
       this.receiverPay = payer === 'RECEIVER' ? cod : 0;
       this.paymentNote = 'Quét mã QR VietQR để thanh toán ngay';
+    } else if (method === 'VNPAY') {
+      // Online payment via VNPAY (usually paid by sender at checkout)
+      this.senderPay = this.shippingFee + (payer === 'SENDER' ? cod : 0);
+      this.receiverPay = payer === 'RECEIVER' ? cod : 0;
+      this.paymentNote = 'Thanh toán trực tuyến qua VNPAY (người gửi)';
     }
+    // Recompute VNPAY compatibility reasons
+    this.computeVnPayCompatibility();
+  }
+
+  private computeVnPayCompatibility() {
+    const f = this.orderForm?.value || {};
+    const reasons: string[] = [];
+
+    // Only validate when user selects VNPAY
+    if (f.paymentMethod !== 'VNPAY') {
+      this.vnPayCompatibilityReasons = [];
+      return;
+    }
+
+    const cod = Number(f.codValue || 0);
+    const weight = Number(f.weightKg || 0);
+
+    const option = f.vnpayOption || 'SHIPPING';
+
+    // If user requests full online payment and COD exists, it's incompatible
+    if (option === 'FULL' && cod > 0) {
+      reasons.push('Đơn có giá trị thu hộ (COD). Việc thanh toán toàn bộ trực tuyến không hỗ trợ thu hộ.');
+    }
+
+    if (weight > 30) {
+      reasons.push('Trọng lượng vượt quá 30kg — VNPAY có thể không hỗ trợ đơn quá nặng.');
+    }
+
+    if (!this.shippingFee || this.shippingFee <= 0) {
+      reasons.push('Phí vận chuyển chưa được tính hoặc bằng 0. Vui lòng kiểm tra thông tin địa chỉ.');
+    }
+
+    const total = option === 'SHIPPING' ? Number(this.shippingFee || 0) : (Number(f.codValue || 0) + Number(this.shippingFee || 0));
+    if (total <= 0) {
+      reasons.push('Tổng giá trị đơn phải lớn hơn 0 để thực hiện thanh toán trực tuyến.');
+    }
+
+    this.vnPayCompatibilityReasons = reasons;
   }
 
   async calculateShippingFee() {
@@ -341,10 +389,58 @@ export class CreateOrder implements OnInit, AfterViewInit {
     };
 
     this.ordersService.createOrder(data).subscribe({
-      next: (res: any) => {
+      next: (res: OrderCreateResponse) => {
         this.loading = false;
-        const order = res.data?.order || res.data;
+        const orderData = res.data as any;
+        const order = orderData?.order || orderData;
+        const orderId = order._id || '';
         const waybill = order.waybill || '';
+        const paymentMethod = this.orderForm.value.paymentMethod;
+
+        // ==================== VNPAY PAYMENT ====================
+        if (paymentMethod === 'VNPAY') {
+          Swal.fire({
+            title: 'Lệnh thanh toán VNPAY',
+            html: `
+              <div class="text-center">
+                <p class="mb-2">Chuyển hướng đến cổng thanh toán VNPAY</p>
+                <p class="fs-5 fw-bold text-primary">${(order.totalOrderValue || order.totalPrice || 0).toLocaleString()} ₫</p>
+                <p class="text-muted">Mã vận đơn: <strong>${waybill}</strong></p>
+                <small class="text-info">Vui lòng chờ để được chuyển hướng...</small>
+              </div>
+            `,
+            confirmButtonText: 'Xác nhận',
+            showCancelButton: true,
+            cancelButtonText: 'Hủy',
+            width: '420px',
+            allowOutsideClick: false,
+                didOpen: () => {
+                  // Auto redirect after 2 seconds — include requested online amount if any
+                  setTimeout(() => {
+                    const option = this.orderForm.value.vnpayOption || 'SHIPPING';
+                    const cod = Number(this.orderForm.value.codValue || 0);
+                    const amount = option === 'SHIPPING' ? Number(this.shippingFee || 0) : (Number(this.shippingFee || 0) + cod);
+
+                    this.router.navigate(['/payment/vnpay'], {
+                      queryParams: { orderId, amount }
+                    });
+                  }, 2000);
+                }
+          }).then((result) => {
+            if (!result.isConfirmed && !result.isDismissed) {
+              const option = this.orderForm.value.vnpayOption || 'SHIPPING';
+              const cod = Number(this.orderForm.value.codValue || 0);
+              const amount = option === 'SHIPPING' ? Number(this.shippingFee || 0) : (Number(this.shippingFee || 0) + cod);
+
+              this.router.navigate(['/payment/vnpay'], {
+                queryParams: { orderId, amount }
+              });
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+              this.router.navigate(['/employee/order/list']);
+            }
+          });
+          return;
+        }
 
         // ==================== QR PAYMENT ====================
         if (res.qrUrl) {

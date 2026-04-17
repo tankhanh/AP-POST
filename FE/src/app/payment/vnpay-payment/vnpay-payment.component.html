@@ -1,0 +1,182 @@
+<div class="vnpay-payment-container">
+  <!-- Header Section -->
+  <div class="payment-header-section">
+    <div class="header-content">
+      <h1 class="header-title">
+        <i class="bi bi-shield-check"></i>
+        Secure Payment via VNPAY
+      </h1>
+      <p class="header-subtitle">Fast, safe and convenient payment method</p>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <div class="d-flex align-items-start">
+      <i class="bi bi-exclamation-triangle-fill me-3 fs-5"></i>
+      <div>
+        <strong>Payment Error!</strong>
+        <p class="mb-0 mt-2">{{ error }}</p>
+      </div>
+      <button type="button" class="btn-close" (click)="error = null"></button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="payment-content">
+    <div class="row g-4">
+      <!-- Payment Card Section -->
+      <div class="col-lg-8">
+        <div class="payment-card">
+          <div class="card-header">
+            <h3 class="mb-0">
+              <i class="bi bi-credit-card"></i>
+              Payment Details
+            </h3>
+          </div>
+
+          <div class="card-body">
+            <!-- Order Info -->
+            <div class="info-group">
+              <h5 class="info-title">
+                <i class="bi bi-box-seam"></i>
+                Order Information
+              </h5>
+              <div class="info-row">
+                <span class="info-label">Order ID:</span>
+                <span class="info-value">
+                  <code>{{ orderId }}</code>
+                </span>
+              </div>
+              <div class="info-row" *ngIf="amount > 0">
+                <span class="info-label">Amount to Pay:</span>
+                <span class="info-value amount-display">
+                  {{ amount | number:'1.0-0' }} ₫
+                </span>
+              </div>
+              <div class="info-row" *ngIf="transactionCode">
+                <span class="info-label">Transaction Code:</span>
+                <span class="info-value">
+                  <small><code>{{ transactionCode }}</code></small>
+                </span>
+              </div>
+            </div>
+
+            <!-- Security Info -->
+            <div class="info-group mt-4">
+              <h5 class="info-title">
+                <i class="bi bi-lock"></i>
+                Payment Security
+              </h5>
+              <div class="security-items">
+                <div class="security-item">
+                  <i class="bi bi-check-circle-fill"></i>
+                  <span>SSL Encrypted Connection</span>
+                </div>
+                <div class="security-item">
+                  <i class="bi bi-check-circle-fill"></i>
+                  <span>PCI DSS Compliant</span>
+                </div>
+                <div class="security-item">
+                  <i class="bi bi-check-circle-fill"></i>
+                  <span>VNPAY Verified Merchant</span>
+                </div>
+                <div class="security-item">
+                  <i class="bi bi-check-circle-fill"></i>
+                  <span>Fraud Detection Enabled</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="payment-actions mt-5">
+              <button
+                class="btn btn-primary btn-lg btn-pay btn-block"
+                (click)="proceedToVNPay()"
+                [disabled]="isLoading || !orderId">
+                <span *ngIf="!isLoading" class="d-flex align-items-center justify-content-center gap-2">
+                  <i class="bi bi-credit-card"></i>
+                  Proceed to VNPAY Payment
+                </span>
+                <span *ngIf="isLoading" class="d-flex align-items-center justify-content-center gap-2">
+                  <span class="spinner-border spinner-border-sm"></span>
+                  Processing Payment URL...
+                </span>
+              </button>
+
+              <button
+                class="btn btn-outline-secondary btn-lg btn-block mt-3"
+                (click)="goBack()"
+                [disabled]="isLoading">
+                <i class="bi bi-arrow-left"></i>
+                Back to Order List
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Sidebar -->
+      <div class="col-lg-4">
+        <div class="info-sidebar">
+          <!-- Payment Flow -->
+          <div class="sidebar-section">
+            <h5 class="sidebar-title">
+              <i class="bi bi-arrow-repeat"></i>
+              Payment Process
+            </h5>
+            <ol class="flow-steps">
+              <li>
+                <span class="step-number">1</span>
+                <span>Click Payment Button</span>
+              </li>
+              <li>
+                <span class="step-number">2</span>
+                <span>Enter Card Details on VNPAY</span>
+              </li>
+              <li>
+                <span class="step-number">3</span>
+                <span>Confirm OTP/2FA</span>
+              </li>
+              <li>
+                <span class="step-number">4</span>
+                <span>Back to Confirmation</span>
+              </li>
+            </ol>
+          </div>
+
+          <!-- Supported Methods -->
+          <div class="sidebar-section mt-4">
+            <h5 class="sidebar-title">
+              <i class="bi bi-wallet2"></i>
+              Accepted Methods
+            </h5>
+            <div class="payment-methods">
+              <div class="method-item">
+                <i class="bi bi-credit-card-2-front"></i>
+                <span>Debit/Credit Card</span>
+              </div>
+              <div class="method-item">
+                <i class="bi bi-building"></i>
+                <span>Bank Transfer</span>
+              </div>
+              <div class="method-item">
+                <i class="bi bi-phone"></i>
+                <span>E-Wallet</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Support -->
+          <div class="sidebar-section mt-4 p-3 bg-light rounded">
+            <p class="small text-muted mb-0">
+              <i class="bi bi-question-circle"></i>
+              <strong>Need Help?</strong><br>
+              Contact VNPAY Support: 1900 5555 (ext. 1)
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

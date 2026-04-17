@@ -42,6 +42,8 @@ import { DashboardPricingComponent } from './dashboard-layout/dashboard-admin/da
 import { CalculateShippingComponent } from './dashboard-layout/user-calculator/user-calculator';
 import { SupportComponent } from './dashboard-layout/dashboard-admin/support/support.component';
 import { PaymentSuccessComponent } from './payment/payment-success/payment-success.component';
+import { VnpayPaymentComponent } from './payment/vnpay-payment/vnpay-payment.component';
+import { VnpayReturnComponent } from './payment/vnpay-return/vnpay-return.component';
 
 export const routes: Routes = [
   { path: 'tracking', component: TrackingComponent },
@@ -50,6 +52,8 @@ export const routes: Routes = [
     path: 'payment-success',
     component: PaymentSuccessComponent
   },
+  { path: 'payment/vnpay', component: VnpayPaymentComponent },
+  { path: 'payment/vnpay-return', component: VnpayReturnComponent },
 
   // ----- USER LAYOUT -----
   {

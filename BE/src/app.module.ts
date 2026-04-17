@@ -28,6 +28,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { PayfakeModule } from './modules/payfake/payfake.module';
 import { HttpModule } from '@nestjs/axios';
 import { VietQrModule } from './modules/vietqr/vietqr.module';
+import { VnpayModule } from './modules/vnpay/vnpay.module';
 import { join } from 'path';
 
 @Module({
@@ -100,6 +101,7 @@ import { join } from 'path';
     PayfakeModule,
     HttpModule,
     VietQrModule,
+    VnpayModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
