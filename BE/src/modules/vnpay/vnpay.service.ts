@@ -95,7 +95,9 @@ export class VnpayService {
       vnp_OrderInfo: this.orderInfo,
       vnp_OrderType: this.orderType,
       vnp_Amount: (amount * 100).toString(), // VNPAY requires amount in hundredth VND
-      vnp_ReturnUrl: returnUrl,
+
+
+      vnp_ReturnUrl: returnUrl || 'https://ap-post.vercel.app/payment/vnpay-return',
       vnp_IpAddr: ipAddress,
       vnp_CreateDate: this.getCurrentTimeString(),
     };
