@@ -7,8 +7,8 @@ import { LocationModule } from '../location/location.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { HttpModule } from '@nestjs/axios';
-import { VietQrModule } from '../vietqr/vietqr.module';
 import { MailService } from '../mail/mail.service';
+import { MomoModule } from '../momo/momo.module';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { MailService } from '../mail/mail.service';
     PricingModule,
     forwardRef(() => PaymentsModule),
     HttpModule,
-    VietQrModule,
+    MomoModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, MailService],

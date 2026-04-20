@@ -71,22 +71,20 @@ export class CreateOrderDto {
   @Type(() => AddressDto)
   deliveryAddress: AddressDto;
 
-  @ApiProperty({ example: 350000, description: 'Giá trị hàng hóa (COD)' })
+  @ApiProperty({ example: 350000 })
   @IsNumber()
   @Min(0)
   codValue: number;
+
   @ApiProperty({ example: 'STD', enum: ['STD', 'EXP'], default: 'STD' })
   @IsOptional()
   @IsString()
   serviceCode?: 'STD' | 'EXP' = 'STD';
-  @ApiProperty({ example: 2.5, description: 'Khối lượng (kg)' })
+
+  @ApiProperty({ example: 2.5 })
   @IsNumber()
   @Min(0.01)
   weightKg: number = 0;
-
-  pricingLocked?: boolean;
-  snapshotShippingFee?: number;
-  pricingNote?: string;
 
   @ApiProperty({
     example: 'SENDER',
@@ -98,11 +96,11 @@ export class CreateOrderDto {
   shippingFeePayer?: 'SENDER' | 'RECEIVER' = 'SENDER';
 
   @ApiProperty({
-    example: 'FAKE',
-    enum: ['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD', 'QR'],
+    example: 'MOMO',
+    enum: ['CASH', 'COD', 'MOMO'],
     description: 'Phương thức thanh toán',
   })
   @IsOptional()
-  @IsEnum(['CASH', 'COD', 'MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD', 'QR'])
+  @IsEnum(['CASH', 'COD', 'MOMO'])
   paymentMethod?: string;
 }

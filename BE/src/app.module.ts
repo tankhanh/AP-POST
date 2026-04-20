@@ -10,8 +10,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { HealthModule } from './health/health.module';
 import google_oauth_config from './config/google_oauth_config';
 import { MailerModule } from '@nestjs-modules/mailer';
-// import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+// import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { UsersModule } from './modules/users/users.module';
 import { FilesModule } from './modules/files/files.module';
 import { DatabasesModule } from './modules/databases/databases.module';
@@ -30,6 +30,7 @@ import { HttpModule } from '@nestjs/axios';
 import { VietQrModule } from './modules/vietqr/vietqr.module';
 import { VnpayModule } from './modules/vnpay/vnpay.module';
 import { join } from 'path';
+import { MomoModule } from './modules/momo/momo.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { join } from 'path';
     HttpModule,
     VietQrModule,
     VnpayModule,
+    MomoModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

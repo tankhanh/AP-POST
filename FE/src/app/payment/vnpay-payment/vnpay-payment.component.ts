@@ -89,6 +89,6 @@ export class VnpayPaymentComponent implements OnInit {
    * Go back to order list
    */
   goBack() {
-    this.router.navigate(['/employee/order/list']);
+    this.router.navigate(['/employee/orders/list']);
   }
 }

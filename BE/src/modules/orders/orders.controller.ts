@@ -23,7 +23,8 @@ import { IUser } from 'src/types/user.interface';
 import { OrderStatus } from './schemas/order.schemas';
 import { OrdersService } from './orders.service';
 import { Roles } from 'src/health/decorator/roles.decorator';
-import { VietQrService } from '../vietqr/vietqr.service';
+import { ConfigService } from '@nestjs/config';
+import { MomoService } from '../momo/momo.service';
 
 @ApiTags('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -31,35 +32,38 @@ import { VietQrService } from '../vietqr/vietqr.service';
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly vietQrService: VietQrService,
+    private readonly momoService: MomoService,
+    private readonly configService: ConfigService,
   ) {}
 
+  // ====================== 1. TẠO ĐƠN HÀNG ======================
   @Post()
   @ResponseMessage('Tạo đơn hàng mới')
   async create(@Body() dto: CreateOrderDto, @Users() user: IUser) {
+    console.log('🔥 [CREATE ORDER] paymentMethod =', dto.paymentMethod);
+
     const result = await this.ordersService.create(dto, user);
 
     const method = dto.paymentMethod || 'CASH';
-
-    // Redirect URL chỉ cần thiết cho các cổng thanh toán gateway
     let redirectUrl: string | null = null;
-    if (['MOMO', 'VNPAY', 'BANK_TRANSFER', 'FAKE', 'CARD'].includes(method)) {
-      // TODO: Nếu bạn còn dùng gateway thật thì implement initiateGateway ở đây
-      // redirectUrl = await this.initiateGateway(method, result.order, result.payment);
+
+    if (method === 'MOMO') {
+      console.log('🔥 Đang gọi MOMO gateway');
+      redirectUrl = await this.initiateGateway(method, result.order, result.payment);
+      console.log('🔥 Kết quả redirectUrl =', redirectUrl);
     }
 
     return {
       order: result.order,
       payment: result.payment,
-      qrUrl: result.qrUrl,
       redirectUrl,
-      message:
-        method === 'QR'
-          ? 'Vui lòng quét mã QR để thanh toán'
-          : 'Tạo đơn hàng thành công',
+      message: method === 'MOMO'
+        ? 'Đang chuyển hướng đến cổng thanh toán MOMO...'
+        : 'Tạo đơn hàng thành công',
     };
   }
 
+  // ====================== 2. DANH SÁCH ======================
   @Get()
   @ResponseMessage('Danh sách đơn hàng')
   findAll(
@@ -79,6 +83,7 @@ export class OrdersController {
     return this.ordersService.findAll(user, page, size, query || {});
   }
 
+  // ====================== 3. THỐNG KÊ (PHẢI ĐẶT TRƯỚC :id) ======================
   @Roles('ADMIN', 'STAFF')
   @Get('statistics')
   @ResponseMessage('Thống kê đơn hàng')
@@ -93,6 +98,7 @@ export class OrdersController {
     return this.ordersService.getStatistics(m, y, isAdmin ? null : user);
   }
 
+  // ====================== 4. CHI TIẾT ĐƠN HÀNG (dynamic route) ======================
   @Public()
   @Get(':id')
   @ResponseMessage('Chi tiết đơn hàng')
@@ -100,58 +106,7 @@ export class OrdersController {
     return this.ordersService.findOne(id);
   }
 
-  @Public()
-  @Get(':id/qr')
-  @ResponseMessage('Lấy mã QR thanh toán')
-  async getQr(@Param('id') id: string) {
-    try {
-      const order = await this.ordersService.findOne(id);
-
-      if (!order) {
-        throw new NotFoundException('Không tìm thấy đơn hàng');
-      }
-
-      if (order.paymentMethod !== 'QR') {
-        throw new BadRequestException(
-          'Đơn hàng này không sử dụng thanh toán QR',
-        );
-      }
-
-      if (order.status !== OrderStatus.PENDING) {
-        throw new BadRequestException(
-          'Chỉ đơn hàng đang chờ (PENDING) mới có thể thanh toán bằng QR',
-        );
-      }
-
-      const amount =
-        Number(order.senderPayAmount) ||
-        Number(order.totalOrderValue) ||
-        Number(order.totalPrice) ||
-        0;
-
-      if (amount <= 0) {
-        throw new BadRequestException('Số tiền thanh toán không hợp lệ');
-      }
-
-      const qrUrl = this.vietQrService.generateQrUrl(
-        amount,
-        order.waybill,
-        `Thanh toan don hang AP Post - ${order.waybill}`,
-      );
-
-      return {
-        success: true,
-        qrUrl: qrUrl,
-        amount: amount,
-        waybill: order.waybill,
-        orderId: order._id,
-      };
-    } catch (error: any) {
-      console.error('Get QR error:', error);
-      throw error;
-    }
-  }
-
+  // ====================== CÁC ROUTE KHÁC ======================
   @Patch(':id')
   @ResponseMessage('Cập nhật đơn hàng')
   update(@Param('id') id: string, @Body() dto: UpdateOrderDto) {
@@ -187,13 +142,29 @@ export class OrdersController {
     return this.ordersService.confirmPayment(id);
   }
 
-  // ====================== PRIVATE HELPER (nếu bạn còn dùng gateway) ======================
-  // private async initiateGateway(
-  //   method: string,
-  //   order: any,
-  //   payment: any,
-  // ): Promise<string | null> {
-  //   // Implement logic MOMO, VNPAY, FAKE... ở đây nếu cần
-  //   return null;
-  // }
+  // ====================== PRIVATE HELPER ======================
+  private async initiateGateway(
+    method: string,
+    order: any,
+    payment: any,
+  ): Promise<string | null> {
+    if (method === 'MOMO') {
+      try {
+        const amount = Number(payment.amount) || Number(order.totalOrderValue) || 0;
+        const orderInfo = `Thanh toan don hang AP Post - ${order.waybill}`;
+
+        const result = await this.momoService.createPayment(
+          order._id.toString(),
+          amount,
+          orderInfo,
+        );
+
+        return result.payUrl;
+      } catch (error) {
+        console.error('MOMO initiate error:', error);
+        throw new BadRequestException('Không thể tạo link thanh toán MOMO');
+      }
+    }
+    return null;
+  }
 }

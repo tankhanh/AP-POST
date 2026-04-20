@@ -44,22 +44,26 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     setTimeout(() => {
-      // Tự động tìm vị trí khi nhập địa chỉ chi tiết
+      // Tự động cập nhật bản đồ khi thay đổi Tỉnh / Phường
+      this.orderForm.get('pickupProvinceId')?.valueChanges.subscribe(() => this.autoUpdatePickup());
+      this.orderForm.get('pickupCommuneId')?.valueChanges.subscribe(() => this.autoUpdatePickup());
       this.orderForm
         .get('pickupDetailAddress')
         ?.valueChanges.pipe(debounceTime(800))
-        .subscribe(() => {
-          if (this.shouldSearch('pickup')) this.updatePickupMap();
-        });
+        .subscribe(() => this.autoUpdatePickup());
 
+      this.orderForm
+        .get('deliveryProvinceId')
+        ?.valueChanges.subscribe(() => this.autoUpdateDelivery());
+      this.orderForm
+        .get('deliveryCommuneId')
+        ?.valueChanges.subscribe(() => this.autoUpdateDelivery());
       this.orderForm
         .get('deliveryDetailAddress')
         ?.valueChanges.pipe(debounceTime(800))
-        .subscribe(() => {
-          if (this.shouldSearch('delivery')) this.updateDeliveryMap();
-        });
+        .subscribe(() => this.autoUpdateDelivery());
 
-      // Tính phí khi thay đổi thông tin
+      // Tính phí
       merge(
         this.orderForm.get('pickupProvinceId')!.valueChanges,
         this.orderForm.get('deliveryProvinceId')!.valueChanges,
@@ -74,7 +78,15 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
 
       this.calculateShippingFee();
       this.updatePayments();
-    }, 100);
+    }, 200);
+  }
+
+  private autoUpdatePickup() {
+    this.updatePickupMap();
+  }
+
+  private autoUpdateDelivery() {
+    this.updateDeliveryMap();
   }
 
   private shouldSearch(type: 'pickup' | 'delivery'): boolean {
@@ -153,7 +165,7 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
 
     const provinceName = this.getProvinceName(f.pickupProvinceId);
     const communeName = this.getCommuneName(f.pickupCommuneId);
-    const detail = f.pickupDetailAddress?.trim();
+    const detail = f.pickupDetailAddress?.trim() || '';
 
     const queries = [
       detail ? `${detail}, ${communeName}, ${provinceName}, Việt Nam` : '',
@@ -162,11 +174,15 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
     ].filter(Boolean);
 
     for (const q of queries) {
-      const res = await firstValueFrom(this.geocoding.search(q));
-      if (res?.length > 0) {
-        const { lat, lon } = res[0];
-        this.orderForm.patchValue({ pickupLat: parseFloat(lat), pickupLng: parseFloat(lon) });
-        return;
+      try {
+        const res = await firstValueFrom(this.geocoding.search(q));
+        if (res?.length > 0) {
+          const { lat, lon } = res[0];
+          this.orderForm.patchValue({ pickupLat: parseFloat(lat), pickupLng: parseFloat(lon) });
+          return;
+        }
+      } catch (e) {
+        console.warn('Geocoding pickup error', e);
       }
     }
   }
@@ -177,7 +193,7 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
 
     const provinceName = this.getProvinceName(f.deliveryProvinceId);
     const communeName = this.getCommuneName(f.deliveryCommuneId);
-    const detail = f.deliveryDetailAddress?.trim();
+    const detail = f.deliveryDetailAddress?.trim() || '';
 
     const queries = [
       detail ? `${detail}, ${communeName}, ${provinceName}, Việt Nam` : '',
@@ -186,11 +202,15 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
     ].filter(Boolean);
 
     for (const q of queries) {
-      const res = await firstValueFrom(this.geocoding.search(q));
-      if (res?.length > 0) {
-        const { lat, lon } = res[0];
-        this.orderForm.patchValue({ deliveryLat: parseFloat(lat), deliveryLng: parseFloat(lon) });
-        return;
+      try {
+        const res = await firstValueFrom(this.geocoding.search(q));
+        if (res?.length > 0) {
+          const { lat, lon } = res[0];
+          this.orderForm.patchValue({ deliveryLat: parseFloat(lat), deliveryLng: parseFloat(lon) });
+          return;
+        }
+      } catch (e) {
+        console.warn('Geocoding delivery error', e);
       }
     }
   }
@@ -220,10 +240,10 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
       this.senderPay = 0;
       this.receiverPay = cod + this.shippingFee;
       this.paymentNote = 'Người nhận trả COD + phí (nếu có)';
-    } else if (method === 'QR') {
+    } else if (method === 'MOMO') {
       this.senderPay = this.shippingFee + (payer === 'SENDER' ? cod : 0);
       this.receiverPay = payer === 'RECEIVER' ? cod : 0;
-      this.paymentNote = 'Quét mã QR VietQR để thanh toán ngay';
+      this.paymentNote = 'Thanh toán trực tuyến qua MOMO';
     }
   }
 
@@ -310,7 +330,7 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
     this.orderForm.get(controlName)?.setValue(detailAddress || '');
   }
 
-  // ==================== SUBMIT ====================
+  // ==================== SUBMIT - ĐÃ SỬA HOÀN CHỈNH ====================
   submit() {
     if (this.orderForm.invalid) {
       this.orderForm.markAllAsTouched();
@@ -347,40 +367,22 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
     };
 
     this.ordersService.createOrder(data).subscribe({
-      next: (res: any) => {
+      next: (apiResponse: any) => {
         this.loading = false;
-        const order = res.data?.order || res.data;
-        const waybill = order.waybill || '';
+        const res = apiResponse?.data || apiResponse;
 
-        // ==================== QR PAYMENT ====================
-        if (res.qrUrl) {
-          Swal.fire({
-            title: 'Quét mã QR để thanh toán',
-            html: `
-               <div class="text-center">
-                 <img src="${res.qrUrl}" style="max-width: 340px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
-                 <p class="mt-3 mb-1 fs-3 fw-bold text-success">${(order.totalOrderValue || order.totalPrice || 0).toLocaleString()} ₫</p>
-                 <p class="text-muted">Mã vận đơn: <strong>${waybill}</strong></p>
-                 <small class="text-success">Mở app ngân hàng bất kỳ → quét mã VietQR</small>
-               </div>
-             `,
-            confirmButtonText: 'Tôi đã thanh toán',
-            showCancelButton: true,
-            cancelButtonText: 'Để sau',
-            width: '420px',
-          }).then(() => {
-            this.router.navigate(['/employee/order/list']);
-          });
+        if (this.orderForm.value.paymentMethod === 'MOMO' && res.redirectUrl) {
+          window.location.href = res.redirectUrl;
           return;
         }
 
-        // ==================== CASH & COD ====================
+        // CASH / COD
         Swal.fire({
           icon: 'success',
           title: 'Tạo đơn thành công!',
-          text: `Mã vận đơn: ${waybill}`,
-          confirmButtonText: 'Xem danh sách đơn',
-        }).then(() => this.router.navigate(['/employee/order/list']));
+          text: `Mã vận đơn: ${res.order.waybill}`,
+          confirmButtonText: 'Về danh sách',
+        }).then(() => this.router.navigate(['/admin/orders/list']));
       },
       error: (err) => {
         this.loading = false;

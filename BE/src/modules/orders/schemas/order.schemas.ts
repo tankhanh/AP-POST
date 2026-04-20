@@ -1,5 +1,4 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { IsOptional } from 'class-validator';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
 import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 
@@ -27,26 +26,15 @@ export class Order {
   snapshotPricingId: Types.ObjectId;
 
   @Prop({ required: true }) senderName: string;
-
   @Prop({ required: true }) receiverName: string;
-
   @Prop({ required: true }) receiverPhone: string;
-
   @Prop({ trim: true, lowercase: true })
   email?: string;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Address',
-    required: true,
-  })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: true })
   pickupAddressId: Types.ObjectId;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Address',
-    required: true,
-  })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: true })
   deliveryAddressId: Types.ObjectId;
 
   @Prop({ required: true, min: 0 }) totalPrice: number;
@@ -73,11 +61,7 @@ export class Order {
   @Prop({ required: true, min: 0.01 })
   weightKg: number;
 
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Branch',
-    required: false,
-  })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: false })
   branchId: Types.ObjectId;
 
   @Prop({
@@ -91,17 +75,10 @@ export class Order {
 
   @Prop({ default: Date.now })
   createdAt?: Date;
-
   @Prop()
   updatedAt?: Date;
 
-  @Prop({
-    type: {
-      _id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-      email: String,
-    },
-    required: false,
-  })
+  @Prop({ type: Object })
   createdBy?: { _id: Types.ObjectId; email: string };
 
   @Prop({ type: Object })
@@ -115,38 +92,23 @@ export class Order {
   shippingFeePayer: ShippingFeePayer;
 
   @Prop({ required: false, min: 0 })
-  senderPayAmount: number; // Tiền người gửi trả tại quầy
+  senderPayAmount: number;
 
   @Prop({ required: false, min: 0 })
-  receiverPayAmount: number; // Tiền người nhận trả khi nhận
+  receiverPayAmount: number;
 
   @Prop({ required: false, min: 0 })
-  totalOrderValue: number; // Tổng codValue + shippingFee
+  totalOrderValue: number;
 
   @Prop({
     type: String,
-    enum: [
-      'CASH',
-      'COD',
-      'MOMO',
-      'VNPAY',
-      'BANK_TRANSFER',
-      'FAKE',
-      'CARD',
-      'QR',
-    ],
+    enum: ['CASH', 'COD', 'MOMO'],   // ← ĐÃ RÚT GỌN
     default: 'CASH',
   })
   paymentMethod?: string;
-
-  @Prop({ type: String })
-  qrUrl?: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
 OrderSchema.index({ waybill: 1 });
 OrderSchema.index({ userId: 1, createdAt: -1 });
-OrderSchema.index({ status: 1, isDeleted: 1 });
-OrderSchema.index({ branchId: 1, createdAt: -1 });
-OrderSchema.index({ branchId: 1, status: 1 });
 OrderSchema.plugin(softDeletePlugin);

@@ -41,20 +41,14 @@ import { StaffTrashComponent } from './dashboard-layout/dashboard-admin/staffs/s
 import { DashboardPricingComponent } from './dashboard-layout/dashboard-admin/dashboard-pricing/dashboard-pricing';
 import { CalculateShippingComponent } from './dashboard-layout/user-calculator/user-calculator';
 import { SupportComponent } from './dashboard-layout/dashboard-admin/support/support.component';
-import { PaymentSuccessComponent } from './payment/payment-success/payment-success.component';
-import { VnpayPaymentComponent } from './payment/vnpay-payment/vnpay-payment.component';
-import { VnpayReturnComponent } from './payment/vnpay-return/vnpay-return.component';
+import { PaymentSuccessComponent } from './payment/success/payment-success.component';
 
 export const routes: Routes = [
   { path: 'tracking', component: TrackingComponent },
   { path: 'calculator', component: CalculateShippingComponent },
-  {
-    path: 'payment-success',
-    component: PaymentSuccessComponent
-  },
-  { path: 'payment/vnpay', component: VnpayPaymentComponent },
-  { path: 'payment/vnpay-return', component: VnpayReturnComponent },
+  { path: 'payment/success', component: PaymentSuccessComponent },
 
+  ,
   // ----- USER LAYOUT -----
   {
     path: '',
@@ -81,7 +75,7 @@ export const routes: Routes = [
           { path: 'home', component: DashboardHome },
           { path: 'profile', component: DashboardProfile },
           { path: 'order/create', component: CreateOrder },
-          { path: 'order/list', component: ListOrder },
+          { path: 'orders/list', component: ListOrder },
           { path: 'order/edit/:id', component: EditOrder },
           { path: 'pricing', component: ListPricing },
           { path: 'branch', component: ListBranch },

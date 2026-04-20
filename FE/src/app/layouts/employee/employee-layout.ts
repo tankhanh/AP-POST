@@ -61,7 +61,7 @@ export class EmployeeLayout implements OnInit, OnDestroy {
       url.startsWith('/reset-password') ||
       url.startsWith('/employee/') ||
       url.startsWith('/employee/home') ||
-      url.startsWith('/employee/order') ||
+      url.startsWith('/employee/orders') ||
       url.startsWith('/employee/profile');
   }
 

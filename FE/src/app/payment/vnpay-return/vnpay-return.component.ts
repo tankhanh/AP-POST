@@ -9,7 +9,7 @@ import { VNPayReturnStatus, Payment, Order } from '../../types/payment.types';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './vnpay-return.component.html',
-  styleUrls: ['./vnpay-return.component.css']
+  styleUrls: ['./vnpay-return.component.css'],
 })
 export class VnpayReturnComponent implements OnInit {
   status: VNPayReturnStatus = 'loading';
@@ -25,7 +25,7 @@ export class VnpayReturnComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private vnpayService: VnpayService
+    private vnpayService: VnpayService,
   ) {}
 
   ngOnInit() {
@@ -63,7 +63,7 @@ export class VnpayReturnComponent implements OnInit {
       error: (err) => {
         console.error('Failed to fetch payment details:', err);
         this.isLoadingDetails = false;
-      }
+      },
     });
   }
 
@@ -71,7 +71,7 @@ export class VnpayReturnComponent implements OnInit {
    * Return to order list
    */
   goToDashboard() {
-    this.router.navigate(['/employee/order/list']);
+    this.router.navigate(['/employee/orders/list']);
   }
 
   /**
@@ -81,7 +81,7 @@ export class VnpayReturnComponent implements OnInit {
     const id = this.paymentDetails?.orderId || this.orderId;
     if (id) {
       this.router.navigate(['/payment/vnpay'], {
-        queryParams: { orderId: id }
+        queryParams: { orderId: id },
       });
     }
   }

@@ -9,7 +9,6 @@ import { GeocodingService } from '../../../services/geocoding.service';
 import { debounceTime } from 'rxjs/operators';
 import { firstValueFrom, merge, startWith } from 'rxjs';
 import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
-import { OrderCreateResponse } from '../../../types/payment.types';
 
 @Component({
   selector: 'app-create-order',
@@ -27,14 +26,13 @@ export class CreateOrder implements OnInit, AfterViewInit {
   senderPay = 0;
   receiverPay = 0;
   paymentNote = '';
-  vnPayCompatibilityReasons: string[] = [];
 
   constructor(
     private fb: FormBuilder,
     private ordersService: OrdersService,
     private locationService: LocationService,
     private router: Router,
-    private geocoding: GeocodingService
+    private geocoding: GeocodingService,
   ) {}
 
   ngOnInit(): void {
@@ -44,20 +42,26 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     setTimeout(() => {
-      // Tự động tìm vị trí khi nhập địa chỉ chi tiết
-      this.orderForm.get('pickupDetailAddress')?.valueChanges
-        .pipe(debounceTime(800))
-        .subscribe(() => {
-          if (this.shouldSearch('pickup')) this.updatePickupMap();
-        });
+      // Tự động cập nhật bản đồ khi thay đổi Tỉnh / Phường
+      this.orderForm.get('pickupProvinceId')?.valueChanges.subscribe(() => this.autoUpdatePickup());
+      this.orderForm.get('pickupCommuneId')?.valueChanges.subscribe(() => this.autoUpdatePickup());
+      this.orderForm
+        .get('pickupDetailAddress')
+        ?.valueChanges.pipe(debounceTime(800))
+        .subscribe(() => this.autoUpdatePickup());
 
-      this.orderForm.get('deliveryDetailAddress')?.valueChanges
-        .pipe(debounceTime(800))
-        .subscribe(() => {
-          if (this.shouldSearch('delivery')) this.updateDeliveryMap();
-        });
+      this.orderForm
+        .get('deliveryProvinceId')
+        ?.valueChanges.subscribe(() => this.autoUpdateDelivery());
+      this.orderForm
+        .get('deliveryCommuneId')
+        ?.valueChanges.subscribe(() => this.autoUpdateDelivery());
+      this.orderForm
+        .get('deliveryDetailAddress')
+        ?.valueChanges.pipe(debounceTime(800))
+        .subscribe(() => this.autoUpdateDelivery());
 
-      // Tính phí khi thay đổi thông tin
+      // Tính phí
       merge(
         this.orderForm.get('pickupProvinceId')!.valueChanges,
         this.orderForm.get('deliveryProvinceId')!.valueChanges,
@@ -65,12 +69,22 @@ export class CreateOrder implements OnInit, AfterViewInit {
         this.orderForm.get('serviceCode')!.valueChanges,
         this.orderForm.get('codValue')!.valueChanges,
         this.orderForm.get('shippingFeePayer')!.valueChanges.pipe(startWith('SENDER')),
-        this.orderForm.get('paymentMethod')!.valueChanges.pipe(startWith('CASH'))
-      ).pipe(debounceTime(300)).subscribe(() => this.calculateShippingFee());
+        this.orderForm.get('paymentMethod')!.valueChanges.pipe(startWith('CASH')),
+      )
+        .pipe(debounceTime(300))
+        .subscribe(() => this.calculateShippingFee());
 
       this.calculateShippingFee();
       this.updatePayments();
-    }, 100);
+    }, 200);
+  }
+
+  private autoUpdatePickup() {
+    this.updatePickupMap();
+  }
+
+  private autoUpdateDelivery() {
+    this.updateDeliveryMap();
   }
 
   private shouldSearch(type: 'pickup' | 'delivery'): boolean {
@@ -95,7 +109,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
       serviceCode: ['STD'],
       weightKg: [1, [Validators.required, Validators.min(0.01)]],
       codValue: [0, [Validators.required, Validators.min(0)]],
-      vnpayOption: ['SHIPPING'],
       email: [''],
       details: [''],
       pickupLat: [null],
@@ -150,20 +163,24 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
     const provinceName = this.getProvinceName(f.pickupProvinceId);
     const communeName = this.getCommuneName(f.pickupCommuneId);
-    const detail = f.pickupDetailAddress?.trim();
+    const detail = f.pickupDetailAddress?.trim() || '';
 
     const queries = [
       detail ? `${detail}, ${communeName}, ${provinceName}, Việt Nam` : '',
       `${communeName}, ${provinceName}, Việt Nam`,
-      `${provinceName}, Việt Nam`
+      `${provinceName}, Việt Nam`,
     ].filter(Boolean);
 
     for (const q of queries) {
-      const res = await firstValueFrom(this.geocoding.search(q));
-      if (res?.length > 0) {
-        const { lat, lon } = res[0];
-        this.orderForm.patchValue({ pickupLat: parseFloat(lat), pickupLng: parseFloat(lon) });
-        return;
+      try {
+        const res = await firstValueFrom(this.geocoding.search(q));
+        if (res?.length > 0) {
+          const { lat, lon } = res[0];
+          this.orderForm.patchValue({ pickupLat: parseFloat(lat), pickupLng: parseFloat(lon) });
+          return;
+        }
+      } catch (e) {
+        console.warn('Geocoding pickup error', e);
       }
     }
   }
@@ -174,20 +191,24 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
     const provinceName = this.getProvinceName(f.deliveryProvinceId);
     const communeName = this.getCommuneName(f.deliveryCommuneId);
-    const detail = f.deliveryDetailAddress?.trim();
+    const detail = f.deliveryDetailAddress?.trim() || '';
 
     const queries = [
       detail ? `${detail}, ${communeName}, ${provinceName}, Việt Nam` : '',
       `${communeName}, ${provinceName}, Việt Nam`,
-      `${provinceName}, Việt Nam`
+      `${provinceName}, Việt Nam`,
     ].filter(Boolean);
 
     for (const q of queries) {
-      const res = await firstValueFrom(this.geocoding.search(q));
-      if (res?.length > 0) {
-        const { lat, lon } = res[0];
-        this.orderForm.patchValue({ deliveryLat: parseFloat(lat), deliveryLng: parseFloat(lon) });
-        return;
+      try {
+        const res = await firstValueFrom(this.geocoding.search(q));
+        if (res?.length > 0) {
+          const { lat, lon } = res[0];
+          this.orderForm.patchValue({ deliveryLat: parseFloat(lat), deliveryLng: parseFloat(lon) });
+          return;
+        }
+      } catch (e) {
+        console.warn('Geocoding delivery error', e);
       }
     }
   }
@@ -209,8 +230,6 @@ export class CreateOrder implements OnInit, AfterViewInit {
     const payer = this.orderForm.value.shippingFeePayer || 'SENDER';
     const method = this.orderForm.value.paymentMethod || 'CASH';
 
-    // No longer force COD = 0 here — support split-payment options.
-
     if (method === 'CASH') {
       this.senderPay = payer === 'SENDER' ? this.shippingFee : 0;
       this.receiverPay = cod + (payer === 'RECEIVER' ? this.shippingFee : 0);
@@ -219,54 +238,11 @@ export class CreateOrder implements OnInit, AfterViewInit {
       this.senderPay = 0;
       this.receiverPay = cod + this.shippingFee;
       this.paymentNote = 'Người nhận trả COD + phí (nếu có)';
-    } else if (method === 'QR') {
+    } else if (method === 'MOMO') {
       this.senderPay = this.shippingFee + (payer === 'SENDER' ? cod : 0);
       this.receiverPay = payer === 'RECEIVER' ? cod : 0;
-      this.paymentNote = 'Quét mã QR VietQR để thanh toán ngay';
-    } else if (method === 'VNPAY') {
-      // Online payment via VNPAY (usually paid by sender at checkout)
-      this.senderPay = this.shippingFee + (payer === 'SENDER' ? cod : 0);
-      this.receiverPay = payer === 'RECEIVER' ? cod : 0;
-      this.paymentNote = 'Thanh toán trực tuyến qua VNPAY (người gửi)';
+      this.paymentNote = 'Thanh toán trực tuyến qua MOMO';
     }
-    // Recompute VNPAY compatibility reasons
-    this.computeVnPayCompatibility();
-  }
-
-  private computeVnPayCompatibility() {
-    const f = this.orderForm?.value || {};
-    const reasons: string[] = [];
-
-    // Only validate when user selects VNPAY
-    if (f.paymentMethod !== 'VNPAY') {
-      this.vnPayCompatibilityReasons = [];
-      return;
-    }
-
-    const cod = Number(f.codValue || 0);
-    const weight = Number(f.weightKg || 0);
-
-    const option = f.vnpayOption || 'SHIPPING';
-
-    // If user requests full online payment and COD exists, it's incompatible
-    if (option === 'FULL' && cod > 0) {
-      reasons.push('Đơn có giá trị thu hộ (COD). Việc thanh toán toàn bộ trực tuyến không hỗ trợ thu hộ.');
-    }
-
-    if (weight > 30) {
-      reasons.push('Trọng lượng vượt quá 30kg — VNPAY có thể không hỗ trợ đơn quá nặng.');
-    }
-
-    if (!this.shippingFee || this.shippingFee <= 0) {
-      reasons.push('Phí vận chuyển chưa được tính hoặc bằng 0. Vui lòng kiểm tra thông tin địa chỉ.');
-    }
-
-    const total = option === 'SHIPPING' ? Number(this.shippingFee || 0) : (Number(f.codValue || 0) + Number(this.shippingFee || 0));
-    if (total <= 0) {
-      reasons.push('Tổng giá trị đơn phải lớn hơn 0 để thực hiện thanh toán trực tuyến.');
-    }
-
-    this.vnPayCompatibilityReasons = reasons;
   }
 
   async calculateShippingFee() {
@@ -296,7 +272,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
           serviceCode: f.serviceCode || 'STD',
           weightKg: Number(f.weightKg),
           isLocal: isSameProvince,
-        })
+        }),
       );
       this.shippingFee = res.data?.totalPrice ?? res.totalPrice ?? 0;
     } catch (err) {
@@ -329,13 +305,13 @@ export class CreateOrder implements OnInit, AfterViewInit {
     const currentCommune = this.getCommuneName(
       event.type === 'pickup'
         ? this.orderForm.value.pickupCommuneId
-        : this.orderForm.value.deliveryCommuneId
+        : this.orderForm.value.deliveryCommuneId,
     );
 
     const currentProvince = this.getProvinceName(
       event.type === 'pickup'
         ? this.orderForm.value.pickupProvinceId
-        : this.orderForm.value.deliveryProvinceId
+        : this.orderForm.value.deliveryProvinceId,
     );
 
     if (currentCommune) detailAddress = detailAddress.split(currentCommune)[0] || detailAddress;
@@ -352,7 +328,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     this.orderForm.get(controlName)?.setValue(detailAddress || '');
   }
 
-  // ==================== SUBMIT ====================
+  // ==================== SUBMIT - ĐÃ SỬA HOÀN CHỈNH ====================
   submit() {
     if (this.orderForm.invalid) {
       this.orderForm.markAllAsTouched();
@@ -389,93 +365,27 @@ export class CreateOrder implements OnInit, AfterViewInit {
     };
 
     this.ordersService.createOrder(data).subscribe({
-      next: (res: OrderCreateResponse) => {
+      next: (apiResponse: any) => {
         this.loading = false;
-        const orderData = res.data as any;
-        const order = orderData?.order || orderData;
-        const orderId = order._id || '';
-        const waybill = order.waybill || '';
-        const paymentMethod = this.orderForm.value.paymentMethod;
+        const res = apiResponse?.data || apiResponse;
 
-        // ==================== VNPAY PAYMENT ====================
-        if (paymentMethod === 'VNPAY') {
-          Swal.fire({
-            title: 'Lệnh thanh toán VNPAY',
-            html: `
-              <div class="text-center">
-                <p class="mb-2">Chuyển hướng đến cổng thanh toán VNPAY</p>
-                <p class="fs-5 fw-bold text-primary">${(order.totalOrderValue || order.totalPrice || 0).toLocaleString()} ₫</p>
-                <p class="text-muted">Mã vận đơn: <strong>${waybill}</strong></p>
-                <small class="text-info">Vui lòng chờ để được chuyển hướng...</small>
-              </div>
-            `,
-            confirmButtonText: 'Xác nhận',
-            showCancelButton: true,
-            cancelButtonText: 'Hủy',
-            width: '420px',
-            allowOutsideClick: false,
-                didOpen: () => {
-                  // Auto redirect after 2 seconds — include requested online amount if any
-                  setTimeout(() => {
-                    const option = this.orderForm.value.vnpayOption || 'SHIPPING';
-                    const cod = Number(this.orderForm.value.codValue || 0);
-                    const amount = option === 'SHIPPING' ? Number(this.shippingFee || 0) : (Number(this.shippingFee || 0) + cod);
-
-                    this.router.navigate(['/payment/vnpay'], {
-                      queryParams: { orderId, amount }
-                    });
-                  }, 2000);
-                }
-          }).then((result) => {
-            if (!result.isConfirmed && !result.isDismissed) {
-              const option = this.orderForm.value.vnpayOption || 'SHIPPING';
-              const cod = Number(this.orderForm.value.codValue || 0);
-              const amount = option === 'SHIPPING' ? Number(this.shippingFee || 0) : (Number(this.shippingFee || 0) + cod);
-
-              this.router.navigate(['/payment/vnpay'], {
-                queryParams: { orderId, amount }
-              });
-            } else if (result.dismiss === Swal.DismissReason.cancel) {
-              this.router.navigate(['/employee/order/list']);
-            }
-          });
+        if (this.orderForm.value.paymentMethod === 'MOMO' && res.redirectUrl) {
+          window.location.href = res.redirectUrl;
           return;
         }
 
-        // ==================== QR PAYMENT ====================
-        if (res.qrUrl) {
-          Swal.fire({
-            title: 'Quét mã QR để thanh toán',
-            html: `
-              <div class="text-center">
-                <img src="${res.qrUrl}" style="max-width: 340px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
-                <p class="mt-3 mb-1 fs-3 fw-bold text-success">${(order.totalOrderValue || order.totalPrice || 0).toLocaleString()} ₫</p>
-                <p class="text-muted">Mã vận đơn: <strong>${waybill}</strong></p>
-                <small class="text-success">Mở app ngân hàng bất kỳ → quét mã VietQR</small>
-              </div>
-            `,
-            confirmButtonText: 'Tôi đã thanh toán',
-            showCancelButton: true,
-            cancelButtonText: 'Để sau',
-            width: '420px'
-          }).then(() => {
-            this.router.navigate(['/employee/order/list']);
-          });
-          return;
-        }
-
-        // ==================== CASH & COD ====================
+        // CASH / COD
         Swal.fire({
           icon: 'success',
           title: 'Tạo đơn thành công!',
-          text: `Mã vận đơn: ${waybill}`,
-          confirmButtonText: 'Xem danh sách đơn'
-        }).then(() => this.router.navigate(['/employee/order/list']));
+          text: `Mã vận đơn: ${res.order.waybill}`,
+          confirmButtonText: 'Về danh sách',
+        }).then(() => this.router.navigate(['/employee/orders/list']));
       },
       error: (err) => {
         this.loading = false;
         Swal.fire('Lỗi!', err.error?.message || 'Tạo đơn thất bại', 'error');
-      }
+      },
     });
   }
 }

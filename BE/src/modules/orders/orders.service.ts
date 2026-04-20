@@ -22,7 +22,6 @@ import { PricingService } from '../pricing/pricing.service';
 import { ProvinceCode } from 'src/types/location.type';
 import { Tracking } from '../tracking/schemas/tracking.schemas';
 import { PaymentsService } from '../payments/payments.service';
-import { VietQrService } from '../vietqr/vietqr.service';
 import { MailService } from '../mail/mail.service';
 
 @Injectable()
@@ -42,7 +41,6 @@ export class OrdersService {
     private pricingService: PricingService,
     private paymentsService: PaymentsService,
     private mailService: MailService,
-    private readonly vietQrService: VietQrService,
   ) {
     this.trackingModel = this.connection.model(Tracking.name);
   }
@@ -55,7 +53,6 @@ export class OrdersService {
   async create(dto: CreateOrderDto, user: IUser) {
     const waybill = await this.generateUniqueWaybill();
 
-    // 1. Lấy province + code
     const originProv = await this.provinceModel
       .findById(dto.pickupAddress.provinceId)
       .lean();
@@ -67,7 +64,6 @@ export class OrdersService {
       throw new BadRequestException('Tỉnh/thành phố không hợp lệ');
     }
 
-    // 2. Tính phí vận chuyển
     const calcResult = await this.pricingService.calculateShipping(
       originProv.code as ProvinceCode,
       destProv.code as ProvinceCode,
@@ -82,8 +78,6 @@ export class OrdersService {
       );
 
     const shippingFee = Number(calcResult.totalPrice) || 0;
-
-    // XÁC ĐỊNH AI TRẢ PHÍ VẬN CHUYỂN
     const shippingFeePayer = dto.shippingFeePayer || 'SENDER';
     const codValue = Number(dto.codValue) || 0;
 
@@ -91,9 +85,7 @@ export class OrdersService {
     let receiverPayAmount =
       codValue + (shippingFeePayer === 'RECEIVER' ? shippingFee : 0);
 
-    const isOnlinePayment = ['FAKE', 'BANK_TRANSFER', 'CARD', 'QR'].includes(
-      dto.paymentMethod || '',
-    );
+    const isOnlinePayment = dto.paymentMethod === 'MOMO';
 
     if (isOnlinePayment && shippingFeePayer === 'SENDER') {
       senderPayAmount += codValue;
@@ -102,26 +94,22 @@ export class OrdersService {
 
     const totalOrderValue = codValue + shippingFee;
 
-    // 3. Tạo địa chỉ (song song)
     const [pickupAddr, deliveryAddr] = await Promise.all([
       this.addressModel.create(dto.pickupAddress),
       this.addressModel.create(dto.deliveryAddress),
     ]);
 
-    // 4. Xử lý branchId
     let branchId: Types.ObjectId | null = null;
     const rawBranchId = user.branchId ?? (user as any).branchId ?? null;
 
     if (user.role === 'STAFF') {
-      if (!rawBranchId) {
+      if (!rawBranchId)
         throw new BadRequestException('Nhân viên chưa được gắn bưu cục.');
-      }
       branchId = new Types.ObjectId(rawBranchId);
     } else if (user.role === 'ADMIN' && rawBranchId) {
       branchId = new Types.ObjectId(rawBranchId);
     }
 
-    // 5. Tạo đơn hàng
     const newOrder = await this.orderModel.create({
       ...dto,
       pickupAddressId: pickupAddr._id,
@@ -152,7 +140,6 @@ export class OrdersService {
       paymentMethod: dto.paymentMethod || 'CASH',
     });
 
-    // 6. Tạo tracking
     await this.trackingModel.create({
       orderId: newOrder._id,
       status: OrderStatus.PENDING,
@@ -165,7 +152,6 @@ export class OrdersService {
       branchId: newOrder.branchId || null,
     });
 
-    // 7. Gửi email xác nhận (chỉ khi KHÔNG thanh toán online)
     const customerEmail = this.normalizeEmail(dto.email);
     if (customerEmail && !isOnlinePayment) {
       this.mailService
@@ -185,18 +171,7 @@ export class OrdersService {
         );
     }
 
-    // 8. Tạo QR nếu là QR Payment
-    let qrUrl: string | null = null;
-    if (dto.paymentMethod === 'QR') {
-      const amountToPay = senderPayAmount || totalOrderValue;
-      qrUrl = this.vietQrService.generateQrUrl(
-        amountToPay,
-        newOrder.waybill,
-        `Thanh toan don hang AP Post - ${newOrder.waybill}`,
-      );
-    }
-
-    // 9. Tạo Payment (CHỈ TẠO 1 LẦN – KHÔNG DUPLICATE)
+    // TẠO PAYMENT
     const payment = await this.paymentsService.createPaymentForOrder(
       newOrder._id.toString(),
       {
@@ -211,8 +186,6 @@ export class OrdersService {
     return {
       order: newOrder,
       payment,
-      qrUrl,
-      redirectUrl: null,
     };
   }
 
@@ -428,19 +401,45 @@ export class OrdersService {
       totalPrice: (dto.codValue || order.codValue || 0) + newShippingFee,
     };
 
+    // Lưu email nếu có
+    if (dto.email) {
+      updateData.email = dto.email.trim().toLowerCase();
+    }
+
     delete updateData.pickupAddress;
     delete updateData.deliveryAddress;
 
+    // Nếu thay đổi trạng thái → gọi updateStatus để có tracking và gửi email
     if (dto.status && dto.status !== order.status) {
       return this.updateStatus(id, dto.status as OrderStatus);
     }
 
+    // Cập nhật thông tin đơn hàng
     const updatedOrder = await this.orderModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate({
         path: 'pickupAddressId deliveryAddressId',
         populate: { path: 'provinceId communeId' },
       });
+
+    // === GỬI EMAIL THÔNG BÁO SAU KHI CẬP NHẬT THÀNH CÔNG ===
+    if (updatedOrder.email) {
+      this.mailService
+        .sendOrderConfirmation({
+          to: updatedOrder.email,
+          receiverName: updatedOrder.receiverName,
+          waybill: updatedOrder.waybill,
+          shippingFee: updatedOrder.shippingFee,
+          codValue: updatedOrder.codValue,
+          senderPayAmount: updatedOrder.senderPayAmount || 0,
+          receiverPayAmount: updatedOrder.receiverPayAmount || 0,
+          totalOrderValue: updatedOrder.totalOrderValue || 0,
+          shippingFeePayer: updatedOrder.shippingFeePayer,
+        })
+        .catch((err) =>
+          console.warn('Gửi email cập nhật đơn hàng thất bại:', err.message),
+        );
+    }
 
     return updatedOrder;
   }
