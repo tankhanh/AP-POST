@@ -178,7 +178,8 @@ export class OrdersService {
         method: dto.paymentMethod || 'CASH',
         amount: senderPayAmount || totalOrderValue,
         status: dto.paymentMethod === 'CASH' ? 'paid' : 'pending',
-        transactionId: newOrder.waybill,
+        // Dùng _id của Order làm transactionId để khớp với Return URL của MoMo
+        transactionId: newOrder._id.toString(),
         createdBy: { _id: user._id, email: user.email },
       },
     );
