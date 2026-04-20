@@ -102,7 +102,6 @@ export class PaymentsService {
     );
 
     if (payment && status === 'paid') {
-      // Cập nhật order thành CONFIRMED
       await this.ordersService.updateStatus(
         payment.orderId.toString(),
         OrderStatus.CONFIRMED,

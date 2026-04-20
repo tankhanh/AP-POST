@@ -459,46 +459,26 @@ export class OrdersService {
   async updateStatus(id: string, status: OrderStatus, user?: IUser) {
     const order = await this.orderModel.findById(id);
     if (!order || order.isDeleted) {
+      console.error(`❌ Order ${id} not found or deleted`);
       throw new NotFoundException('Order not found');
     }
 
-    if (user && ['CONFIRMED', 'SHIPPING', 'COMPLETED'].includes(status)) {
-      await this.orderModel.updateOne(
-        { _id: id },
-        { $set: { createdBy: { _id: user._id, email: user.email } } },
-      );
-    }
-
-    await this.orderModel.updateOne({ _id: id }, { status });
-
-    const display: Record<string, { location: string; note: string }> = {
-      PENDING: {
-        location: 'Đơn hàng đang chờ xác nhận',
-        note: 'Khách hàng đã đặt hàng',
-      },
-      CONFIRMED: {
-        location: 'Bưu cục tiếp nhận',
-        note: 'Nhân viên đã xác nhận đơn',
-      },
-      SHIPPING: { location: 'Đang vận chuyển', note: 'Đã giao cho shipper' },
-      COMPLETED: {
-        location: 'Giao hàng thành công',
-        note: 'Khách đã nhận hàng',
-      },
-      CANCELED: { location: 'Đã hủy', note: 'Đơn hàng bị hủy' },
-    };
-
+    const oldStatus = order.status;
     order.status = status;
     order.updatedAt = new Date();
+
     await order.save();
 
+    console.log(`🔄 Order ${id} changed from ${oldStatus} to ${status}`);
+
+    // Tạo tracking
     await this.trackingModel.create({
       orderId: order._id,
       status: status,
       timestamp: new Date(),
       location:
         status === OrderStatus.CONFIRMED
-          ? 'Bưu cục tiếp nhận'
+          ? 'Bưu cục tiếp nhận (Thanh toán MOMO)'
           : 'Cập nhật trạng thái',
       note:
         status === OrderStatus.CONFIRMED ? 'Thanh toán MOMO thành công' : '',
@@ -507,6 +487,7 @@ export class OrdersService {
         : null,
     });
 
+    // Gửi email nếu có
     if (order.email) {
       this.mailService
         .sendStatusUpdate({
@@ -517,9 +498,7 @@ export class OrdersService {
           trackingUrl: `https://ap-post.vercel.app/tracking/${order.waybill}`,
           codValue: order.codValue,
         })
-        .catch((err) =>
-          console.error(`GỬI EMAIL TRẠNG THÁI ${status} THẤT BẠI:`, err),
-        );
+        .catch((err) => console.error(`Gửi email trạng thái thất bại:`, err));
     }
 
     return order;
