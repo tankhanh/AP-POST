@@ -64,27 +64,47 @@ export class MomoController {
   }
 
   // Return URL - Người dùng được redirect về sau khi thanh toán
+  // src/momo/momo.controller.ts
+
+  // Return URL - Người dùng được redirect về sau khi thanh toán
   @Get('return')
   @Public()
   async handleReturn(@Query() query: any, @Res() res: Response) {
     const orderId = query.orderId || query.requestId;
     const resultCode = Number(query.resultCode || -1);
 
-    console.log('🔄 Momo Return URL:', { orderId, resultCode });
+    console.log('🔄 [MOMO RETURN URL] Received:', {
+      orderId,
+      resultCode,
+      fullQuery: query,
+    });
 
     if (resultCode === 0 && orderId) {
+      console.log(
+        `✅ Thanh toán thành công qua Return URL cho order: ${orderId}`,
+      );
+
       try {
+        // Cập nhật Payment thành 'paid'
         await this.paymentsService.updatePaymentStatusByTransaction(
           orderId,
           'paid',
         );
-        console.log(`✅ Return URL cập nhật order ${orderId} thành CONFIRMED`);
-      } catch (err) {
-        console.error('❌ Lỗi cập nhật từ Return URL:', err);
+
+        // Cập nhật Order thành CONFIRMED
+        await this.ordersService.updateStatus(orderId, OrderStatus.CONFIRMED);
+
+        console.log(`🎉 Đã cập nhật order ${orderId} thành CONFIRMED`);
+      } catch (err: any) {
+        console.error('❌ Lỗi khi cập nhật từ Return URL:', err.message);
       }
+    } else {
+      console.log(
+        `⚠️ Thanh toán không thành công hoặc thiếu orderId. ResultCode: ${resultCode}`,
+      );
     }
 
-    // Redirect về trang success
+    // Redirect về trang success của frontend
     const frontendUrl = `https://ap-post.vercel.app/payment/success?orderId=${orderId}&resultCode=${resultCode}&method=momo`;
     return res.redirect(frontendUrl);
   }
