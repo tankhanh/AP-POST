@@ -73,38 +73,42 @@ export class MomoController {
     const orderId = query.orderId || query.requestId;
     const resultCode = Number(query.resultCode || -1);
 
-    console.log('🔄 [MOMO RETURN URL] Received:', {
-      orderId,
-      resultCode,
-      fullQuery: query,
-    });
+    console.log('🔄 [MOMO RETURN URL] Full Query:', query);
+    console.log(
+      `🔄 [MOMO RETURN URL] OrderId: ${orderId}, ResultCode: ${resultCode}`,
+    );
 
     if (resultCode === 0 && orderId) {
       console.log(
-        `✅ Thanh toán thành công qua Return URL cho order: ${orderId}`,
+        `✅ [RETURN URL] Bắt đầu cập nhật thanh toán cho order: ${orderId}`,
       );
 
       try {
-        // Cập nhật Payment thành 'paid'
-        await this.paymentsService.updatePaymentStatusByTransaction(
-          orderId,
-          'paid',
+        // Cập nhật Payment
+        const payment =
+          await this.paymentsService.updatePaymentStatusByTransaction(
+            orderId,
+            'paid',
+          );
+        console.log(
+          `✅ [RETURN URL] Payment updated: ${payment ? 'OK' : 'NOT FOUND'}`,
         );
 
         // Cập nhật Order thành CONFIRMED
         await this.ordersService.updateStatus(orderId, OrderStatus.CONFIRMED);
-
-        console.log(`🎉 Đã cập nhật order ${orderId} thành CONFIRMED`);
+        console.log(
+          `🎉 [RETURN URL] Order ${orderId} đã chuyển sang CONFIRMED`,
+        );
       } catch (err: any) {
-        console.error('❌ Lỗi khi cập nhật từ Return URL:', err.message);
+        console.error('❌ [RETURN URL] Lỗi khi cập nhật:', err.message);
       }
     } else {
-      console.log(
-        `⚠️ Thanh toán không thành công hoặc thiếu orderId. ResultCode: ${resultCode}`,
+      console.warn(
+        `⚠️ [RETURN URL] Thanh toán không thành công hoặc thiếu orderId. ResultCode = ${resultCode}`,
       );
     }
 
-    // Redirect về trang success của frontend
+    // Redirect về trang success
     const frontendUrl = `https://ap-post.vercel.app/payment/success?orderId=${orderId}&resultCode=${resultCode}&method=momo`;
     return res.redirect(frontendUrl);
   }
