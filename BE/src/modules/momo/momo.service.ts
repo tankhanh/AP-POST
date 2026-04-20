@@ -29,10 +29,10 @@ export class MomoService {
     orderInfo: string,
   ): Promise<{ payUrl: string }> {
     const requestId = Date.now().toString();
-    const redirectUrl = 'https://ap-post.vercel.app/payment/momo-return'; // frontend return URL
+    const redirectUrl = 'https://ap-post.vercel.app/payment/success';
     const ipnUrl = `${
       this.configService.get('API_BASE_URL') ||
-      'https://ap-post-api.onrender.com/api/v1'
+      'https://ap-post-api.onrender.com'
     }/api/payments/momo/ipn`;
     const extraData = '';
     const requestType = 'payWithMethod';

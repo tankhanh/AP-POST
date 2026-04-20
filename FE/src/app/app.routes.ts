@@ -46,7 +46,10 @@ import { PaymentSuccessComponent } from './payment/success/payment-success.compo
 export const routes: Routes = [
   { path: 'tracking', component: TrackingComponent },
   { path: 'calculator', component: CalculateShippingComponent },
-  { path: 'payment/success', component: PaymentSuccessComponent },
+  {
+    path: 'payment/success',
+    component: PaymentSuccessComponent,
+  },
 
   ,
   // ----- USER LAYOUT -----

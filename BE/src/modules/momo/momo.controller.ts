@@ -68,33 +68,24 @@ export class MomoController {
   @Public()
   async handleReturn(@Query() query: any, @Res() res: Response) {
     const orderId = query.orderId || query.requestId;
-    const resultCode = Number(query.resultCode);
+    const resultCode = Number(query.resultCode || -1);
 
-    console.log('🔄 Momo Return URL received:', {
-      orderId,
-      resultCode,
-      fullQuery: query,
-    });
+    console.log('🔄 Momo Return URL:', { orderId, resultCode });
 
-    // Nếu thanh toán thành công (resultCode = 0)
     if (resultCode === 0 && orderId) {
       try {
-        // Cập nhật Payment và Order thành CONFIRMED
         await this.paymentsService.updatePaymentStatusByTransaction(
           orderId,
           'paid',
         );
-        console.log(
-          `✅ Return URL: Đã cập nhật order ${orderId} thành CONFIRMED`,
-        );
+        console.log(`✅ Return URL cập nhật order ${orderId} thành CONFIRMED`);
       } catch (err) {
         console.error('❌ Lỗi cập nhật từ Return URL:', err);
       }
     }
 
-    // Redirect về trang success của frontend với thông tin
+    // Redirect về trang success
     const frontendUrl = `https://ap-post.vercel.app/payment/success?orderId=${orderId}&resultCode=${resultCode}&method=momo`;
-
     return res.redirect(frontendUrl);
   }
 }
