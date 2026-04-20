@@ -64,52 +64,60 @@ export class MomoController {
   }
 
   // Return URL - Người dùng được redirect về sau khi thanh toán
-  // src/momo/momo.controller.ts
-
-  // Return URL - Người dùng được redirect về sau khi thanh toán
   @Get('return')
   @Public()
   async handleReturn(@Query() query: any, @Res() res: Response) {
     const orderId = query.orderId || query.requestId;
     const resultCode = Number(query.resultCode || -1);
 
-    console.log('🔄 [MOMO RETURN URL] Full Query:', query);
-    console.log(
-      `🔄 [MOMO RETURN URL] OrderId: ${orderId}, ResultCode: ${resultCode}`,
-    );
+    console.log('🔄 [MOMO RETURN URL] ====================');
+    console.log('Full Query:', query);
+    console.log(`OrderId = ${orderId}, ResultCode = ${resultCode}`);
+    console.log('============================================');
 
     if (resultCode === 0 && orderId) {
       console.log(
-        `✅ [RETURN URL] Bắt đầu cập nhật thanh toán cho order: ${orderId}`,
+        `✅ Bắt đầu xử lý thanh toán thành công cho order: ${orderId}`,
       );
 
       try {
-        // Cập nhật Payment
+        // 1. Cập nhật Payment
+        console.log(
+          `→ Đang gọi updatePaymentStatusByTransaction với transactionId = ${orderId}`,
+        );
         const payment =
           await this.paymentsService.updatePaymentStatusByTransaction(
             orderId,
             'paid',
           );
-        console.log(
-          `✅ [RETURN URL] Payment updated: ${payment ? 'OK' : 'NOT FOUND'}`,
-        );
 
-        // Cập nhật Order thành CONFIRMED
+        if (payment) {
+          console.log(
+            `✅ Payment updated thành công. OrderId trong Payment: ${payment.orderId}`,
+          );
+        } else {
+          console.warn(
+            `⚠️ Không tìm thấy Payment với transactionId = ${orderId}`,
+          );
+        }
+
+        // 2. Cập nhật Order thành CONFIRMED
+        console.log(`→ Đang gọi updateStatus cho order ${orderId}`);
         await this.ordersService.updateStatus(orderId, OrderStatus.CONFIRMED);
-        console.log(
-          `🎉 [RETURN URL] Order ${orderId} đã chuyển sang CONFIRMED`,
-        );
+        console.log(`🎉 Thành công! Order ${orderId} đã chuyển sang CONFIRMED`);
       } catch (err: any) {
-        console.error('❌ [RETURN URL] Lỗi khi cập nhật:', err.message);
+        console.error('❌ LỖI KHI CẬP NHẬT TRẠNG THÁI:', err.message);
+        console.error(err.stack || err);
       }
     } else {
       console.warn(
-        `⚠️ [RETURN URL] Thanh toán không thành công hoặc thiếu orderId. ResultCode = ${resultCode}`,
+        `⚠️ Thanh toán không thành công hoặc thiếu orderId. ResultCode = ${resultCode}`,
       );
     }
 
     // Redirect về trang success
     const frontendUrl = `https://ap-post.vercel.app/payment/success?orderId=${orderId}&resultCode=${resultCode}&method=momo`;
+    console.log(`→ Redirecting to: ${frontendUrl}`);
     return res.redirect(frontendUrl);
   }
 }
