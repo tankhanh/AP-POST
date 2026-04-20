@@ -22,7 +22,7 @@ export class PaymentsService {
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @Inject(forwardRef(() => OrdersService))
     private ordersService: OrdersService,
-  ) { }
+  ) {}
 
   async create(orderId: string, method: string) {
     const order = await this.orderModel.findById(orderId);
@@ -102,7 +102,11 @@ export class PaymentsService {
     );
 
     if (payment && status === 'paid') {
-      await this.ordersService.updateStatus(payment.orderId.toString(), OrderStatus.CONFIRMED);
+      // Cập nhật order thành CONFIRMED
+      await this.ordersService.updateStatus(
+        payment.orderId.toString(),
+        OrderStatus.CONFIRMED,
+      );
     }
 
     return payment;

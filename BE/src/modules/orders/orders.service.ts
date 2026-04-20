@@ -457,11 +457,7 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: OrderStatus, user?: IUser) {
-    const order = await this.orderModel
-      .findById(id)
-      .populate('pickupAddressId deliveryAddressId')
-      .lean();
-
+    const order = await this.orderModel.findById(id);
     if (!order || order.isDeleted) {
       throw new NotFoundException('Order not found');
     }
@@ -492,18 +488,23 @@ export class OrdersService {
       CANCELED: { location: 'Đã hủy', note: 'Đơn hàng bị hủy' },
     };
 
-    const actionPerformer = user
-      ? { _id: new Types.ObjectId(user._id), email: user.email }
-      : order.createdBy;
+    order.status = status;
+    order.updatedAt = new Date();
+    await order.save();
 
     await this.trackingModel.create({
       orderId: order._id,
       status: status,
       timestamp: new Date(),
-      location: display[status]?.location || 'Cập nhật trạng thái',
-      note: display[status]?.note || '',
-      createdBy: actionPerformer || null,
-      branchId: order.branchId || null,
+      location:
+        status === OrderStatus.CONFIRMED
+          ? 'Bưu cục tiếp nhận'
+          : 'Cập nhật trạng thái',
+      note:
+        status === OrderStatus.CONFIRMED ? 'Thanh toán MOMO thành công' : '',
+      createdBy: user
+        ? { _id: new Types.ObjectId(user._id), email: user.email }
+        : null,
     });
 
     if (order.email) {
@@ -521,10 +522,7 @@ export class OrdersService {
         );
     }
 
-    return await this.orderModel.findById(id).populate({
-      path: 'pickupAddressId deliveryAddressId',
-      populate: { path: 'provinceId communeId' },
-    });
+    return order;
   }
 
   async getStatistics(month?: number, year?: number, user?: IUser | null) {

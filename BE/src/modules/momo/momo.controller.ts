@@ -18,7 +18,7 @@ export class MomoController {
   @Post('ipn')
   @Public()
   async handleIpn(@Body() body: any) {
-    console.log('📨 Momo IPN received:', body);
+    console.log('📨 Momo IPN received:', JSON.stringify(body, null, 2));
 
     const { signature, ...params } = body;
 
@@ -28,28 +28,38 @@ export class MomoController {
       return { message: 'Invalid signature' };
     }
 
-    const orderId = body.orderId || body.requestId;
+    const orderId = body.orderId || body.requestId; // MoMo có thể trả về orderId hoặc requestId
     const resultCode = Number(body.resultCode);
+    const amount = Number(body.amount);
+
+    console.log(
+      `🔄 IPN OrderId: ${orderId}, ResultCode: ${resultCode}, Amount: ${amount}`,
+    );
 
     if (resultCode === 0) {
       // Thanh toán thành công
       console.log(`✅ Momo thanh toán thành công cho order: ${orderId}`);
 
-      // Cập nhật Payment
-      await this.paymentsService.updatePaymentStatusByTransaction(orderId, 'paid');
-
-      // Cập nhật Order thành CONFIRMED
       try {
+        // Cập nhật Payment
+        await this.paymentsService.updatePaymentStatusByTransaction(
+          orderId,
+          'paid',
+        );
+
+        // Cập nhật Order thành CONFIRMED
         await this.ordersService.updateStatus(orderId, OrderStatus.CONFIRMED);
         console.log(`✅ Đơn hàng ${orderId} đã chuyển sang CONFIRMED`);
       } catch (err) {
-        console.error('❌ Lỗi cập nhật trạng thái đơn hàng:', err);
+        console.error('❌ Lỗi cập nhật trạng thái đơn hàng hoặc payment:', err);
       }
     } else {
-      console.log(`❌ Momo thanh toán thất bại. ResultCode: ${resultCode}`);
+      console.log(
+        `❌ Momo thanh toán thất bại. ResultCode: ${resultCode} - Message: ${body.message}`,
+      );
     }
 
-    // Momo yêu cầu phải trả về { message: 'success' } hoặc tương tự
+    // MoMo yêu cầu phải trả về { message: 'success' } hoặc tương tự
     return { message: 'success' };
   }
 
