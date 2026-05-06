@@ -33,21 +33,20 @@ export class VerifyReset {
 
   verifyResetCode() {
     if (!this.code || !this.userId) {
-      this.errorMessage = 'Thiếu user hoặc mã code!';
+      this.errorMessage = 'Thiếu người dùng hoặc mã xác nhận.';
       return;
     }
 
-    console.log('Gửi verify reset:', this.userId, this.code);
     this.authService.verifyReset({ _id: this.userId, code: this.code }).subscribe({
-      next: (res: any) => {
-        this.successMessage = 'Xác thực thành công!';
+      next: () => {
+        this.successMessage = 'Xác thực thành công.';
         this.errorMessage = '';
         setTimeout(() => {
           this.router.navigate(['/reset-password'], { queryParams: { user: this.userId } });
         }, 1000);
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Verification failed!';
+        this.errorMessage = err.error?.message || 'Xác minh thất bại.';
         this.successMessage = '';
       },
     });

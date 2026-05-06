@@ -1,79 +1,80 @@
-<!-- Bộ lọc tháng/năm -->
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-  <h5 class="fw-bold mb-0">Thống kê tổng quan hệ thống</h5>
+<div class="ap-dashboard-header">
+  <div>
+    <div class="ap-dashboard-kicker">Quản trị</div>
+    <h1 class="ap-dashboard-title">Tổng quan hệ thống</h1>
+  </div>
 
-  <div class="d-flex align-items-center gap-2">
-    <div class="d-flex align-items-center">
-      <label for="monthSelect" class="me-2 text-muted fw-semibold">Tháng:</label>
-      <select id="monthSelect" class="form-select form-select-sm shadow-sm w-auto" [(ngModel)]="selectedMonth"
-        [disabled]="viewAllYear" (ngModelChange)="onFilterChange()">
+  <div class="ap-filter-controls">
+    <div class="ap-filter-control">
+      <label for="monthSelect">Tháng</label>
+      <select
+        id="monthSelect"
+        class="form-select form-select-sm w-auto"
+        [(ngModel)]="selectedMonth"
+        [disabled]="viewAllYear"
+        (ngModelChange)="onFilterChange()"
+      >
         <option *ngFor="let m of monthOptions" [value]="m.value">{{ m.label }}</option>
       </select>
     </div>
 
-    <div class="d-flex align-items-center">
-      <label for="yearSelect" class="me-2 text-muted fw-semibold">Năm:</label>
-      <select id="yearSelect" class="form-select form-select-sm shadow-sm w-auto" [(ngModel)]="selectedYear"
-        (change)="onFilterChange()">
+    <div class="ap-filter-control">
+      <label for="yearSelect">Năm</label>
+      <select
+        id="yearSelect"
+        class="form-select form-select-sm w-auto"
+        [(ngModel)]="selectedYear"
+        (change)="onFilterChange()"
+      >
         <option *ngFor="let y of yearOptions" [value]="y">{{ y }}</option>
       </select>
     </div>
 
-    <div class="form-check form-switch ms-2">
-      <input class="form-check-input" type="checkbox" id="viewAllYear" [(ngModel)]="viewAllYear"
-        (change)="onFilterChange()" />
-      <label class="form-check-label fw-semibold" for="viewAllYear">Toàn năm</label>
+    <div class="form-check form-switch ms-1">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="viewAllYear"
+        [(ngModel)]="viewAllYear"
+        (change)="onFilterChange()"
+      />
+      <label class="form-check-label" for="viewAllYear">Toàn năm</label>
     </div>
   </div>
 </div>
 
-<!-- Summary Cards -->
-<div class="row g-3 mb-4">
-  <div class="col-lg-3 col-md-4 col-6" *ngFor="let card of summaryCards">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body text-center">
-        <i [class]="card.icon + ' fs-2 mb-2'"></i>
-        <h6 class="text-muted mb-1">{{ card.label }}</h6>
-        <h4 class="fw-bold mb-0" [class]="card.textClass">{{ card.value }}</h4>
-        <small *ngIf="card.sub" class="text-muted">{{ card.sub }}</small>
-      </div>
+<div class="ap-metrics-grid is-admin">
+  <section class="ap-metric-card" *ngFor="let card of summaryCards">
+    <span class="ap-metric-icon">
+      <iconify-icon [icon]="card.icon"></iconify-icon>
+    </span>
+    <div>
+      <div class="ap-metric-label">{{ card.label }}</div>
+      <div class="ap-metric-value" [ngClass]="card.textClass">{{ card.value }}</div>
+      <div *ngIf="card.sub" class="ap-metric-sub">{{ card.sub }}</div>
     </div>
-  </div>
+  </section>
 </div>
 
-<!-- Charts Row 1 -->
-<div class="row g-4 mb-4">
-  <!-- Doanh thu & Đơn hàng theo ngày -->
-  <div class="col-lg-8">
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-        <h6 class="fw-bold mb-3">Doanh thu & Số đơn hàng theo ngày</h6>
-        <canvas #revenueOrderChart></canvas>
-      </div>
+<div class="ap-chart-grid">
+  <section class="ap-chart-card">
+    <h3>Doanh thu & số đơn theo ngày</h3>
+    <div class="ap-chart-frame">
+      <canvas #revenueOrderChart></canvas>
     </div>
-  </div>
+  </section>
 
-  <!-- Tỷ lệ trạng thái -->
-  <div class="col-lg-4">
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-        <h6 class="fw-bold mb-3">Tỷ lệ trạng thái đơn hàng</h6>
-        <canvas #statusChart></canvas>
-      </div>
+  <section class="ap-chart-card">
+    <h3>Tỷ lệ trạng thái đơn hàng</h3>
+    <div class="ap-chart-frame">
+      <canvas #statusChart></canvas>
     </div>
-  </div>
+  </section>
 </div>
 
-<!-- Charts Row 2 -->
-<div class="col-lg-12">
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-      <h6 class="fw-bold mb-3">Top 10 nhân viên xuất sắc</h6>
-
-      <div style="position: relative; height: 450px; width: 100%;">
-        <canvas #topEmployeesChart></canvas>
-      </div>
-
-    </div>
+<section class="ap-chart-card">
+  <h3>Top 10 nhân viên xuất sắc</h3>
+  <div class="ap-chart-frame is-tall">
+    <canvas #topEmployeesChart></canvas>
   </div>
-</div>
+</section>

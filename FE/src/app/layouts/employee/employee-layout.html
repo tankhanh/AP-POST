@@ -1,130 +1,115 @@
 @if (!isAuthPage) {
-  <!-- Header -->
-  <header class="header border-4 border-primary border-top position-fixed start-0 top-0 w-100">
-    <div class="container">
-      <div class="header-wrapper d-flex align-items-center justify-content-between">
-        <div class="logo">
-          <a [routerLink]="['/']" class="logo-white">
-            <img
-              src="assets/images/logos/logo.png"
-              alt="logo"
-              class="img-fluid"
-              style="width: 100px; height: 100%"
-            />
+  <nav class="navbar navbar-expand-lg ap-site-nav">
+    <div class="container-fluid px-4">
+      <a [routerLink]="['/']" class="navbar-brand ap-nav-brand">
+        <span class="ap-brand-mark">AP</span>
+        <span class="ap-brand-text">AP Post</span>
+      </a>
+
+      <button
+        class="navbar-toggler border-0 btn btn-secondary btn-sm"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#publicNavbar"
+        aria-controls="publicNavbar"
+        aria-expanded="false"
+        aria-label="Mở menu"
+      >
+        <iconify-icon icon="mdi:menu"></iconify-icon>
+      </button>
+
+      <div class="collapse navbar-collapse" id="publicNavbar">
+        <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
+          <a [routerLink]="['/tracking']" class="nav-link">
+            <iconify-icon icon="mdi:magnify-scan"></iconify-icon>
+            Tra cứu
           </a>
-          <a [routerLink]="['/']" class="logo-dark">
-            <img
-              src="assets/images/logos/logo.png"
-              alt="logo"
-              class="img-fluid"
-              style="width: 100px; height: auto"
-            />
+          <a [routerLink]="['/calculator']" class="nav-link">
+            <iconify-icon icon="mdi:calculator-variant"></iconify-icon>
+            Tính cước
           </a>
-        </div>
-        <div class="d-flex align-items-center gap-4">
-          <div class="btn-group">
+
+          <div class="dropdown">
             <button
-              title="button"
-              class="btn btn-secondary toggle-menu round-45 p-2 d-flex align-items-center justify-content-center bg-white rounded-circle"
+              class="btn ap-account-button"
               type="button"
               data-bs-toggle="dropdown"
-              data-bs-auto-close="true"
               aria-expanded="false"
             >
-              <iconify-icon
-                icon="solar:hamburger-menu-line-duotone"
-                class="menu-icon fs-8 text-dark"
-              ></iconify-icon>
+              <iconify-icon icon="mdi:account-circle"></iconify-icon>
+              <span>{{
+                user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Tài khoản'
+              }}</span>
+              <iconify-icon icon="mdi:chevron-down"></iconify-icon>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end p-4">
-              <div class="d-flex flex-column gap-6">
-                @if (!isAuthPage) {
-                  <div class="hstack justify-content-between border-bottom pb-6">
-                    <div>
-                      <p class="mb-1 fw-semibold text-dark">
-                        Xin chào {{ user?.name ?? user?.email ?? 'Khách' }}
-                      </p>
-                      <a [routerLink]="['/tracking']" class="text-secondary fw-semibold pb-6">
-                        Tra cứu đơn hàng
-                      </a>
-                    </div>
-                    <button type="button" class="btn-close opacity-75" aria-label="Đóng"></button>
-                  </div>
+
+            <ul class="dropdown-menu dropdown-menu-end mt-2">
+              @if (authService.isLoggedIn()) {
+                <li>
+                  <span class="dropdown-item">
+                    <iconify-icon icon="mdi:email-outline"></iconify-icon>
+                    {{ user?.email }}
+                  </span>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+
+                @if (user?.role === 'STAFF') {
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/employee/dashboard']">
+                      <iconify-icon icon="mdi:view-dashboard-outline"></iconify-icon>
+                      Dashboard
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/employee/orders/list']">
+                      <iconify-icon icon="mdi:package-variant-closed"></iconify-icon>
+                      Đơn hàng
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/employee/profile']">
+                      <iconify-icon icon="mdi:account-outline"></iconify-icon>
+                      Hồ sơ
+                    </a>
+                  </li>
                 }
-                <div class="d-flex flex-column gap-3">
-                  <div class="hstack gap-3">
-                    @if (!authService.isLoggedIn()) {
-                      <a
-                        [routerLink]="['/login']"
-                        class="btn btn-outline-light fs-4 bg-white px-3 py-2 text-dark w-100 hstack justify-content-center"
-                      >
-                        Đăng nhập
-                      </a>
-                      <!-- <a
-                    [routerLink]="['/register']"
-                    class="btn btn-dark text-white fs-4 bg-dark px-3 py-2 w-50 hstack justify-content-center"
-                  >
+
+                @if (user?.role === 'ADMIN') {
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/admin/dashboard']">
+                      <iconify-icon icon="mdi:shield-account-outline"></iconify-icon>
+                      Quản trị
+                    </a>
+                  </li>
+                }
+
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <button (click)="logout()" class="dropdown-item text-danger">
+                    <iconify-icon icon="mdi:logout"></iconify-icon>
+                    Đăng xuất
+                  </button>
+                </li>
+              } @else {
+                <li>
+                  <a class="dropdown-item" [routerLink]="['/login']">
+                    <iconify-icon icon="mdi:login"></iconify-icon>
+                    Đăng nhập
+                  </a>
+                </li>
+                <!-- <li>
+                  <a class="dropdown-item" [routerLink]="['/register']">
+                    <iconify-icon icon="mdi:account-plus-outline"></iconify-icon>
                     Đăng ký
-                  </a> -->
-                    } @else {
-                      <div class="d-flex flex-column gap-3 w-100 align-items-stretch text-center">
-                        <!-- Hàng trên: hai nút ngang full width -->
-                        <div class="d-flex gap-3 w-100">
-                          <!-- Nếu role = STAFF -->
-                          @if (user?.role === 'STAFF') {
-                            <a
-                              [routerLink]="['/employee/dashboard']"
-                              class="btn btn-outline-light fs-4 bg-white px-3 py-2 text-dark w-50 hstack justify-content-center"
-                              style="height: 42px; line-height: 1"
-                            >
-                              Tạo đơn hàng
-                            </a>
-                          }
-
-                          <!-- Nếu role = ADMIN -->
-                          @if (user?.role === 'ADMIN') {
-                            <a
-                              [routerLink]="['/admin/dashboard']"
-                              class="btn btn-outline-light fs-4 bg-white px-3 py-2 text-dark w-50 hstack justify-content-center"
-                              style="height: 42px; line-height: 1"
-                            >
-                              Quản trị
-                            </a>
-                          }
-
-                          <!-- Nút Đăng xuất -->
-                          <button
-                            (click)="logout()"
-                            class="btn btn-dark text-white fs-4 bg-dark px-3 py-2 w-50 hstack justify-content-center"
-                            style="
-                              background-color: #c1ff72;
-                              color: black;
-                              font-weight: 600;
-                              height: 44px;
-                              line-height: 1;
-                            "
-                          >
-                            Đăng xuất
-                          </button>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-                <div>
-                  <a class="text-dark" href="tel:+1-212-456-7890">+1-212-456-7890</a>
-                  <br />
-                  <a class="fs-8 text-dark fw-bold" href="mailto:dinhtankhanh14@gmail.com"
-                    >dinhtankhanh14@gmail.com</a
-                  >
-                </div>
-              </div>
+                  </a>
+                </li> -->
+              }
             </ul>
           </div>
         </div>
       </div>
     </div>
-  </header>
+  </nav>
 }
 
 <div class="page-wrapper overflow-hidden">
@@ -132,79 +117,60 @@
 </div>
 
 @if (!isAuthPage) {
-  <footer class="footer bg-dark py-5 py-lg-11 py-xl-12">
+  <footer class="ap-site-footer">
     <div class="container">
-      <div class="row">
-        <div class="col-xl-5 mb-8 mb-xl-0">
-          <div class="d-flex flex-column gap-8 pe-xl-5">
-            <h2 class="mb-0 text-white">ApPost</h2>
-            <div class="d-flex flex-column gap-2">
-              <a
-                href="mailto:dinhtankhanh14@gmail.com"
-                target="_blank"
-                class="link-hover hstack gap-3 text-white fs-5"
-              >
-                <iconify-icon icon="lucide:arrow-up-right" class="fs-7 text-primary"></iconify-icon>
-                dinhtankhanh14@gmail.com
-              </a>
-              <a
-                rel="noopener"
-                href="https://maps.app.goo.gl/hpDp81fqzGt5y4bC8"
-                target="_blank"
-                class="link-hover hstack gap-3 text-white fs-5"
-              >
-                <iconify-icon icon="lucide:map-pin" class="fs-7 text-primary"></iconify-icon>
-                Địa chỉ văn phòng
-              </a>
-            </div>
-          </div>
+      <div class="ap-footer-grid">
+        <div>
+          <a [routerLink]="['/']" class="ap-nav-brand mb-3">
+            <span class="ap-brand-mark">AP</span>
+            <span class="ap-brand-text text-white">AP Post</span>
+          </a>
+          <p>
+            Nền tảng quản lý vận chuyển cho tạo đơn, tính cước, theo dõi vận đơn và vận hành chi
+            nhánh.
+          </p>
         </div>
-        <div class="col-md-4 col-xl-2 mb-8 mb-xl-0">
-          <ul class="footer-menu list-unstyled mb-0 d-flex flex-column gap-2">
-            <li><a class="link-hover fs-5 text-white" href="index.html">Trang chủ</a></li>
-            <li><a class="link-hover fs-5 text-white" href="about-us.html">Giới thiệu</a></li>
-            <li>
-              <a class="link-hover fs-5 text-white" id="services" href="#services">Dịch vụ</a>
-            </li>
-            <li><a class="link-hover fs-5 text-white" href="projects.html">Dự án</a></li>
-            <li>
-              <a class="link-hover fs-5 text-white" href="terms-and-conditions.html">Điều khoản</a>
-            </li>
-            <li>
-              <a class="link-hover fs-5 text-white" href="privacy-policy.html"
-                >Chính sách bảo mật</a
-              >
-            </li>
-            <li><a class="link-hover fs-5 text-white" href="404.html">Lỗi 404</a></li>
+
+        <div>
+          <h6>Đi nhanh</h6>
+          <ul class="list-unstyled d-grid gap-2 mt-3">
+            <li><a [routerLink]="['/']">Trang chủ</a></li>
+            <li><a [routerLink]="['/tracking']">Tra cứu đơn</a></li>
+            <li><a [routerLink]="['/calculator']">Tính cước</a></li>
           </ul>
         </div>
-        <div class="col-md-4 col-xl-2 mb-8 mb-xl-0">
-          <ul class="footer-menu list-unstyled mb-0 d-flex flex-column gap-2">
-            <li><a class="link-hover fs-5 text-white" href="#!">Facebook</a></li>
-            <li><a class="link-hover fs-5 text-white" href="#!">Instagram</a></li>
-            <li><a class="link-hover fs-5 text-white" href="#!">Twitter</a></li>
+
+        <div>
+          <h6>Tài khoản</h6>
+          <ul class="list-unstyled d-grid gap-2 mt-3">
+            <li><a [routerLink]="['/login']">Đăng nhập</a></li>
+            <!-- <li><a [routerLink]="['/register']">Đăng ký</a></li> -->
+            <li><a [routerLink]="['/forget-password']">Quên mật khẩu</a></li>
           </ul>
         </div>
-        <div class="col-md-4 col-xl-3 mb-8 mb-xl-0">
-          <p class="mb-0 text-white text-opacity-70 text-md-end">© ApPost bản quyền 2026</p>
+
+        <div>
+          <h6>Hỗ trợ</h6>
+          <ul class="list-unstyled d-grid gap-2 mt-3">
+            <li><a href="mailto:dinhtankhanh14@gmail.com">dinhtankhanh14@gmail.com</a></li>
+            <li><a href="tel:+84908779245">+84 908 779 245</a></li>
+            <li><a href="#">Điều khoản dịch vụ</a></li>
+          </ul>
         </div>
       </div>
+
+      <div class="ap-footer-bottom">
+        <span>© 2026 AP Post. Tất cả các quyền được bảo vệ.</span>
+        <span>Thiết kế bởi Dinh Tan Khanh.</span>
+      </div>
     </div>
-    <p class="mb-0 text-white text-opacity-70 text-md-center mt-10">
-      Phân phối bởi
-      <a rel="noopener" class="text-white" href="https://www.themewagon.com" target="_blank"
-        >AP POST</a
-      >
-    </p>
   </footer>
 
-  <div class="get-template hstack gap-2">
-    <button
-      title="button"
-      class="btn bg-primary p-2 round-52 rounded-circle hstack justify-content-center flex-shrink-0"
-      id="scrollToTopBtn"
-    >
-      <iconify-icon icon="lucide:arrow-up" class="fs-7 text-dark"></iconify-icon>
-    </button>
-  </div>
+  <button
+    title="Lên đầu trang"
+    class="btn btn-primary ap-scroll-top position-fixed"
+    id="scrollToTopBtn"
+  >
+    <iconify-icon icon="mdi:arrow-up"></iconify-icon>
+  </button>
 }

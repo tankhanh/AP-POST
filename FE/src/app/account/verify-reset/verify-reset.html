@@ -1,28 +1,38 @@
-<section class="d-flex align-items-center justify-content-center min-vh-100 bg-light-gray">
-  <div class="container py-3">
-    <div class="card shadow-lg mx-auto p-5" style="max-width: 400px;">
-      <h3 class="text-center fw-bold mb-4">Mã xác nhận đổi mật khẩu</h3>
+<section class="auth-page">
+  <div class="container">
+    <div class="auth-card auth-card-narrow">
+      <a href="/" class="auth-brand">
+        <span class="ap-brand-mark">AP</span>
+        <span class="ap-brand-text">AP Post</span>
+      </a>
 
-      <form (ngSubmit)="verifyResetCode()">
-        <input
-          type="text"
-          class="form-control mb-3"
-          placeholder="Nhập mã xác nhận"
-          [(ngModel)]="code"
-          name="code"
-          required
-        />
+      <h2>Xác nhận đổi mật khẩu.</h2>
+      <p class="mb-4">Nhập mã xác nhận đã được gửi tới email của bạn.</p>
 
-        <button type="submit" class="btn btn-dark w-100 py-2 fw-medium">
-          xác nhận
+      <form class="auth-form" (ngSubmit)="verifyResetCode()">
+        <div>
+          <label class="form-label" for="resetCode">Mã xác nhận</label>
+          <input
+            id="resetCode"
+            type="text"
+            class="form-control"
+            placeholder="Nhập mã"
+            [(ngModel)]="code"
+            name="code"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100">
+          Xác nhận
         </button>
       </form>
 
       @if (successMessage) {
-        <p class="text-success text-center mt-3">{{ successMessage }}</p>
+        <div class="alert alert-success mt-3">{{ successMessage }}</div>
       }
       @if (errorMessage) {
-        <p class="text-danger text-center mt-3">{{ errorMessage }}</p>
+        <div class="alert alert-danger mt-3">{{ errorMessage }}</div>
       }
     </div>
   </div>

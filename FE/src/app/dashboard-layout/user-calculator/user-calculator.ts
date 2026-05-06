@@ -26,12 +26,11 @@ interface ShippingBreakdown {
 }
 
 interface ShippingResponse {
-  totalPrice: number; // phí ship
+  totalPrice: number;
   description?: string;
   breakdown: ShippingBreakdown;
 }
 
-// thêm type form có COD
 type ShippingForm = ShippingRequest & {
   codValue: number;
 };
@@ -45,7 +44,6 @@ type ShippingForm = ShippingRequest & {
 })
 export class CalculateShippingComponent implements OnInit {
   private http = inject(HttpClient);
-  // private readonly API_URL = 'http://localhost:8000/api/v1';
   private readonly API_URL = 'https://ap-post-api.onrender.com/api/v1';
 
   provinceOptions: { value: string; label: string }[] = [];
@@ -109,20 +107,18 @@ export class CalculateShippingComponent implements OnInit {
     };
 
     this.loading = true;
-    this.http
-      .post<{ data: ShippingResponse }>(`${this.API_URL}/pricing/calculate`, payload)
-      .subscribe({
-        next: (res) => {
-          this.result = res.data;
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error(err);
-          this.errorMessage =
-            err?.error?.message || 'Không tính được phí vận chuyển. Vui lòng thử lại.';
-          this.loading = false;
-        },
-      });
+    this.http.post<{ data: ShippingResponse }>(`${this.API_URL}/pricing/calculate`, payload).subscribe({
+      next: (res) => {
+        this.result = res.data;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.errorMessage =
+          err?.error?.message || 'Không tính được phí vận chuyển. Vui lòng thử lại.';
+        this.loading = false;
+      },
+    });
   }
 
   resetForm() {
@@ -138,7 +134,6 @@ export class CalculateShippingComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  // helper: tổng thu hộ
   get totalCollect(): number {
     if (!this.result) return 0;
     return this.result.totalPrice + (this.formData.codValue || 0);

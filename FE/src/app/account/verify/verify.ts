@@ -27,7 +27,6 @@ export class Verify {
         const fromQuery = params['user'];
         const fromStorage = localStorage.getItem('pending_user_id');
         this.userId = fromQuery || fromStorage || '';
-        console.log('✅ Loaded userId:', this.userId);
       });
     } else {
       this.userId = '';
@@ -35,17 +34,14 @@ export class Verify {
   }
 
   verifyCode() {
-    console.log('userId:', this.userId);
-    console.log('code:', this.code);
-
     if (!this.code || !this.userId) {
-      this.errorMessage = 'Missing user or code!';
+      this.errorMessage = 'Thiếu người dùng hoặc mã xác nhận.';
       return;
     }
 
     this.authService.verify({ _id: this.userId, code: this.code }).subscribe({
       next: () => {
-        this.successMessage = 'Account activated successfully!';
+        this.successMessage = 'Tài khoản đã được kích hoạt.';
         this.errorMessage = '';
 
         if (isPlatformBrowser(this.platformId)) {
@@ -55,7 +51,7 @@ export class Verify {
         setTimeout(() => this.router.navigate(['/login']), 1500);
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Verification failed!';
+        this.errorMessage = err.error?.message || 'Xác minh thất bại.';
         this.successMessage = '';
       },
     });

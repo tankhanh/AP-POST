@@ -8,7 +8,7 @@ import {
   OnDestroy,
   CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../services/auth.service';
@@ -16,16 +16,16 @@ import { AuthService } from '../services/auth.service';
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './dashboard-layout.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class DashboardLayout implements OnInit, OnDestroy {
   sidebarOpen = true;
-  innerWidth = window.innerWidth;
+  innerWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
   isBrowser = false;
   user: any = null;
-  private userSubscription!: Subscription;
+  private userSubscription?: Subscription;
 
   constructor(
     public authService: AuthService,
@@ -45,6 +45,7 @@ export class DashboardLayout implements OnInit, OnDestroy {
 
   @HostListener('window:resize')
   onResize() {
+    if (!this.isBrowser) return;
     this.innerWidth = window.innerWidth;
     this.sidebarOpen = this.innerWidth >= 992;
   }

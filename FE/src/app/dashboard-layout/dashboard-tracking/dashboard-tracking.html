@@ -1,151 +1,129 @@
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-lg-8 col-md-10">
+<div class="tracking-page">
+  <div class="tracking-shell">
+    <div class="tracking-topline">
+      <a routerLink="/" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+        Trang chủ
+      </a>
+      <span class="ap-eyebrow mb-0">Tra cứu vận đơn</span>
+    </div>
 
-      <!-- Tiêu đề + Nút quay lại trang chủ (góc trái) -->
-      <div class="text-center mb-5 position-relative">
-        <div class="position-absolute start-0 top-50 translate-middle-y">
-          <a routerLink="/" class="btn btn-sm btn-success">
-            <i class="bi bi-arrow-left me-1"></i> Trang chủ
-          </a>
-        </div>
-        <h2 class="fw-bold text-secondary">Tra cứu vận đơn</h2>
-        <p class="text-muted">Nhập mã vận đơn để theo dõi hành trình giao hàng</p>
+    <header class="tracking-header">
+      <h1>Theo dõi hành trình giao hàng.</h1>
+      <p>Nhập mã vận đơn để xem trạng thái mới nhất, COD và các mốc xử lý.</p>
+    </header>
+
+    <section class="tracking-search-card">
+      <form (ngSubmit)="search()" class="tracking-search-form">
+        <input
+          type="text"
+          class="form-control form-control-lg"
+          placeholder="VD: VN123456789VN"
+          [(ngModel)]="waybill"
+          name="waybill"
+          required
+          autofocus
+          [disabled]="loading"
+        />
+        <button type="submit" class="btn btn-primary btn-lg" [disabled]="!waybill || loading">
+          <span *ngIf="!loading">
+            <i class="bi bi-search"></i>
+            Tra cứu
+          </span>
+          <span *ngIf="loading">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Đang tìm
+          </span>
+        </button>
+      </form>
+
+      <div *ngIf="error" class="alert alert-danger mt-3 mb-0">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error }}
       </div>
+    </section>
 
-      <!-- Form tra cứu -->
-      <div class="card shadow-sm border-0 mb-5">
-        <div class="card-body p-4">
-          <form (ngSubmit)="search()" class="row g-3 align-items-center">
-            <div class="col-md-9 col-12">
-              <input type="text" class="form-control form-control-lg" placeholder="Nhập mã vận đơn (VD: VN123456789VN)"
-                [(ngModel)]="waybill" name="waybill" required autofocus [disabled]="loading" uppercase />
-            </div>
-            <div class="col-md-3 col-12">
-              <button type="submit" class="btn btn-danger btn-lg w-100" [disabled]="!waybill || loading">
-                <span *ngIf="!loading">
-                  <i class="bi bi-search me-2"></i>Tra cứu
-                </span>
-                <span *ngIf="loading">
-                  <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Đang tìm...
-                </span>
-              </button>
-            </div>
-          </form>
-
-          <!-- Thông báo lỗi -->
-          <div *ngIf="error" class="alert alert-danger mt-3 mb-0">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            {{ error }}
-          </div>
+    <ng-container *ngIf="trackingEvents?.length">
+      <section class="tracking-summary">
+        <div class="tracking-summary-item">
+          <span>Mã vận đơn</span>
+          <strong>{{ trackingData.waybill }}</strong>
         </div>
-      </div>
+        <div class="tracking-summary-item" *ngIf="trackingData.codValue > 0">
+          <span>Thu hộ COD</span>
+          <strong>{{ trackingData.codValue | number : '1.0-0' }}đ</strong>
+        </div>
+        <div class="tracking-summary-item">
+          <span>Trạng thái hiện tại</span>
+          <strong [ngClass]="getCurrentStatusColor()">{{ getCurrentStatusLabel() }}</strong>
+        </div>
+        <div class="tracking-summary-item">
+          <span>Cập nhật lúc</span>
+          <strong>{{ latestUpdate | date : 'HH:mm' }}, ngày {{ latestUpdate | date : 'dd/MM/yyyy' }}</strong>
+        </div>
+      </section>
 
-      <!-- Kết quả tra cứu -->
-      <ng-container *ngIf="trackingEvents?.length">
-
-        <!-- Thông tin tổng quan -->
-        <div class="card shadow-sm border-0 mb-4">
-          <div class="card-body">
-            <div class="row text-center text-md-start">
-              <div class="col-md-4 mb-3">
-                <small class="text-muted text-uppercase">Mã vận đơn</small>
-                <h5 class="fw-bold text-warning">{{ trackingData.waybill }}</h5>
-              </div>
-              <div class="col-md-4 mb-3" *ngIf="trackingData.codValue > 0">
-                <small class="text-muted text-uppercase">Thu hộ (COD)</small>
-                <h5 class="fw-bold text-danger">{{ trackingData.codValue | number:'1.0-0' }} ₫</h5>
-              </div>
-              <div class="col-md-4 mb-3">
-                <small class="text-muted text-uppercase">Trạng thái hiện tại</small>
-                <h5 class="fw-bold" [ngClass]="getCurrentStatusColor()">
-                  {{ getCurrentStatusLabel() }}
-                </h5>
-              </div>
-              <div class="col-md-4 mb-3">
-                <small class="text-muted text-uppercase">Cập nhật lúc</small>
-                <h6 class="mb-0">
-                  {{ latestUpdate | date:'HH:mm' }}, ngày {{ latestUpdate | date:'dd/MM/yyyy' }}
-                </h6>
-              </div>
-            </div>
-          </div>
+      <section class="tracking-timeline-card">
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
+          <h2>Hành trình vận đơn</h2>
+          <span class="badge">Timeline</span>
         </div>
 
-        <!-- Timeline hành trình -->
-        <div class="card shadow-sm border-0">
-          <div class="card-header bg-white border-0 py-3">
-            <h5 class="fw-bold mb-0 text-warning">
-              <i class="bi bi-truck me-2"></i>Hành trình vận đơn
-            </h5>
-          </div>
-          <div class="card-body">
-            <div class="timeline-modern">
+        <div class="timeline-modern">
+          <div class="timeline-item" *ngFor="let event of trackingEvents; let i = index">
+            <div class="timeline-connector" [class.completed]="i < currentStepIndex"></div>
 
-              <div class="timeline-item" *ngFor="let event of trackingEvents; let i = index; let isLast = last">
-                <!-- Đường nối -->
-                <div class="timeline-connector" [class.completed]="i < currentStepIndex"></div>
+            <div
+              class="timeline-dot d-flex align-items-center justify-content-center"
+              [class.active]="i === currentStepIndex"
+              [class.completed]="i < currentStepIndex"
+            >
+              <i [class]="getStatusIcon(event.status)"></i>
+            </div>
 
-                <!-- Điểm tròn trạng thái -->
-                <div class="timeline-dot d-flex align-items-center justify-content-center"
-                     [class.active]="i === currentStepIndex"
-                     [class.completed]="i < currentStepIndex">
-                  <i [class]="getStatusIcon(event.status) + ' fs-4 text-white'"></i>
-                </div>
+            <div class="timeline-content" [class.active]="i === currentStepIndex">
+              <h3 [ngClass]="getStatusTextClass(event.status)">
+                {{ getStatusLabel(event.status) }}
+              </h3>
+              <p class="small mb-2">
+                <i class="bi bi-clock-history me-1"></i>
+                {{ event.timestamp | date : 'HH:mm' }}, ngày {{ event.timestamp | date : 'dd/MM/yyyy' }}
+              </p>
 
-                <!-- Nội dung -->
-                <div class="timeline-content" [class.active]="i === currentStepIndex">
-                  <h6 class="fw-bold mb-1" [ngClass]="getStatusTextClass(event.status)">
-                    {{ getStatusLabel(event.status) }}
-                  </h6>
-                  <p class="text-muted small mb-2 mt-2">
-                    <i class="bi bi-clock-history me-1"></i>
-                    {{ event.timestamp | date:'HH:mm' }}, ngày {{ event.timestamp | date:'dd/MM/yyyy' }}
-                  </p>
+              <p class="mb-1" *ngIf="event.location">
+                <i class="bi bi-geo-alt-fill me-1"></i>
+                <strong>Địa điểm:</strong> {{ event.location }}
+              </p>
 
-                  <p class="mb-1" *ngIf="event.location">
-                    <i class="bi bi-geo-alt-fill me-1"></i>
-                    <strong>Địa điểm:</strong> {{ event.location }}
-                  </p>
+              <p class="mb-1" *ngIf="event.branchId?.name">
+                <i class="bi bi-building-fill me-1"></i>
+                <strong>Chi nhánh:</strong> {{ event.branchId.name }}
+              </p>
 
-                  <p class="mb-1" *ngIf="event.branchId?.name">
-                    <i class="bi bi-building-fill me-1"></i>
-                    <strong>Chi nhánh:</strong> {{ event.branchId.name }}
-                  </p>
-
-                  <p class="mb-0 text-muted small" *ngIf="event.note">
-                    <strong>Ghi chú:</strong> {{ event.note }}
-                  </p>
-                </div>
-              </div>
-
+              <p class="mb-0 small" *ngIf="event.note">
+                <strong>Ghi chú:</strong> {{ event.note }}
+              </p>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- Nút về trang chủ lớn ở dưới cùng -->
-        <div class="text-center my-5 py-4">
-          <a routerLink="/" class="btn btn-success btn-lg px-5 shadow-sm">
-            <i class="bi bi-house-door-fill me-2"></i>
-            Về trang chủ
-          </a>
-        </div>
-
-      </ng-container>
-
-      <!-- Khi đã nhập mã nhưng chưa tra cứu -->
-      <div *ngIf="!(trackingEvents?.length) && !loading && !error && waybill" class="text-center py-5">
-        <i class="bi bi-search display-1 text-muted opacity-50"></i>
-        <p class="text-muted mt-4 fs-5">Nhấn nút <strong>Tra cứu</strong> để xem hành trình</p>
+      <div class="text-center mt-4">
+        <a routerLink="/" class="btn btn-secondary btn-lg">
+          <i class="bi bi-house-door-fill"></i>
+          Về trang chủ
+        </a>
       </div>
+    </ng-container>
 
-      <!-- Khi chưa nhập gì -->
-      <div *ngIf="!waybill && !loading && !error" class="text-center py-5 text-muted">
-        <i class="bi bi-box-seam display-1 opacity-25"></i>
-        <p class="mt-4 fs-4">Nhập mã vận đơn để bắt đầu tra cứu</p>
-      </div>
+    <div *ngIf="!(trackingEvents?.length) && !loading && !error && waybill" class="tracking-empty">
+      <i class="bi bi-search"></i>
+      <p>Nhấn Tra cứu để xem hành trình.</p>
+    </div>
 
+    <div *ngIf="!waybill && !loading && !error" class="tracking-empty">
+      <i class="bi bi-box-seam"></i>
+      <p>Nhập mã vận đơn để bắt đầu.</p>
     </div>
   </div>
 </div>

@@ -13,11 +13,9 @@ import { ToastrService } from 'ngx-toastr';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class ForgetPassword implements OnInit {
-  email: string = '';
-
-  // 👉 Thêm hai biến thông báo ở đây
-  successMessage: string = '';
-  errorMessage: string = '';
+  email = '';
+  successMessage = '';
+  errorMessage = '';
 
   constructor(
     private authService: AuthService,
@@ -28,21 +26,19 @@ export class ForgetPassword implements OnInit {
   ngOnInit() {}
 
   sendResetLink() {
-    // Xóa thông báo cũ mỗi lần gửi
     this.successMessage = '';
     this.errorMessage = '';
 
     if (!this.email) {
-      this.toastr.warning('Vui lòng nhập địa chỉ email của bạn.', 'Thiếu thông tin');
       this.errorMessage = 'Vui lòng nhập địa chỉ email của bạn.';
+      this.toastr.warning(this.errorMessage, 'Thiếu thông tin');
       return;
     }
 
     this.authService.requestPasswordReset(this.email).subscribe({
       next: (res: any) => {
-        this.successMessage = 'Mã đặt lại mật khẩu đã được gửi, vui lòng kiểm tra email của bạn.';
+        this.successMessage = 'Mã đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra email.';
         this.toastr.success(this.successMessage, 'Thành công');
-        console.log('Reset request success:', res);
 
         const data = res.data || res;
 
@@ -53,7 +49,6 @@ export class ForgetPassword implements OnInit {
         this.router.navigate(['/verify-reset']);
       },
       error: (err) => {
-        console.error('Reset request failed:', err);
         const message = err.error?.message || 'Đã xảy ra lỗi, vui lòng thử lại sau.';
         this.errorMessage = message;
         this.toastr.error(message, 'Lỗi');

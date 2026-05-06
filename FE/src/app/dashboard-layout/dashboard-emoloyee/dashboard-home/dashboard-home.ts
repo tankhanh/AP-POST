@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild, NgZone, AfterViewInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  ViewChild,
+  AfterViewInit,
+  OnDestroy,
+  CUSTOM_ELEMENTS_SCHEMA,
+} from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import Chart from 'chart.js/auto';
 import { DashboardService } from '../../../services/dashboard/dashboard.service';
@@ -10,6 +17,7 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, HttpClientModule, FormsModule],
   templateUrl: './dashboard-home.html',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class DashboardHome implements AfterViewInit, OnDestroy {
   private orderChart!: Chart;
@@ -22,6 +30,7 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
     'COMPLETED',
     'CANCELED',
   ] as const;
+
   private readonly STATUS_LABELS: Record<string, string> = {
     PENDING: 'Chờ xác nhận',
     CONFIRMED: 'Đã xác nhận',
@@ -29,12 +38,13 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
     COMPLETED: 'Hoàn tất',
     CANCELED: 'Đã hủy',
   };
+
   private readonly STATUS_COLORS: Record<string, string> = {
-    PENDING: '#6c757d',
-    CONFIRMED: '#0d6efd',
-    SHIPPING: '#20c997',
-    COMPLETED: '#198754',
-    CANCELED: '#dc3545',
+    PENDING: '#868685',
+    CONFIRMED: '#38c8ff',
+    SHIPPING: '#ffc091',
+    COMPLETED: '#054d28',
+    CANCELED: '#d03238',
   };
 
   @ViewChild('orderChartCanvas') orderChartCanvas!: ElementRef<HTMLCanvasElement>;
@@ -63,51 +73,42 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
     {
       label: 'Đã giao thành công',
       value: 0,
-      icon: 'bi bi-truck text-success',
+      icon: 'mdi:truck-check-outline',
       textClass: 'text-success',
     },
     {
-      label: 'Đã hoàn / Bị hủy',
+      label: 'Đã hoàn / bị hủy',
       value: 0,
-      icon: 'bi bi-arrow-repeat text-danger',
+      icon: 'mdi:package-variant-remove',
       textClass: 'text-danger',
     },
     {
-      label: 'Tổng đơn trong tháng',
+      label: 'Tổng đơn trong kỳ',
       value: 0,
-      icon: 'bi bi-box-seam text-primary',
+      icon: 'mdi:package-variant-closed',
       textClass: 'text-primary',
     },
     {
       label: 'Doanh thu ước tính',
-      value: '0₫',
-      icon: 'bi bi-currency-dollar text-warning',
+      value: '0đ',
+      icon: 'mdi:cash-multiple',
       textClass: 'text-warning',
     },
   ];
 
-  constructor(private ngZone: NgZone, private dashboardService: DashboardService) {}
+  constructor(private dashboardService: DashboardService) {}
 
   ngAfterViewInit(): void {
     this.fetchStatistics();
   }
 
   onMonthOrYearChange() {
-    console.log(
-      'Thay đổi tháng/năm:',
-      this.selectedMonth,
-      this.selectedYear,
-      'Toàn năm:',
-      this.viewAllYear
-    );
     this.fetchStatistics();
   }
 
   private fetchStatistics(): void {
     const month = this.viewAllYear ? undefined : this.selectedMonth;
     const year = this.selectedYear;
-
-    console.log('📡 Gọi API với month =', month, 'year =', year);
 
     this.dashboardService.getStatistics(month, year).subscribe((res: any) => {
       const data = res?.data || {};
@@ -120,7 +121,7 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
       this.summaryCards[0].value = this.deliveredCount;
       this.summaryCards[1].value = this.returnedCount;
       this.summaryCards[2].value = this.totalOrders;
-      this.summaryCards[3].value = `${this.estimatedRevenue.toLocaleString()}₫`;
+      this.summaryCards[3].value = `${this.estimatedRevenue.toLocaleString()}đ`;
 
       this.renderCharts(data);
     });
@@ -136,10 +137,12 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
     const datasets = statuses.map((st) => ({
       label: this.STATUS_LABELS[st],
       data: labels.map((d) => data.ordersByDay?.[d]?.[st] ?? 0),
-      tension: 0.3,
+      tension: 0.34,
       fill: false,
       borderColor: this.STATUS_COLORS[st],
       backgroundColor: this.STATUS_COLORS[st],
+      pointRadius: 3,
+      pointHoverRadius: 5,
     }));
 
     if (this.orderChart) this.orderChart.destroy();
@@ -148,27 +151,26 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
       data: { labels, datasets },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'top' },
+          legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
           tooltip: {
             callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}` },
           },
         },
         interaction: { mode: 'index', intersect: false },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+        scales: {
+          x: { grid: { color: 'rgba(14,15,12,0.06)' } },
+          y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(14,15,12,0.08)' } },
+        },
       },
     });
 
     const statusCounts = data.statusDistribution || data.statusCounts || {};
-    const doughnutLabelsVN = this.STATUS_ORDER.filter((st) => statusCounts[st] !== undefined).map(
-      (st) => this.STATUS_LABELS[st]
-    );
-    const doughnutValues = this.STATUS_ORDER.filter((st) => statusCounts[st] !== undefined).map(
-      (st) => Number(statusCounts[st] || 0)
-    );
-    const doughnutColors = this.STATUS_ORDER.filter((st) => statusCounts[st] !== undefined).map(
-      (st) => this.STATUS_COLORS[st]
-    );
+    const visibleStatuses = this.STATUS_ORDER.filter((st) => statusCounts[st] !== undefined);
+    const doughnutLabelsVN = visibleStatuses.map((st) => this.STATUS_LABELS[st]);
+    const doughnutValues = visibleStatuses.map((st) => Number(statusCounts[st] || 0));
+    const doughnutColors = visibleStatuses.map((st) => this.STATUS_COLORS[st]);
 
     if (this.statusChart) this.statusChart.destroy();
 
@@ -181,10 +183,10 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
           this.statusChartCanvas.nativeElement.width,
           this.statusChartCanvas.nativeElement.height
         );
-        ctx.font = '16px sans-serif';
-        ctx.fillStyle = 'gray';
+        ctx.font = '16px Inter';
+        ctx.fillStyle = '#868685';
         ctx.textAlign = 'center';
-        ctx.fillText('Không có dữ liệu', this.statusChartCanvas.nativeElement.width / 2, 60);
+        ctx.fillText('Không có dữ liệu', this.statusChartCanvas.nativeElement.width / 2, 80);
       }
       return;
     }
@@ -195,12 +197,21 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
         type: 'doughnut',
         data: {
           labels: doughnutLabelsVN,
-          datasets: [{ data: doughnutValues, backgroundColor: doughnutColors }],
+          datasets: [
+            {
+              data: doughnutValues,
+              backgroundColor: doughnutColors,
+              borderColor: '#ffffff',
+              borderWidth: 3,
+            },
+          ],
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
           plugins: {
-            legend: { position: 'bottom' },
+            legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
             tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}` } },
           },
         },

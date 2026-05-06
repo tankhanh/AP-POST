@@ -1,4 +1,11 @@
-import { Component, AfterViewInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import {
+  Component,
+  AfterViewInit,
+  ViewChild,
+  ElementRef,
+  OnDestroy,
+  CUSTOM_ELEMENTS_SCHEMA,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Chart from 'chart.js/auto';
@@ -9,6 +16,7 @@ import { DashboardService } from '../../services/dashboard/dashboard.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './dashboard-admin.component.html',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class DashboardAdmin implements AfterViewInit, OnDestroy {
   @ViewChild('revenueOrderChart') revenueOrderChart!: ElementRef<HTMLCanvasElement>;
@@ -39,14 +47,14 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
   };
 
   private STATUS_COLORS: Record<string, string> = {
-    PENDING: '#6c757d',
-    CONFIRMED: '#0d6efd',
-    SHIPPING: '#20c997',
-    COMPLETED: '#198754',
-    CANCELED: '#dc3545',
+    PENDING: '#868685',
+    CONFIRMED: '#38c8ff',
+    SHIPPING: '#ffc091',
+    COMPLETED: '#054d28',
+    CANCELED: '#d03238',
   };
 
-  constructor(private dashboardService: DashboardService) { }
+  constructor(private dashboardService: DashboardService) {}
 
   ngAfterViewInit(): void {
     this.loadData();
@@ -62,8 +70,7 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
 
     this.dashboardService.getSystemStatistics(month, year).subscribe({
       next: (res) => {
-        // Xử lý linh hoạt: res.data (nếu có wrapper) hoặc res trực tiếp
-        const data = (res as any).data || res; 
+        const data = (res as any).data || res;
         if (data) {
           this.updateSummaryCards(data.summary);
           this.renderCharts(data);
@@ -78,16 +85,67 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
   private updateSummaryCards(summary: any) {
     if (!summary) return;
     this.summaryCards = [
-      { label: 'Tổng đơn hàng', value: summary.totalOrders?.toLocaleString() || '0', icon: 'bi bi-box-seam text-primary', textClass: 'text-primary' },
-      { label: 'Đã giao thành công', value: summary.deliveredOrders?.toLocaleString() || '0', icon: 'bi bi-truck text-success', textClass: 'text-success' },
-      { label: 'Đã hủy / Hoàn', value: summary.canceledOrders?.toLocaleString() || '0', icon: 'bi bi-x-circle text-danger', textClass: 'text-danger' },
-      { label: 'Đơn hôm nay', value: summary.todayOrders || 0, icon: 'bi bi-lightning-charge text-warning', textClass: 'text-warning' },
-      { label: 'Doanh thu hôm nay', value: `${(summary.todayRevenue || 0).toLocaleString()}₫`, icon: 'bi bi-currency-dollar text-success', textClass: 'text-success' },
-      { label: 'Nhân viên hoạt động', value: summary.activeEmployees || 0, sub: `/ ${summary.totalEmployees || 0} tổng`, icon: 'bi bi-people text-info', textClass: 'text-info' },
-      { label: 'Tỷ lệ COD', value: (summary.codRate || 0) + '%', icon: 'bi bi-cash-stack text-purple', textClass: 'text-purple' },
-      { label: 'Tỷ lệ giao thành công', value: (summary.successRate || 0) + '%', icon: 'bi bi-check2-all text-success', textClass: 'text-success' },
-      { label: 'Đơn kẹt > 48h', value: summary.stuckOrders48h || 0, icon: 'bi bi-exclamation-triangle text-danger', textClass: 'text-danger' },
-      { label: 'Bảng giá đang áp dụng', value: summary.activePricingTables || 0, icon: 'bi bi-table text-secondary', textClass: 'text-secondary' },
+      {
+        label: 'Tổng đơn hàng',
+        value: summary.totalOrders?.toLocaleString() || '0',
+        icon: 'mdi:package-variant-closed',
+        textClass: 'text-primary',
+      },
+      {
+        label: 'Đã giao thành công',
+        value: summary.deliveredOrders?.toLocaleString() || '0',
+        icon: 'mdi:truck-check-outline',
+        textClass: 'text-success',
+      },
+      {
+        label: 'Đã hủy / hoàn',
+        value: summary.canceledOrders?.toLocaleString() || '0',
+        icon: 'mdi:package-variant-remove',
+        textClass: 'text-danger',
+      },
+      {
+        label: 'Đơn hôm nay',
+        value: summary.todayOrders || 0,
+        icon: 'mdi:lightning-bolt-outline',
+        textClass: 'text-warning',
+      },
+      {
+        label: 'Doanh thu hôm nay',
+        value: `${(summary.todayRevenue || 0).toLocaleString()}đ`,
+        icon: 'mdi:cash-multiple',
+        textClass: 'text-success',
+      },
+      {
+        label: 'Nhân viên hoạt động',
+        value: summary.activeEmployees || 0,
+        sub: `/ ${summary.totalEmployees || 0} tổng`,
+        icon: 'mdi:account-group-outline',
+        textClass: 'text-info',
+      },
+      {
+        label: 'Tỷ lệ COD',
+        value: `${summary.codRate || 0}%`,
+        icon: 'mdi:cash-fast',
+        textClass: 'text-purple',
+      },
+      {
+        label: 'Tỷ lệ giao thành công',
+        value: `${summary.successRate || 0}%`,
+        icon: 'mdi:check-decagram-outline',
+        textClass: 'text-success',
+      },
+      {
+        label: 'Đơn kẹt > 48h',
+        value: summary.stuckOrders48h || 0,
+        icon: 'mdi:alert-outline',
+        textClass: 'text-danger',
+      },
+      {
+        label: 'Bảng giá đang áp dụng',
+        value: summary.activePricingTables || 0,
+        icon: 'mdi:table-cog',
+        textClass: 'text-secondary',
+      },
     ];
   }
 
@@ -96,116 +154,152 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
 
     if (!data.charts) return;
 
-    // 1. Doanh thu + Số đơn theo ngày
     const days = data.charts.dailyLabels || [];
     const labels = days.map((d: number) => `Ngày ${d}`);
 
-    this.charts.push(new Chart(this.revenueOrderChart.nativeElement, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Số đơn',
-            data: data.charts.dailyOrders || [],
-            borderColor: '#0d6efd',
-            backgroundColor: 'rgba(13, 110, 253, 0.1)',
-            yAxisID: 'y',
-            tension: 0.3,
-            fill: true,
-          },
-          {
-            label: 'Doanh thu (₫)',
-            data: data.charts.dailyRevenue || [],
-            borderColor: '#198754',
-            backgroundColor: 'rgba(25, 135, 84, 0.1)',
-            yAxisID: 'y1',
-            tension: 0.3,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'top' } },
-        scales: {
-          y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Số đơn' } },
-          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Doanh thu' } },
+    this.charts.push(
+      new Chart(this.revenueOrderChart.nativeElement, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Số đơn',
+              data: data.charts.dailyOrders || [],
+              borderColor: '#0e0f0c',
+              backgroundColor: 'rgba(14, 15, 12, 0.08)',
+              yAxisID: 'y',
+              tension: 0.34,
+              fill: true,
+            },
+            {
+              label: 'Doanh thu (đ)',
+              data: data.charts.dailyRevenue || [],
+              borderColor: '#9fe870',
+              backgroundColor: 'rgba(159, 232, 112, 0.16)',
+              yAxisID: 'y1',
+              tension: 0.34,
+            },
+          ],
         },
-      },
-    }));
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } },
+          scales: {
+            x: { grid: { color: 'rgba(14,15,12,0.06)' } },
+            y: {
+              beginAtZero: true,
+              position: 'left',
+              title: { display: true, text: 'Số đơn' },
+              grid: { color: 'rgba(14,15,12,0.08)' },
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: 'Doanh thu' },
+            },
+          },
+        },
+      })
+    );
 
-    // 2. Tỷ lệ trạng thái
     const statusData = data.charts.statusDistribution || {};
-    const statusLabels = Object.keys(statusData).filter(k => statusData[k] > 0);
-    const statusValues = statusLabels.map(k => statusData[k]);
-    const statusColors = statusLabels.map(k => this.STATUS_COLORS[k] || '#ccc');
+    const statusLabels = Object.keys(statusData).filter((k) => statusData[k] > 0);
+    const statusValues = statusLabels.map((k) => statusData[k]);
+    const statusColors = statusLabels.map((k) => this.STATUS_COLORS[k] || '#868685');
 
-    this.charts.push(new Chart(this.statusChartEl.nativeElement, {
-      type: 'doughnut',
-      data: {
-        labels: statusLabels.map(k => this.STATUS_LABELS[k] || k),
-        datasets: [{ data: statusValues, backgroundColor: statusColors }],
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } },
-      },
-    }));
+    this.charts.push(
+      new Chart(this.statusChartEl.nativeElement, {
+        type: 'doughnut',
+        data: {
+          labels: statusLabels.map((k) => this.STATUS_LABELS[k] || k),
+          datasets: [
+            {
+              data: statusValues,
+              backgroundColor: statusColors,
+              borderColor: '#ffffff',
+              borderWidth: 3,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } },
+        },
+      })
+    );
 
-    // 3. Top 10 nhân viên
     const topEmp = data.charts?.topEmployees || [];
 
     if (topEmp.length === 0) {
       const ctx = this.topEmployeesChart.nativeElement.getContext('2d');
       if (ctx) {
-          ctx.clearRect(0, 0, this.topEmployeesChart.nativeElement.width, this.topEmployeesChart.nativeElement.height);
-          ctx.font = '14px Inter';
-          ctx.fillStyle = '#6c757d';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(
-            'Chưa có dữ liệu nhân viên',
-            this.topEmployeesChart.nativeElement.width / 2,
-            this.topEmployeesChart.nativeElement.height / 2
-          );
+        ctx.clearRect(
+          0,
+          0,
+          this.topEmployeesChart.nativeElement.width,
+          this.topEmployeesChart.nativeElement.height
+        );
+        ctx.font = '14px Inter';
+        ctx.fillStyle = '#868685';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+          'Chưa có dữ liệu nhân viên',
+          this.topEmployeesChart.nativeElement.width / 2,
+          this.topEmployeesChart.nativeElement.height / 2
+        );
       }
     } else {
-      this.charts.push(new Chart(this.topEmployeesChart.nativeElement, {
-        type: 'bar',
-        data: {
-          labels: topEmp.map((e: any) => e.name),
-          datasets: [{
-            label: 'Số đơn giao thành công',
-            data: topEmp.map((e: any) => e.completed),
-            backgroundColor: '#198754',
-            barThickness: 20,
-          }],
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => ` ${ctx.raw} đơn hoàn tất`,
+      this.charts.push(
+        new Chart(this.topEmployeesChart.nativeElement, {
+          type: 'bar',
+          data: {
+            labels: topEmp.map((e: any) => e.name),
+            datasets: [
+              {
+                label: 'Số đơn giao thành công',
+                data: topEmp.map((e: any) => e.completed),
+                backgroundColor: '#9fe870',
+                borderColor: '#163300',
+                borderWidth: 1,
+                barThickness: 22,
+                borderRadius: 999,
+              },
+            ],
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ` ${ctx.raw} đơn hoàn tất`,
+                },
               },
             },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 },
+                grid: { color: 'rgba(14,15,12,0.08)' },
+              },
+              y: { grid: { display: false } },
+            },
           },
-          scales: { 
-            x: { 
-                beginAtZero: true, 
-                ticks: { stepSize: 1 } 
-            } 
-          },
-        },
-      }));
+        })
+      );
     }
   }
 
   private destroyAllCharts() {
-    this.charts.forEach(c => c.destroy());
+    this.charts.forEach((c) => c.destroy());
     this.charts = [];
   }
 

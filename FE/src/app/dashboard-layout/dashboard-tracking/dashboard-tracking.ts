@@ -12,8 +12,8 @@ import { RouterLink } from '@angular/router';
   styleUrls: ['./dashboard-tracking.scss'],
 })
 export class TrackingComponent {
-  waybill = ''; // ĐỔI TÊN CHO RÕ NGHĨA
-  trackingData: any = null; // Đổi sang object thay vì array
+  waybill = '';
+  trackingData: any = null;
   trackingEvents: TrackingEvent[] = [];
   loading = false;
   error = '';
@@ -48,7 +48,7 @@ export class TrackingComponent {
 
   search() {
     if (!this.waybill.trim()) {
-      this.error = 'Vui lòng nhập mã vận đơn';
+      this.error = 'Vui lòng nhập mã vận đơn.';
       return;
     }
 
@@ -57,10 +57,8 @@ export class TrackingComponent {
     this.trackingData = null;
     this.trackingEvents = [];
 
-    // ← ĐÚNG METHOD MỚI
     this.trackingService.getTrackingByWaybill(this.waybill).subscribe({
       next: (res: any) => {
-        console.log('Data từ API:', res);
         this.trackingData = res.data || null;
         this.trackingEvents = res.data?.timeline || [];
         this.loading = false;
@@ -74,7 +72,6 @@ export class TrackingComponent {
     });
   }
 
-  // Các getter giữ nguyên như cũ
   get currentStepIndex() {
     if (this.trackingEvents.length === 0) return -1;
     const latestStatus = this.trackingEvents[this.trackingEvents.length - 1].status;

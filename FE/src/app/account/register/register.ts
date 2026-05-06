@@ -13,12 +13,13 @@ import { ToastrService } from 'ngx-toastr';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class Register implements OnInit {
-  name: string = '';
-  phone: string = '';
-  email: string = '';
-  password: string = '';
-  errorMessage: string = '';
-  successMessage: string = '';
+  name = '';
+  phone = '';
+  email = '';
+  password = '';
+  errorMessage = '';
+  successMessage = '';
+  isLoading = false;
 
   constructor(
     private authService: AuthService,
@@ -30,10 +31,13 @@ export class Register implements OnInit {
 
   register() {
     if (!this.name || !this.phone || !this.email || !this.password) {
-      this.errorMessage = 'Vui lòng nhập đầy đủ thông tin!';
+      this.errorMessage = 'Vui lòng nhập đầy đủ thông tin.';
       this.toastr.error(this.errorMessage);
       return;
     }
+
+    this.isLoading = true;
+    this.errorMessage = '';
 
     const userData = {
       name: this.name,
@@ -46,15 +50,17 @@ export class Register implements OnInit {
 
     this.authService.register(userData).subscribe({
       next: (res) => {
+        this.isLoading = false;
         if (res.data?._id) {
           localStorage.setItem('pending_user_id', res.data._id);
           this.router.navigate(['/verify'], { queryParams: { user: res.data._id } });
         }
-        this.successMessage = 'Please login to confirm email.';
+        this.successMessage = 'Đăng ký thành công. Vui lòng xác minh email.';
         this.toastr.success(this.successMessage);
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Register failed!';
+        this.isLoading = false;
+        this.errorMessage = err.error?.message || 'Đăng ký thất bại, vui lòng thử lại.';
         this.toastr.error(this.errorMessage);
       },
     });

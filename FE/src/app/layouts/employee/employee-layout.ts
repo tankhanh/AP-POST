@@ -1,4 +1,4 @@
-import { isPlatformBrowser, CurrencyPipe } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import {
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
@@ -7,7 +7,7 @@ import {
   OnInit,
   PLATFORM_ID,
 } from '@angular/core';
-import { Event, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ToastrService } from 'ngx-toastr';
@@ -59,10 +59,7 @@ export class EmployeeLayout implements OnInit, OnDestroy {
       url.startsWith('/forget-password') ||
       url.startsWith('/verify') ||
       url.startsWith('/reset-password') ||
-      url.startsWith('/employee/') ||
-      url.startsWith('/employee/home') ||
-      url.startsWith('/employee/orders') ||
-      url.startsWith('/employee/profile');
+      url.startsWith('/employee/');
   }
 
   logout() {
@@ -71,7 +68,7 @@ export class EmployeeLayout implements OnInit, OnDestroy {
     this.toastr.success('Đăng xuất thành công!');
     setTimeout(() => {
       if (this.isBrowser) window.location.href = '/';
-    }, 2000);
+    }, 800);
   }
 
   ngOnDestroy(): void {

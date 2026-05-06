@@ -1,107 +1,190 @@
-<!-- Banner -->
-<section
-  class="position-relative d-flex align-items-center min-vh-100 text-white bg-dark overflow-hidden"
->
-  <!-- Carousel nền -->
-  <div
-    id="bgCarousel"
-    class="carousel slide position-absolute top-0 start-0 w-100 h-100"
-    data-bs-ride="carousel"
-    data-bs-interval="4000"
-  >
-    <div class="carousel-inner h-100">
-      <div class="carousel-item active h-100">
-        <img
-          src="../assets/images/backgrounds/pic_1.jpg"
-          class="d-block w-100 h-100 object-fit-cover"
-          style="filter: brightness(0.4)"
-          alt="Background 1"
-        />
+<section class="ap-hero">
+  <img
+    class="ap-hero__media"
+    src="assets/images/backgrounds/vecteezy_people-visit-post-office-customers-stand-in-queue_13717371.jpg"
+    alt="AP Post digital delivery operations"
+  />
+
+  <div class="ap-hero__content">
+    <div class="container">
+      <div class="ap-eyebrow">
+        <iconify-icon icon="mdi:package-variant-closed-check"></iconify-icon>
+        Nền tảng vận chuyển toàn quốc
       </div>
-      <div class="carousel-item h-100">
-        <img
-          src="../assets/images/backgrounds/pic_2.jpg"
-          class="d-block w-100 h-100 object-fit-cover"
-          style="filter: brightness(0.4)"
-          alt="Background 2"
-        />
+
+      <h1 class="ap-display">
+        Gửi hàng nhanh.
+        <br />
+        Theo dõi rõ.
+        <br />
+        Giá minh bạch.
+      </h1>
+
+      <p>
+        AP Post gom tạo đơn, tính cước, theo dõi vận đơn và quản lý chi nhánh vào một trải nghiệm
+        gọn gàng cho cả khách hàng lẫn đội vận hành.
+      </p>
+
+      <div class="ap-hero-actions mt-4">
+        <a [routerLink]="['/calculator']" class="btn btn-primary btn-lg">
+          <iconify-icon icon="mdi:calculator-variant"></iconify-icon>
+          Tính cước
+        </a>
+        <a [routerLink]="['/tracking']" class="btn btn-primary btn-lg">
+          <iconify-icon icon="mdi:magnify-scan"></iconify-icon>
+          Tra cứu đơn
+        </a>
       </div>
-      <div class="carousel-item h-100">
-        <img
-          src="../assets/images/backgrounds/pic_3.jpg"
-          class="d-block w-100 h-100 object-fit-cover"
-          style="filter: brightness(0.4)"
-          alt="Background 3"
-        />
+
+      <div class="ap-trust-row">
+        <div class="ap-trust-item">
+          <strong>24/7</strong>
+          <span>Theo dõi trạng thái</span>
+        </div>
+        <div class="ap-trust-item">
+          <strong>COD</strong>
+          <span>Thu hộ linh hoạt</span>
+        </div>
+        <div class="ap-trust-item">
+          <strong>1 phút</strong>
+          <span>Ước tính cước</span>
+        </div>
       </div>
     </div>
   </div>
+</section>
 
-  <!-- Lớp phủ gradient -->
-  <div
-    class="position-absolute top-0 start-0 w-100 h-100"
-    style="
-      background: radial-gradient(circle at top left, rgba(250, 204, 21, 0.25), transparent 55%),
-        linear-gradient(to bottom right, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.95));
-    "
-  ></div>
+<div class="ap-quick-panel">
+  <div class="container">
+    <div class="ap-panel">
+      <div class="ap-panel-grid">
+        <div class="ap-panel-item">
+          <strong>Tạo đơn</strong>
+          <span>Nhập người gửi, người nhận, hàng hóa và COD trong cùng một luồng.</span>
+        </div>
+        <div class="ap-panel-item">
+          <strong>Đi tuyến</strong>
+          <span>Cập nhật trạng thái từ xác nhận, lấy hàng, giao hàng tới hoàn tất.</span>
+        </div>
+        <div class="ap-panel-item">
+          <strong>Đối soát</strong>
+          <span>Thống kê doanh thu, đơn hủy, đơn kẹt và hiệu suất nhân viên.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <!-- Nội dung -->
-  <div class="container position-relative z-1">
-    <div class="row justify-content-start">
-      <div class="col-lg-6 col-md-8 col-sm-10 py-5">
-        <!-- badge nhỏ -->
-        <span
-          class="badge rounded-pill bg-warning text-dark mb-3 px-3 py-2 text-uppercase fw-semibold"
-          style="font-size: 0.75rem; letter-spacing: 0.08em"
-        >
-          Giải pháp vận chuyển toàn quốc
+<section class="ap-section">
+  <div class="container">
+    <div class="ap-section-heading">
+      <div class="ap-eyebrow">
+        <iconify-icon icon="mdi:shape-circle-plus"></iconify-icon>
+        Công cụ chính
+      </div>
+      <h2 class="ap-section-title">Một bảng điều khiển cho mọi hành trình.</h2>
+      <p>
+        Thiết kế mới ưu tiên thao tác nhanh, bề mặt rõ, trạng thái dễ quét và màu nhấn chỉ xuất hiện
+        ở nơi cần quyết định.
+      </p>
+    </div>
+
+    <div class="ap-feature-grid">
+      <a [routerLink]="['/tracking']" class="ap-feature-card">
+        <span class="ap-icon-bubble">
+          <iconify-icon icon="mdi:map-marker-path"></iconify-icon>
         </span>
+        <h3>Theo dõi vận đơn</h3>
+        <p>Timeline rõ ràng cho từng lần chuyển trạng thái và cập nhật chi nhánh.</p>
+      </a>
 
-        <h1 class="fw-bold display-5 text-white mb-3">
-          Gửi hàng dễ dàng với
-          <span class="text-warning">AP Post</span>
-        </h1>
+      <a [routerLink]="['/calculator']" class="ap-feature-card">
+        <span class="ap-icon-bubble">
+          <iconify-icon icon="mdi:scale-balance"></iconify-icon>
+        </span>
+        <h3>Tính cước</h3>
+        <p>Ước tính phí ship, COD và phụ phí theo vùng trong vài giây.</p>
+      </a>
 
-        <p class="lead text-white-50 mb-4">
-          Tạo, quản lý và theo dõi đơn hàng nhanh chóng, chính xác. Tối ưu chi phí và thời gian giao
-          nhận cho cá nhân & doanh nghiệp.
+      <a [routerLink]="['/login']" class="ap-feature-card">
+        <span class="ap-icon-bubble">
+          <iconify-icon icon="mdi:package-variant-closed-check"></iconify-icon>
+        </span>
+        <h3>Quản lý đơn</h3>
+        <p>Tạo, sửa, xem chi tiết và xuất hóa đơn ngay trong khu vực nhân viên.</p>
+      </a>
+
+      <a [routerLink]="['/register']" class="ap-feature-card">
+        <span class="ap-icon-bubble">
+          <iconify-icon icon="mdi:account-check"></iconify-icon>
+        </span>
+        <h3>Tài khoản mới</h3>
+        <p>Bắt đầu miễn phí và xác minh email để truy cập các công cụ vận hành.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="ap-section ap-section-white">
+  <div class="container">
+    <div class="ap-workflow">
+      <div class="ap-workflow-aside">
+        <div class="ap-eyebrow">
+          <iconify-icon icon="mdi:route"></iconify-icon>
+          Luồng vận hành
+        </div>
+        <h2 class="ap-section-title">Từ đơn hàng tới giao thành công.</h2>
+        <p>
+          UI mới giữ mọi bước ở cùng nhịp: rõ trạng thái, ít nhiễu thị giác và hành động luôn nổi
+          bật bằng màu lime.
         </p>
+      </div>
 
-        <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
-          <a
-            [routerLink]="['/tracking']"
-            class="btn btn-outline-dark fw-semibold px-4 py-2 rounded-pill d-inline-flex align-items-center"
-            title="Tra cứu trạng thái đơn hàng"
-          >
-            Tra cứu đơn hàng
-            <i class="bi bi-search ms-2"></i>
-          </a>
-
-          <a
-            [routerLink]="['/calculator']"
-            class="btn btn-outline-dark fw-semibold px-4 py-2 rounded-pill d-inline-flex align-items-center"
-            title="Ước tính cước vận chuyển"
-          >
-            Tra cứu giá thành
-            <i class="bi bi-cash-coin ms-2"></i>
-          </a>
-        </div>
-
-        <div class="d-flex flex-wrap gap-3 text-white-50" style="font-size: 0.9rem">
-          <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-check-circle-fill text-success"></i>
-            <span>Giao nhanh nội tỉnh & liên tỉnh</span>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-check-circle-fill text-success"></i>
-            <span>Theo dõi đơn hàng theo thời gian thực</span>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-check-circle-fill text-success"></i>
-            <span>Ước tính cước minh bạch</span>
+      <div class="ap-step-list">
+        <div class="ap-step">
+          <span class="ap-step-number">01</span>
+          <div>
+            <h3>Nhập thông tin</h3>
+            <p>Người gửi, người nhận, khối lượng, dịch vụ và thu hộ được gom thành form rõ ràng.</p>
           </div>
         </div>
+
+        <div class="ap-step">
+          <span class="ap-step-number">02</span>
+          <div>
+            <h3>Xác nhận tuyến</h3>
+            <p>Chi nhánh, vùng gửi và vùng nhận được trình bày bằng bảng dễ so sánh.</p>
+          </div>
+        </div>
+
+        <div class="ap-step">
+          <span class="ap-step-number">03</span>
+          <div>
+            <h3>Theo dõi giao hàng</h3>
+            <p>Timeline hiển thị trạng thái hiện tại, lịch sử cập nhật và ghi chú vận hành.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ap-section">
+  <div class="container">
+    <div class="ap-cta-band">
+      <div>
+        <h2 class="ap-section-title mb-3">Sẵn sàng gửi đơn đầu tiên?</h2>
+        <p>Tạo tài khoản hoặc đăng nhập để quản lý đơn, chi nhánh và bảng giá.</p>
+      </div>
+      <div class="ap-actions">
+        <!-- <a [routerLink]="['/register']" class="btn btn-lg">
+          <iconify-icon icon="mdi:account-plus"></iconify-icon>
+          Đăng ký
+        </a> -->
+        <a [routerLink]="['/login']" class="btn btn-secondary btn-lg">
+          <iconify-icon icon="mdi:login"></iconify-icon>
+          Đăng nhập
+        </a>
       </div>
     </div>
   </div>

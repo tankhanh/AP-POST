@@ -1,59 +1,141 @@
-<!-- Register Section -->
-<section
-  class="bg-light-gray border-top border-primary border-4 d-flex align-items-center justify-content-center min-vh-100">
-  <div class="container py-3">
-    <div class="sign-in card mx-auto shadow-lg">
-      <div class="card-body py-8 px-lg-5">
-        <a [routerLink]="['/']" class="mb-8 hstack justify-content-center">
-          <h2 class="img-fluid" style="color: black">Ap Post</h2>
+<section class="auth-page">
+  <div class="container">
+    <div class="auth-shell">
+      <aside class="auth-art">
+        <div>
+          <a [routerLink]="['/']" class="auth-brand">
+            <span class="ap-brand-mark">AP</span>
+            <span class="ap-brand-text text-white">AP Post</span>
+          </a>
+          |
+          <div class="ap-eyebrow">
+            <iconify-icon icon="mdi:account-plus"></iconify-icon>
+            Bắt đầu miễn phí
+          </div>
+
+          <h1>Tạo tài khoản của bạn.</h1>
+          <br />
+          <p>Sau khi đăng ký, bạn sẽ xác minh email để mở dashboard và bắt đầu tạo đơn.</p>
+        </div>
+
+        <div class="auth-proof">
+          <div class="auth-proof-item">
+            <strong>Không phí ẩn</strong>
+            <span>Ước tính chi phí trước khi gửi đơn.</span>
+          </div>
+          <div class="auth-proof-item">
+            <strong>Dễ mở rộng</strong>
+            <span>Phù hợp cho cá nhân, cửa hàng và đội vận hành.</span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="auth-card">
+        <a [routerLink]="['/']" class="auth-brand">
+          <span class="ap-brand-mark">AP</span>
+          <span class="ap-brand-text">AP Post</span>
         </a>
 
-        <h4 class="text-center mb-5 fw-medium">Đăng ký</h4>
+        <h2>Bắt đầu ngay.</h2>
+        <p class="mb-4">Điền thông tin để tạo tài khoản AP Post.</p>
 
-        <!-- FORM Register -->
-        <form class="d-flex flex-column gap-3">
+        <form class="auth-form">
           <div>
-            <input type="text" class="form-control border-bottom" [(ngModel)]="name" name="name" placeholder="Họ và tên"
-              required />
-          </div>
-          <div>
-            <input type="tel" class="form-control border-bottom" [(ngModel)]="phone" name="phone" placeholder="Số điện thoại"
-              required />
-          </div>
-          <div>
-            <input type="email" class="form-control border-bottom" [(ngModel)]="email" name="email" placeholder="Email"
-              required />
-          </div>
-          <div>
-            <input type="password" class="form-control border-bottom" [(ngModel)]="password" name="password"
-              placeholder="Mật khẩu" required />
+            <label class="form-label" for="registerName">Họ và tên</label>
+            <input
+              id="registerName"
+              type="text"
+              class="form-control"
+              [(ngModel)]="name"
+              name="name"
+              placeholder="Nguyễn Văn A"
+              required
+            />
           </div>
 
-          <!-- Thông báo -->
+          <div>
+            <label class="form-label" for="registerPhone">Số điện thoại</label>
+            <input
+              id="registerPhone"
+              type="tel"
+              class="form-control"
+              [(ngModel)]="phone"
+              name="phone"
+              placeholder="0900 000 000"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="form-label" for="registerEmail">Email</label>
+            <input
+              id="registerEmail"
+              type="email"
+              class="form-control"
+              [(ngModel)]="email"
+              name="email"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="form-label" for="registerPassword">Mật khẩu</label>
+            <input
+              id="registerPassword"
+              type="password"
+              class="form-control"
+              [(ngModel)]="password"
+              name="password"
+              placeholder="Tối thiểu 6 ký tự"
+              required
+            />
+          </div>
+
           @if (errorMessage) {
-          <p class="text-danger text-center">{{ errorMessage }}</p>
-          } @if (successMessage) {
-          <p class="text-success text-center">{{ successMessage }}</p>
+            <div class="alert alert-danger mb-0">
+              <iconify-icon icon="mdi:alert-circle" class="me-2"></iconify-icon>
+              {{ errorMessage }}
+            </div>
           }
 
-          <button type="button" (click)="register()"
-            class="btn btn-dark w-100 justify-content-center py-2 fw-medium my-7 fs-4 lh-lg">
-            Đăng ký
+          @if (successMessage) {
+            <div class="alert alert-success mb-0">
+              <iconify-icon icon="mdi:check-circle" class="me-2"></iconify-icon>
+              {{ successMessage }}
+            </div>
+          }
+
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="terms" required />
+            <label class="form-check-label text-muted" for="terms">
+              Tôi đồng ý với điều khoản dịch vụ và chính sách bảo mật.
+            </label>
+          </div>
+
+          <button
+            type="button"
+            (click)="register()"
+            class="btn btn-primary btn-lg w-100"
+            [disabled]="isLoading"
+          >
+            @if (!isLoading) {
+              <iconify-icon icon="mdi:account-plus"></iconify-icon>
+              Đăng ký
+            } @else {
+              <iconify-icon icon="mdi:loading" class="animate-pulse"></iconify-icon>
+              Đang xử lý
+            }
           </button>
         </form>
-        <p class="mb-0 fw-medium text-center">
+
+        <div class="auth-divider">AP Post</div>
+
+        <p class="text-center mb-0">
           Bạn đã có tài khoản?
-          <a class="text-dark" routerLink="/login">Đăng nhập</a>
+          <a [routerLink]="['/login']" class="fw-bold">Đăng nhập</a>
         </p>
       </div>
     </div>
   </div>
 </section>
-
-<!-- Scroll to top -->
-<div class="get-template hstack gap-2">
-  <button class="btn bg-primary p-2 round-52 rounded-circle hstack justify-content-center flex-shrink-0"
-    id="scrollToTopBtn">
-    <iconify-icon icon="lucide:arrow-up" class="fs-7 text-dark"></iconify-icon>
-  </button>
-</div>

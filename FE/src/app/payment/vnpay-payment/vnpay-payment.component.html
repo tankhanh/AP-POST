@@ -1,182 +1,140 @@
 <div class="vnpay-payment-container">
-  <!-- Header Section -->
-  <div class="payment-header-section">
-    <div class="header-content">
-      <h1 class="header-title">
-        <i class="bi bi-shield-check"></i>
-        Secure Payment via VNPAY
-      </h1>
-      <p class="header-subtitle">Fast, safe and convenient payment method</p>
+  <header class="payment-header-section">
+    <div class="ap-eyebrow">
+      <i class="bi bi-shield-check"></i>
+      Thanh toán VNPAY
     </div>
-  </div>
+    <h1>Thanh toán an toàn cho đơn hàng.</h1>
+    <p>Kiểm tra thông tin và tiếp tục sang cổng VNPAY để hoàn tất giao dịch.</p>
+  </header>
 
-  <!-- Error Message -->
-  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
-    <div class="d-flex align-items-start">
-      <i class="bi bi-exclamation-triangle-fill me-3 fs-5"></i>
+  <div *ngIf="error" class="alert alert-danger" role="alert">
+    <div class="d-flex align-items-start gap-3">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
       <div>
-        <strong>Payment Error!</strong>
+        <strong>Lỗi thanh toán</strong>
         <p class="mb-0 mt-2">{{ error }}</p>
       </div>
-      <button type="button" class="btn-close" (click)="error = null"></button>
+      <button type="button" class="btn-close ms-auto" (click)="error = null"></button>
     </div>
   </div>
 
-  <!-- Main Content -->
-  <div class="payment-content">
+  <main class="payment-content">
     <div class="row g-4">
-      <!-- Payment Card Section -->
       <div class="col-lg-8">
-        <div class="payment-card">
+        <section class="payment-card">
           <div class="card-header">
-            <h3 class="mb-0">
+            <h2>
               <i class="bi bi-credit-card"></i>
-              Payment Details
-            </h3>
+              Chi tiết thanh toán
+            </h2>
           </div>
 
           <div class="card-body">
-            <!-- Order Info -->
             <div class="info-group">
-              <h5 class="info-title">
+              <h3 class="info-title">
                 <i class="bi bi-box-seam"></i>
-                Order Information
-              </h5>
+                Thông tin đơn hàng
+              </h3>
               <div class="info-row">
-                <span class="info-label">Order ID:</span>
-                <span class="info-value">
-                  <code>{{ orderId }}</code>
-                </span>
+                <span class="info-label">Mã đơn hàng</span>
+                <span class="info-value"><code>{{ orderId }}</code></span>
               </div>
               <div class="info-row" *ngIf="amount > 0">
-                <span class="info-label">Amount to Pay:</span>
-                <span class="info-value amount-display">
-                  {{ amount | number:'1.0-0' }} ₫
-                </span>
+                <span class="info-label">Số tiền thanh toán</span>
+                <span class="info-value amount-display">{{ amount | number : '1.0-0' }}đ</span>
               </div>
               <div class="info-row" *ngIf="transactionCode">
-                <span class="info-label">Transaction Code:</span>
-                <span class="info-value">
-                  <small><code>{{ transactionCode }}</code></small>
-                </span>
+                <span class="info-label">Mã giao dịch</span>
+                <span class="info-value"><code>{{ transactionCode }}</code></span>
               </div>
             </div>
 
-            <!-- Security Info -->
-            <div class="info-group mt-4">
-              <h5 class="info-title">
+            <div class="info-group">
+              <h3 class="info-title">
                 <i class="bi bi-lock"></i>
-                Payment Security
-              </h5>
+                Bảo mật thanh toán
+              </h3>
               <div class="security-items">
                 <div class="security-item">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>SSL Encrypted Connection</span>
+                  <span>Kết nối mã hóa SSL</span>
                 </div>
                 <div class="security-item">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>PCI DSS Compliant</span>
+                  <span>Xác thực qua cổng VNPAY</span>
                 </div>
                 <div class="security-item">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>VNPAY Verified Merchant</span>
+                  <span>Không lưu thông tin thẻ</span>
                 </div>
                 <div class="security-item">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>Fraud Detection Enabled</span>
+                  <span>Đối soát giao dịch tự động</span>
                 </div>
               </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="payment-actions mt-5">
+            <div class="payment-actions">
               <button
-                class="btn btn-primary btn-lg btn-pay btn-block"
+                class="btn btn-primary btn-lg btn-pay w-100"
                 (click)="proceedToVNPay()"
-                [disabled]="isLoading || !orderId">
+                [disabled]="isLoading || !orderId"
+              >
                 <span *ngIf="!isLoading" class="d-flex align-items-center justify-content-center gap-2">
                   <i class="bi bi-credit-card"></i>
-                  Proceed to VNPAY Payment
+                  Tiếp tục thanh toán
                 </span>
                 <span *ngIf="isLoading" class="d-flex align-items-center justify-content-center gap-2">
                   <span class="spinner-border spinner-border-sm"></span>
-                  Processing Payment URL...
+                  Đang tạo liên kết
                 </span>
               </button>
 
-              <button
-                class="btn btn-outline-secondary btn-lg btn-block mt-3"
-                (click)="goBack()"
-                [disabled]="isLoading">
+              <button class="btn btn-secondary btn-lg w-100" (click)="goBack()" [disabled]="isLoading">
                 <i class="bi bi-arrow-left"></i>
-                Back to Order List
+                Về danh sách đơn
               </button>
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
-      <!-- Info Sidebar -->
       <div class="col-lg-4">
-        <div class="info-sidebar">
-          <!-- Payment Flow -->
-          <div class="sidebar-section">
-            <h5 class="sidebar-title">
+        <aside class="info-sidebar">
+          <section class="sidebar-section">
+            <h3 class="sidebar-title">
               <i class="bi bi-arrow-repeat"></i>
-              Payment Process
-            </h5>
+              Quy trình
+            </h3>
             <ol class="flow-steps">
-              <li>
-                <span class="step-number">1</span>
-                <span>Click Payment Button</span>
-              </li>
-              <li>
-                <span class="step-number">2</span>
-                <span>Enter Card Details on VNPAY</span>
-              </li>
-              <li>
-                <span class="step-number">3</span>
-                <span>Confirm OTP/2FA</span>
-              </li>
-              <li>
-                <span class="step-number">4</span>
-                <span>Back to Confirmation</span>
-              </li>
+              <li><span class="step-number">1</span><span>Kiểm tra đơn hàng</span></li>
+              <li><span class="step-number">2</span><span>Chuyển sang VNPAY</span></li>
+              <li><span class="step-number">3</span><span>Xác thực OTP/2FA</span></li>
+              <li><span class="step-number">4</span><span>Quay lại xác nhận</span></li>
             </ol>
-          </div>
+          </section>
 
-          <!-- Supported Methods -->
-          <div class="sidebar-section mt-4">
-            <h5 class="sidebar-title">
+          <section class="sidebar-section">
+            <h3 class="sidebar-title">
               <i class="bi bi-wallet2"></i>
-              Accepted Methods
-            </h5>
+              Hỗ trợ
+            </h3>
             <div class="payment-methods">
-              <div class="method-item">
-                <i class="bi bi-credit-card-2-front"></i>
-                <span>Debit/Credit Card</span>
-              </div>
-              <div class="method-item">
-                <i class="bi bi-building"></i>
-                <span>Bank Transfer</span>
-              </div>
-              <div class="method-item">
-                <i class="bi bi-phone"></i>
-                <span>E-Wallet</span>
-              </div>
+              <div class="method-item"><i class="bi bi-credit-card-2-front"></i><span>Thẻ nội địa/quốc tế</span></div>
+              <div class="method-item"><i class="bi bi-building"></i><span>Ngân hàng liên kết</span></div>
+              <div class="method-item"><i class="bi bi-phone"></i><span>Ví điện tử</span></div>
             </div>
-          </div>
+          </section>
 
-          <!-- Support -->
-          <div class="sidebar-section mt-4 p-3 bg-light rounded">
-            <p class="small text-muted mb-0">
+          <section class="sidebar-section support-note">
+            <p class="small mb-0">
               <i class="bi bi-question-circle"></i>
-              <strong>Need Help?</strong><br>
-              Contact VNPAY Support: 1900 5555 (ext. 1)
+              Cần hỗ trợ? Liên hệ VNPAY hoặc AP Post để kiểm tra giao dịch.
             </p>
-          </div>
-        </div>
+          </section>
+        </aside>
       </div>
     </div>
-  </div>
+  </main>
 </div>

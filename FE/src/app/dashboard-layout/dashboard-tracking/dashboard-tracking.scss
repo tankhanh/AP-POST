@@ -1,69 +1,148 @@
-.timeline-modern {
-  position: relative;
-  padding-left: 40px;
+.tracking-page {
+  min-height: 100vh;
+  padding: 48px 24px;
+  background: var(--wise-canvas);
 }
 
-.timeline-item {
-  position: relative;
-  padding-bottom: 30px;
+.tracking-shell {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
 }
 
-.timeline-connector {
-  position: absolute;
-  left: 19px;
-  top: 40px;
-  bottom: -20px;
-  width: 2px;
-  background: #e9ecef;
-  &.completed { background: #198754; }
-  
-  left: 20px;
-}
-
-.timeline-dot {
-  position: absolute;
-  left: 0;
-  top: 10px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #dee2e6;
+.tracking-topline {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  transition: all 0.3s;
-  font-size: 1.4rem !important;
-  z-index: 10;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 34px;
+}
 
-  &.completed {
-    background: #198754;
+.tracking-header {
+  max-width: 760px;
+  margin-bottom: 28px;
+
+  h1 {
+    margin: 0 0 18px;
+    font-size: 72px;
+    line-height: 0.86;
+    font-weight: 900;
+    letter-spacing: 0;
   }
 
-  &.active {
-    background: #0d6efd;
-    transform: scale(1.2);
-    box-shadow: 0 0 0 6px rgba(13, 110, 253, 0.2);
+  p {
+    margin: 0;
+    color: var(--wise-muted);
+    font-weight: 600;
+  }
+}
+
+.tracking-search-card,
+.tracking-timeline-card,
+.tracking-summary {
+  border: 1px solid var(--wise-line);
+  border-radius: 30px;
+  background: #ffffff;
+  box-shadow: var(--wise-ring);
+}
+
+.tracking-search-card {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.tracking-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.tracking-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.tracking-summary-item {
+  padding: 18px;
+  background: #ffffff;
+
+  span {
+    display: block;
+    color: var(--wise-muted);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  strong {
+    display: block;
+    margin-top: 8px;
+    color: var(--wise-black);
+    font-size: 18px;
+    font-weight: 900;
+    word-break: break-word;
+  }
+}
+
+.tracking-timeline-card {
+  padding: 24px;
+
+  h2 {
+    margin: 0;
+    font-size: 40px;
+    line-height: 0.92;
+    font-weight: 900;
   }
 }
 
 .timeline-content {
-  margin-left: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  margin-left: 60px !important;
+  h3 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    line-height: 1.1;
+  }
 
-  &.active {
-    background: #e3f2fd;
-    border-left: 4px solid #0d6efd;
+  p {
+    font-size: 14px;
+    font-weight: 600;
   }
 }
 
-.text-orange {
-  color: #fd7e14;
+.tracking-empty {
+  border: 1px dashed var(--wise-line);
+  border-radius: 30px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--wise-muted);
+  background: rgba(255, 255, 255, 0.6);
+
+  i {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 54px;
+    color: var(--wise-soft);
+  }
+
+  p {
+    margin: 0;
+    font-weight: 700;
+  }
 }
 
-.text-purple {
-  color: #6f42c1;
+@media (max-width: 768px) {
+  .tracking-page {
+    padding: 24px 14px;
+  }
+
+  .tracking-header h1 {
+    font-size: 42px;
+  }
+
+  .tracking-search-form,
+  .tracking-summary {
+    grid-template-columns: 1fr;
+  }
 }
