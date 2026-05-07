@@ -49,15 +49,20 @@ export class UsersService {
 
   // Gửi email kích hoạt
   async sendVerificationEmail(email: string, name: string, codeId: string) {
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Activate your account',
-      template: 'register.hbs',
-      context: {
-        name: name ?? email,
-        activationCode: codeId,
-      },
-    });
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Activate your account',
+        template: 'register.hbs',
+        context: {
+          name: name ?? email,
+          activationCode: codeId,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Verification email failed:', error);
+      // Continue without failing the registration process
+    }
   }
 
   /* ------------ Admin create STAFF user ------------ */
@@ -229,15 +234,20 @@ export class UsersService {
       },
     );
 
-    await this.mailerService.sendMail({
-      to: user.email,
-      subject: 'Change your password active code',
-      template: 'resetpassword.hbs',
-      context: {
-        name: user?.name ?? user.email,
-        resetCode: codeId,
-      },
-    });
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Change your password active code',
+        template: 'resetpassword.hbs',
+        context: {
+          name: user?.name ?? user.email,
+          resetCode: codeId,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Password reset email failed:', error);
+      // Continue without failing the process
+    }
 
     return { _id: user._id, email: user.email };
   }
