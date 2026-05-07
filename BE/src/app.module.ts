@@ -104,31 +104,39 @@ import { MomoModule } from './modules/momo/momo.module';
     VietQrModule,
     VnpayModule,
     MomoModule,
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        transport: {
-          host: configService.get<string>('mail_host'),
-          port: configService.get<number>('mail_port'),
-          secure: false,
-          auth: {
-            user: configService.get<string>('mail_username'),
-            pass: configService.get<string>('mail_password'),
-          },
-          tls: {
-            rejectUnauthorized: false,
-          },
-        },
-        template: {
-          dir: join(process.cwd(), 'src/modules/mail/templates'),
-          adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
-        },
-      }),
-    }),
+      MailerModule.forRootAsync({
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: (configService: ConfigService) => ({
+    transport: {
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      requireTLS: true,
+
+      auth: {
+        user: configService.get<string>('mail_username'),
+        pass: configService.get<string>('mail_password'),
+      },
+
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+
+      tls: {
+        ciphers: 'SSLv3',
+      },
+    },
+
+    template: {
+      dir: join(process.cwd(), 'src/modules/mail/templates'),
+      adapter: new HandlebarsAdapter(),
+      options: {
+        strict: true,
+      },
+    },
+  }),
+}),
   ],
   controllers: [AppController],
   providers: [AppService],
