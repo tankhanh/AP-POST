@@ -2,6 +2,7 @@ import { Component, OnInit, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { VnpayService } from '../../services/vnpay.service';
+import { AuthService } from '../../services/auth.service';
 import { ToastrService } from 'ngx-toastr';
 import { VNPayCreatePaymentResponse } from '../../types/payment.types';
 
@@ -26,6 +27,7 @@ export class VnpayPaymentComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private toastr: ToastrService,
+    private authService: AuthService,
   ) {}
 
   ngOnInit() {
@@ -89,6 +91,7 @@ export class VnpayPaymentComponent implements OnInit {
    * Go back to order list
    */
   goBack() {
-    this.router.navigate(['/employee/orders/list']);
+    const base = this.authService.isCustomer() ? '/customer' : this.authService.isEmployee() ? '/employee' : '/admin';
+    this.router.navigate([`${base}/orders/list`]);
   }
 }

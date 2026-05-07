@@ -13,6 +13,7 @@ import {
   NotificationStatus,
   NotificationType,
 } from './schemas/notification.schemas';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
@@ -22,12 +23,30 @@ export class NotificationsService {
     @InjectModel(Notification.name)
     private notificationModel: SoftDeleteModel<NotificationDocument>,
     private readonly mailerService: MailerService,
+    private readonly gateway: NotificationsGateway,
   ) {}
 
+  private normalizeRecipient(recipient?: string) {
+    const value = String(recipient || '').trim();
+    return value.includes('@') ? value.toLowerCase() : value;
+  }
+
+  private getUserRecipients(user?: IUser) {
+    const recipients = [
+      user?._id ? String(user._id) : '',
+      user?.email ? this.normalizeRecipient(user.email) : '',
+    ].filter(Boolean);
+
+    return [...new Set(recipients)];
+  }
+
   async create(dto: CreateNotificationDto) {
+    const recipient = this.normalizeRecipient(dto.recipient);
     const notification = await this.notificationModel.create({
       ...dto,
+      recipient,
       status: NotificationStatus.PENDING,
+      isDeleted: false,
     });
 
     // Gửi thực tế theo type
@@ -35,29 +54,75 @@ export class NotificationsService {
       await this.sendEmail(notification);
     }
 
+    // Emit real-time notification. If recipient looks like an ObjectId send to room, otherwise broadcast.
+    try {
+      // support role-based recipients (e.g., 'role:ADMIN')
+      if (recipient && typeof recipient === 'string' && recipient.startsWith('role:')) {
+        const roleRoom = recipient;
+        this.gateway.server.to(roleRoom).emit('notification', notification);
+        this.logger.log(`Emitted notification ${notification._id} to role room ${roleRoom}`);
+        return notification;
+      }
+      const isObjectId = mongoose.Types.ObjectId.isValid(recipient);
+      if (isObjectId) {
+        this.gateway.sendToUser(recipient, 'notification', notification);
+        this.logger.log(`Emitted notification ${notification._id} to user room ${recipient}`);
+      } else if (recipient && recipient.includes('@')) {
+        // recipient looks like an email — emit to the email room only (avoid double-delivery)
+        const em = String(recipient).trim().toLowerCase();
+        this.gateway.server.to(`email:${em}`).emit('notification', notification);
+        this.logger.log(`Emitted notification ${notification._id} to email room email:${em}`);
+      } else {
+        this.gateway.broadcast('notification', notification);
+        this.logger.log(`Broadcasted notification ${notification._id}`);
+      }
+    } catch (err) {
+      this.logger.warn('Failed to emit notification via gateway', err as any);
+    }
+
     return notification;
   }
 
-  async findAll(currentPage = 1, limit = 10, qs?: string) {
+  async findAll(currentPage = 1, limit = 10, qs: any = {}) {
     const { filter, sort } = aqp(qs);
     delete filter.current;
     delete filter.pageSize;
 
-    const offset = (currentPage - 1) * limit;
+    if (filter.isDeleted === undefined) filter.isDeleted = false;
+
+    // Normalize recipient filter: support comma-separated values or arrays -> $in
+    if (filter.recipient) {
+      if (Array.isArray(filter.recipient)) {
+        const arr = filter.recipient.map((r: any) => this.normalizeRecipient(r));
+        filter.recipient = { $in: arr };
+      } else if (typeof filter.recipient === 'string' && filter.recipient.includes(',')) {
+        const arr = filter.recipient.split(',').map((s) => this.normalizeRecipient(s)).filter(Boolean);
+        if (arr.length) filter.recipient = { $in: arr };
+      } else if (typeof filter.recipient === 'string') {
+        filter.recipient = this.normalizeRecipient(filter.recipient);
+      } else if (filter.recipient.$in) {
+        filter.recipient.$in = filter.recipient.$in.map((r: any) => this.normalizeRecipient(r)).filter(Boolean);
+      }
+    }
+
+    const page = Number(currentPage) > 0 ? Number(currentPage) : 1;
+    const size = Number(limit) > 0 ? Number(limit) : 10;
+    const offset = (page - 1) * size;
+    const sortOption = sort && Object.keys(sort as any).length ? sort : { createdAt: -1 };
     const totalItems = await this.notificationModel.countDocuments(filter);
-    const totalPages = Math.ceil(totalItems / limit);
+    const totalPages = Math.ceil(totalItems / size);
 
     const results = await this.notificationModel
       .find(filter)
       .skip(offset)
-      .limit(limit)
-      .sort(sort as any)
+      .limit(size)
+      .sort(sortOption as any)
       .exec();
 
     return {
       meta: {
-        current: currentPage,
-        pageSize: limit,
+        current: page,
+        pageSize: size,
         pages: totalPages,
         total: totalItems,
       },
@@ -67,13 +132,13 @@ export class NotificationsService {
 
   async findOne(id: string) {
     const notification = await this.notificationModel.findById(id);
-    if (!notification) throw new NotFoundException('Notification not found');
+    if (!notification || notification.isDeleted) throw new NotFoundException('Notification not found');
     return notification;
   }
 
   async update(id: string, dto: UpdateNotificationDto) {
-    const notification = await this.notificationModel.findByIdAndUpdate(
-      id,
+    const notification = await this.notificationModel.findOneAndUpdate(
+      { _id: id, isDeleted: false },
       dto,
       {
         new: true,
@@ -83,9 +148,21 @@ export class NotificationsService {
     return notification;
   }
 
+  async markAllRead(user: IUser) {
+    const now = new Date();
+    const recipients = this.getUserRecipients(user);
+    if (!recipients.length) return { modified: 0 };
+
+    const res = await this.notificationModel.updateMany(
+      { recipient: { $in: recipients }, status: { $ne: NotificationStatus.SENT }, isDeleted: false },
+      { $set: { status: NotificationStatus.SENT, readAt: now } },
+    );
+    return { modified: res.modifiedCount || 0 };
+  }
+
   async remove(id: string, user: IUser) {
     const notification = await this.notificationModel.findById(id);
-    if (!notification) throw new NotFoundException('Notification not found');
+    if (!notification || notification.isDeleted) throw new NotFoundException('Notification not found');
 
     notification.isDeleted = true;
     notification.deletedAt = new Date();

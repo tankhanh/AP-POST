@@ -26,6 +26,10 @@
       </p>
 
       <div class="ap-hero-actions mt-4">
+        <a [routerLink]="orderLink" class="btn btn-primary btn-lg">
+          <iconify-icon icon="mdi:package-variant-closed-plus"></iconify-icon>
+          Tạo đơn
+        </a>
         <a [routerLink]="['/calculator']" class="btn btn-primary btn-lg">
           <iconify-icon icon="mdi:calculator-variant"></iconify-icon>
           Tính cước
@@ -106,13 +110,14 @@
         <p>Ước tính phí ship, COD và phụ phí theo vùng trong vài giây.</p>
       </a>
 
-      <a [routerLink]="['/login']" class="ap-feature-card">
+      <a [routerLink]="orderLink" class="ap-feature-card">
         <span class="ap-icon-bubble">
           <iconify-icon icon="mdi:package-variant-closed-check"></iconify-icon>
         </span>
         <h3>Quản lý đơn</h3>
         <p>Tạo, sửa, xem chi tiết và xuất hóa đơn ngay trong khu vực nhân viên.</p>
       </a>
+
 
       <a [routerLink]="['/register']" class="ap-feature-card">
         <span class="ap-icon-bubble">
@@ -177,10 +182,10 @@
         <p>Tạo tài khoản hoặc đăng nhập để quản lý đơn, chi nhánh và bảng giá.</p>
       </div>
       <div class="ap-actions">
-        <!-- <a [routerLink]="['/register']" class="btn btn-lg">
+        <a [routerLink]="['/register']" class="btn btn-lg">
           <iconify-icon icon="mdi:account-plus"></iconify-icon>
           Đăng ký
-        </a> -->
+        </a>
         <a [routerLink]="['/login']" class="btn btn-secondary btn-lg">
           <iconify-icon icon="mdi:login"></iconify-icon>
           Đăng nhập

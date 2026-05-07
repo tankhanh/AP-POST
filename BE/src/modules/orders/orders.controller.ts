@@ -25,6 +25,20 @@ import { OrdersService } from './orders.service';
 import { Roles } from 'src/health/decorator/roles.decorator';
 import { ConfigService } from '@nestjs/config';
 import { MomoService } from '../momo/momo.service';
+import { IsNotEmpty, IsString } from 'class-validator';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+
+class PublicOtpRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+}
+
+class PublicOtpVerifyDto extends PublicOtpRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}
 
 @ApiTags('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -37,6 +51,49 @@ export class OrdersController {
   ) {}
 
   // ====================== 1. TẠO ĐƠN HÀNG ======================
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle(3, 60)
+  @Post('public/request-otp')
+  @ResponseMessage('Gửi OTP tạo đơn B2C')
+  requestPublicOtp(@Body() body: PublicOtpRequestDto) {
+    return this.ordersService.requestPublicOtp(body.phone);
+  }
+
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle(6, 60)
+  @Post('public/verify-otp')
+  @ResponseMessage('Xác thực OTP tạo đơn B2C')
+  verifyPublicOtp(@Body() body: PublicOtpVerifyDto) {
+    return this.ordersService.verifyPublicOtp(body.phone, body.code);
+  }
+
+  @Public()
+  @Post('public')
+  @ResponseMessage('Tạo đơn hàng B2C (khách lẻ)')
+  async createPublic(@Body() dto: CreateOrderDto) {
+    console.log('🔥 [CREATE PUBLIC ORDER] paymentMethod =', dto.paymentMethod);
+
+    const result = await this.ordersService.createPublic(dto);
+    const method = dto.paymentMethod || 'CASH';
+    let redirectUrl: string | null = null;
+
+    if (method === 'MOMO') {
+      redirectUrl = await this.initiateGateway(method, result.order, result.payment);
+    }
+
+    return {
+      order: result.order,
+      payment: result.payment,
+      redirectUrl,
+      message:
+        method === 'MOMO'
+          ? 'Đang chuyển hướng đến cổng thanh toán MOMO...'
+          : 'Tạo đơn hàng B2C thành công',
+    };
+  }
+
   @Post()
   @ResponseMessage('Tạo đơn hàng mới')
   async create(@Body() dto: CreateOrderDto, @Users() user: IUser) {

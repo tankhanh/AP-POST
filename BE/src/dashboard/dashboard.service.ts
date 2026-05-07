@@ -212,13 +212,13 @@ export class DashboardService {
         );
 
         const activeCount = await this.userModel.countDocuments({
-            role: { $in: ['ADMIN', 'STAFF', 'COURIER'] },
+            role: { $in: ['ADMIN', 'STAFF'] },
             isActive: true,
             isDeleted: false,
         });
 
         const totalCount = await this.userModel.countDocuments({
-            role: { $in: ['ADMIN', 'STAFF', 'COURIER'] },
+            role: { $in: ['ADMIN', 'STAFF'] },
             isDeleted: false,
         });
         // console.log('Top 10 Performance:', JSON.stringify(top10Raw, null, 2));

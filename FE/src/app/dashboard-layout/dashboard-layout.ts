@@ -9,6 +9,7 @@ import {
   CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NotificationCenter } from '../shared/notification-center/notification-center';
 import { Subscription } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../services/auth.service';
@@ -16,7 +17,7 @@ import { AuthService } from '../services/auth.service';
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, NotificationCenter],
   templateUrl: './dashboard-layout.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

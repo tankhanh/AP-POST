@@ -56,6 +56,11 @@ export class CreateOrderDto {
   @IsString()
   receiverPhone: string;
 
+  @ApiProperty({ example: '0901234567', required: false })
+  @IsOptional()
+  @IsString()
+  senderPhone?: string;
+
   @ApiProperty({ example: 'khachhang@gmail.com', required: false })
   @IsOptional()
   @IsEmail()
@@ -103,4 +108,31 @@ export class CreateOrderDto {
   @IsOptional()
   @IsEnum(['CASH', 'COD', 'MOMO'])
   paymentMethod?: string;
+
+  @ApiProperty({
+    example: 'DROPOFF',
+    enum: ['DROPOFF', 'PICKUP'],
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(['DROPOFF', 'PICKUP'])
+  pickupMethod?: 'DROPOFF' | 'PICKUP';
+
+  @ApiProperty({
+    example: '2026-05-07T09:00:00.000Z',
+    required: false,
+    description: 'Khung giờ khách hẹn lấy hàng tại nhà (ISO datetime)',
+  })
+  @IsOptional()
+  @IsString()
+  pickupSlot?: string;
+
+  @ApiProperty({
+    example: 'otp_xxx',
+    required: false,
+    description: 'Token OTP dành cho luồng tạo đơn B2C công khai',
+  })
+  @IsOptional()
+  @IsString()
+  publicOtpToken?: string;
 }

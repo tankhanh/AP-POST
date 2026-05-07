@@ -19,7 +19,6 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "-": "^0.0.1",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/axios": "^1.0.1",
     "@nestjs/common": "9.4.0",
@@ -30,10 +29,12 @@
     "@nestjs/mongoose": "^9.2.2",
     "@nestjs/passport": "^9.0.3",
     "@nestjs/platform-express": "9.4.0",
+    "@nestjs/platform-socket.io": "^9.4.3",
     "@nestjs/schedule": "3.0.1",
     "@nestjs/swagger": "^7.0.4",
     "@nestjs/terminus": "10.0.1",
     "@nestjs/throttler": "4.1.0",
+    "@nestjs/websockets": "^9.4.3",
     "@sendgrid/mail": "^8.1.6",
     "api-query-params": "^5.4.0",
     "axios": "^1.13.2",
@@ -58,6 +59,7 @@
     "passport-local": "^1.0.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "^7.8.2",
+    "socket.io": "^4.8.3",
     "soft-delete-plugin-mongoose": "1.0.15",
     "swagger-ui-express": "^5.0.1",
     "vnpay": "^2.4.4"

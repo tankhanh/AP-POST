@@ -35,9 +35,9 @@ export class NotificationsController {
   findAll(
     @Query('current') currentPage: string,
     @Query('pageSize') limit: string,
-    @Query() qs: string,
+    @Query() qs?: any,
   ) {
-    return this.notificationsService.findAll(+currentPage, +limit, qs);
+    return this.notificationsService.findAll(+currentPage, +limit, qs || {});
   }
 
   @Get(':id')
@@ -45,12 +45,18 @@ export class NotificationsController {
   findOne(@Param('id') id: string) {
     return this.notificationsService.findOne(id);
   }
-
+  @Patch('mark-all-read')
+  @ResponseMessage('Đánh dấu tất cả đã đọc')
+  markAllRead(@Users() user: IUser) {
+    return this.notificationsService.markAllRead(user);
+  }
+  
   @Patch(':id')
   @ResponseMessage('Cập nhật thông báo')
   update(@Param('id') id: string, @Body() dto: UpdateNotificationDto) {
     return this.notificationsService.update(id, dto);
   }
+
 
   @Delete(':id')
   @ResponseMessage('Xóa thông báo')

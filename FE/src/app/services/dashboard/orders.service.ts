@@ -32,6 +32,28 @@ export class OrdersService {
       );
   }
 
+  createPublicOrder(data: any): Observable<any> {
+    return this.http
+      .post<any>(`${this.API_URL}/public`, data, {
+        observe: 'response',
+      })
+      .pipe(
+        map((response: HttpResponse<any>) => response.body ?? { success: true }),
+        catchError((err) => {
+          console.error('Create public order error:', err);
+          return throwError(() => err);
+        }),
+      );
+  }
+
+  requestPublicOtp(phone: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/public/request-otp`, { phone });
+  }
+
+  verifyPublicOtp(phone: string, code: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/public/verify-otp`, { phone, code });
+  }
+
   getOrders(filters: any = {}): Observable<any> {
     let params = new HttpParams().set('pageSize', '999').set('current', '1');
 

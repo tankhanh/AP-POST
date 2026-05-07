@@ -139,7 +139,7 @@ export class DatabasesService implements OnModuleInit {
         name: 'Customer',
         email: 'customer@appost.com',
         password: hash,
-        role: 'CUSTOMER',
+        role: 'USER',
         isActive: true,
       },
     ]);
@@ -3934,7 +3934,7 @@ export class DatabasesService implements OnModuleInit {
   ): Promise<{ order1: OrderDocument; customer: UserDocument }> {
     if (await this.orderModel.countDocuments({ isDeleted: false })) {
       const customer = await this.userModel
-        .findOne({ role: 'CUSTOMER' })
+        .findOne({ role: 'USER' })
         .lean();
       const order1 = await this.orderModel
         .findOne({ userId: customer?._id })
@@ -3942,8 +3942,8 @@ export class DatabasesService implements OnModuleInit {
       return { order1: order1 as any, customer: customer as any };
     }
 
-    const customer = await this.userModel.findOne({ role: 'CUSTOMER' }).lean();
-    if (!customer) throw new Error('No CUSTOMER user to seed orders');
+    const customer = await this.userModel.findOne({ role: 'USER' }).lean();
+    if (!customer) throw new Error('No USER role user to seed orders');
 
     // Lấy một pricing bất kỳ để làm snapshot (hoặc tạo fake nếu chưa có)
     let pricing = await this.pricingModel.findOne().lean();

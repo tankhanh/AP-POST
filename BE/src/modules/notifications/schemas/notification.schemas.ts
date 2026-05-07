@@ -48,6 +48,9 @@ export class Notification {
   @Prop()
   deletedAt?: Date;
 
+  @Prop({ required: false })
+  readAt?: Date;
+
   @Prop({ type: Object })
   deletedBy?: {
     _id: mongoose.Types.ObjectId;

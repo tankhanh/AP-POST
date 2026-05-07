@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -16,6 +17,7 @@ export class PaymentSuccessComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private authService: AuthService,
   ) {}
 
   ngOnInit() {
@@ -45,6 +47,7 @@ export class PaymentSuccessComponent implements OnInit {
   }
 
   goToList() {
-    this.router.navigate(['/employee/orders/list']);
+    const base = this.authService.isCustomer() ? '/customer' : this.authService.isEmployee() ? '/employee' : '/admin';
+    this.router.navigate([`${base}/orders/list`]);
   }
 }

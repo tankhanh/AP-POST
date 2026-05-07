@@ -1,9 +1,10 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { LocationService } from '../../../services/location.service';
 import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import Swal from 'sweetalert2';
 import { GeocodingService } from '../../../services/geocoding.service';
 import { debounceTime } from 'rxjs/operators';
@@ -13,7 +14,7 @@ import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
 @Component({
   selector: 'app-create-order',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, DualMapComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, DualMapComponent],
   templateUrl: './createOrder.html',
 })
 export class CreateOrder implements OnInit, AfterViewInit {
@@ -26,6 +27,14 @@ export class CreateOrder implements OnInit, AfterViewInit {
   senderPay = 0;
   receiverPay = 0;
   paymentNote = '';
+  isPublicFlow = false;
+  pageTitle = 'Tạo đơn hàng mới';
+  submitLabel = 'Tạo đơn hàng';
+  publicOtpToken = '';
+  otpCode = '';
+  requestingOtp = false;
+  verifyingOtp = false;
+  otpVerified = false;
 
   constructor(
     private fb: FormBuilder,
@@ -33,9 +42,15 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private locationService: LocationService,
     private router: Router,
     private geocoding: GeocodingService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    this.isPublicFlow = this.route.snapshot.data['publicCreate'] === true;
+    if (this.isPublicFlow) {
+      this.pageTitle = 'Tạo đơn gửi hàng (B2C)';
+      this.submitLabel = 'Tạo đơn gửi';
+    }
     this.initForm();
     this.loadProvinces();
   }
@@ -98,6 +113,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
   initForm() {
     this.orderForm = this.fb.group({
       senderName: ['', Validators.required],
+      senderPhone: [''],
       receiverName: ['', Validators.required],
       receiverPhone: ['', [Validators.required, Validators.pattern('^[0-9]{9,11}$')]],
       pickupProvinceId: ['', Validators.required],
@@ -117,6 +133,64 @@ export class CreateOrder implements OnInit, AfterViewInit {
       deliveryLng: [null],
       shippingFeePayer: ['SENDER'],
       paymentMethod: ['CASH'],
+      pickupMethod: ['DROPOFF'],
+      pickupSlot: [''],
+    });
+  }
+
+  requestOtp() {
+    if (!this.isPublicFlow) return;
+    const senderPhone = (this.orderForm.value.senderPhone || '').trim();
+    if (!senderPhone) {
+      Swal.fire('Thiếu thông tin', 'Vui lòng nhập số điện thoại người gửi', 'warning');
+      return;
+    }
+
+    this.requestingOtp = true;
+    this.ordersService.requestPublicOtp(senderPhone).subscribe({
+      next: (res: any) => {
+        this.requestingOtp = false;
+        const data = res?.data || res;
+        this.publicOtpToken = data.otpToken || '';
+        if (data.devOtpCode) this.otpCode = data.devOtpCode;
+        Swal.fire(
+          'OTP đã gửi',
+          data.devOtpCode
+            ? `Mã OTP dev: ${data.devOtpCode}`
+            : 'Vui lòng kiểm tra SMS/điện thoại để lấy mã OTP',
+          'success',
+        );
+      },
+      error: (err) => {
+        this.requestingOtp = false;
+        Swal.fire('Lỗi!', err.error?.message || 'Không thể gửi OTP', 'error');
+      },
+    });
+  }
+
+  verifyOtp() {
+    if (!this.isPublicFlow) return;
+    const senderPhone = (this.orderForm.value.senderPhone || '').trim();
+    const code = (this.otpCode || '').trim();
+    if (!senderPhone || !code || !this.publicOtpToken) {
+      Swal.fire('Thiếu thông tin', 'Bạn cần gửi OTP và nhập mã xác thực', 'warning');
+      return;
+    }
+
+    this.verifyingOtp = true;
+    this.ordersService.verifyPublicOtp(senderPhone, code).subscribe({
+      next: (res: any) => {
+        this.verifyingOtp = false;
+        const data = res?.data || res;
+        this.publicOtpToken = data.otpToken || this.publicOtpToken;
+        this.otpVerified = true;
+        Swal.fire('Thành công', 'Số điện thoại đã xác thực', 'success');
+      },
+      error: (err) => {
+        this.verifyingOtp = false;
+        this.otpVerified = false;
+        Swal.fire('Lỗi!', err.error?.message || 'Xác thực OTP thất bại', 'error');
+      },
     });
   }
 
@@ -339,6 +413,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
     const data = {
       senderName: this.orderForm.value.senderName,
+      senderPhone: this.orderForm.value.senderPhone?.trim() || null,
       receiverName: this.orderForm.value.receiverName,
       receiverPhone: this.orderForm.value.receiverPhone,
       email: this.orderForm.value.email?.trim() || null,
@@ -362,9 +437,22 @@ export class CreateOrder implements OnInit, AfterViewInit {
       details: this.orderForm.value.details?.trim() || null,
       shippingFeePayer: this.orderForm.value.shippingFeePayer,
       paymentMethod: this.orderForm.value.paymentMethod,
+      pickupMethod: this.orderForm.value.pickupMethod,
+      pickupSlot: this.orderForm.value.pickupSlot || null,
+      publicOtpToken: this.isPublicFlow ? this.publicOtpToken : undefined,
     };
 
-    this.ordersService.createOrder(data).subscribe({
+    if (this.isPublicFlow && !this.otpVerified) {
+      this.loading = false;
+      Swal.fire('Chưa xác thực OTP', 'Vui lòng xác thực số điện thoại trước khi tạo đơn', 'warning');
+      return;
+    }
+
+    const request$ = this.isPublicFlow
+      ? this.ordersService.createPublicOrder(data)
+      : this.ordersService.createOrder(data);
+
+    request$.subscribe({
       next: (apiResponse: any) => {
         this.loading = false;
         const res = apiResponse?.data || apiResponse;
@@ -377,10 +465,14 @@ export class CreateOrder implements OnInit, AfterViewInit {
         // CASH / COD
         Swal.fire({
           icon: 'success',
-          title: 'Tạo đơn thành công!',
+          title: this.isPublicFlow ? 'Tạo đơn B2C thành công!' : 'Tạo đơn thành công!',
           text: `Mã vận đơn: ${res.order.waybill}`,
-          confirmButtonText: 'Về danh sách',
-        }).then(() => this.router.navigate(['/employee/orders/list']));
+          confirmButtonText: this.isPublicFlow ? 'Tra cứu đơn' : 'Về danh sách',
+        }).then(() =>
+          this.router.navigate([
+            this.isPublicFlow ? '/tracking' : '/employee/orders/list',
+          ]),
+        );
       },
       error: (err) => {
         this.loading = false;

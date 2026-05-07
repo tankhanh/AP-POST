@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { OrdersService } from '../../../services/dashboard/orders.service';
@@ -10,6 +10,7 @@ import Swal from 'sweetalert2';
   templateUrl: './listOrder.html',
   standalone: true,
   imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, RouterLink],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class ListOrder implements OnInit {
   orders: any[] = [];

@@ -127,6 +127,6 @@ export class AuthService {
   }
 
   isCustomer(user?: any): boolean {
-    return this.hasRole('customer', user);
+    return this.hasRole('user', user);
   }
 }

@@ -46,6 +46,7 @@ import { PaymentSuccessComponent } from './payment/success/payment-success.compo
 export const routes: Routes = [
   { path: 'tracking', component: TrackingComponent },
   { path: 'calculator', component: CalculateShippingComponent },
+  // public ship route removed — only logged-in customers may create orders
   {
     path: 'payment/success',
     component: PaymentSuccessComponent,
@@ -84,6 +85,19 @@ export const routes: Routes = [
           { path: 'branch', component: ListBranch },
         ],
       },
+      // CUSTOMER area (separate path to distinguish from staff)
+      {
+        path: 'customer',
+        canActivate: [AuthGuard],
+        component: DashboardLayout,
+        children: [
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          { path: 'dashboard', component: DashboardHome },
+          { path: 'profile', component: DashboardProfile },
+          { path: 'order/create', component: CreateOrder },
+          { path: 'orders/list', component: ListOrder },
+        ],
+      },
     ],
   },
 
@@ -99,6 +113,7 @@ export const routes: Routes = [
       { path: 'order/edit/:id', component: AdminEditOrder },
       { path: 'pricing', component: DashboardPricingComponent },
       { path: 'support', component: SupportComponent },
+      { path: 'notifications/test', loadComponent: () => import('./dashboard-layout/dashboard-admin/notifications-test/notifications-test').then(m => m.NotificationsTest) },
       {
         path: 'branch',
         children: [

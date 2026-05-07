@@ -17,6 +17,12 @@ export class AuthService {
     private configService: ConfigService,
   ) { }
 
+  private normalizeRole(role: string) {
+    if (role === 'CUSTOMER') return 'USER';
+    if (role === 'COURIER') return 'STAFF';
+    return role;
+  }
+
   // validate user
 
   async validateUser(username: string, pass: string): Promise<any> {
@@ -26,12 +32,13 @@ export class AuthService {
     const isValid = this.usersService.isValidPassword(pass, user.password);
     if (!isValid) return null;
 
+    const normalizedRole = this.normalizeRole(user.role as string);
     const permissions =
-      user.role === 'ADMIN'
+      normalizedRole === 'ADMIN'
         ? ['manage_users', 'view_reports']
         : ['view_profile'];
 
-    return { ...user.toObject(), permissions };
+    return { ...user.toObject(), role: normalizedRole, permissions };
   }
 
   ////////////////////////////////////////////

@@ -57,6 +57,7 @@
   </aside>
 
   <main class="ap-main">
+    <div *ngIf="sidebarOpen && innerWidth < 992" class="ap-sidebar-backdrop" (click)="toggleSidebar()"></div>
     <div class="ap-topbar">
       <div class="d-flex align-items-center gap-2">
         <button class="btn btn-secondary d-lg-none" (click)="toggleSidebar()" aria-label="Mở sidebar">
@@ -69,6 +70,7 @@
       </div>
 
       <div class="d-flex align-items-center gap-2">
+        <app-notification-center></app-notification-center>
         <a [routerLink]="['/tracking']" class="btn btn-secondary btn-sm">
           <iconify-icon icon="mdi:magnify-scan"></iconify-icon>
           Tra cứu

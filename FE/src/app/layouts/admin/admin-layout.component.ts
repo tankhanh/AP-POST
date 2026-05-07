@@ -11,13 +11,16 @@ import {
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
+import { NavigationEnd } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
+import { NotificationCenter } from '../../shared/notification-center/notification-center';
+import { SoundService } from '../../services/sound.service';
 
 @Component({
   selector: 'admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NotificationCenter],
   templateUrl: './admin-layout.component.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -29,11 +32,13 @@ export class AdminLayout implements OnInit, OnDestroy {
   innerWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
   isBrowser = false;
   private sub?: Subscription;
+  private routerSub?: Subscription;
 
   constructor(
     public authService: AuthService,
     private router: Router,
     private toastr: ToastrService,
+    private sound: SoundService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -41,6 +46,16 @@ export class AdminLayout implements OnInit, OnDestroy {
     this.isBrowser = isPlatformBrowser(this.platformId);
     this.sub = this.authService.currentUser$.subscribe((u) => {
       this.user = u;
+    });
+
+    // play a sound when admin navigates to dashboard
+    this.routerSub = this.router.events.subscribe((evt) => {
+      if (evt instanceof NavigationEnd) {
+        const url = evt.urlAfterRedirects || '';
+        if (/(^|\/)admin(\/|$).*dashboard/.test(url)) {
+          try { this.sound.play(); } catch (e) {}
+        }
+      }
     });
   }
 
@@ -63,5 +78,6 @@ export class AdminLayout implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
+    this.routerSub?.unsubscribe();
   }
 }

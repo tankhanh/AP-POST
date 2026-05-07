@@ -1,0 +1,63 @@
+.notification-list {
+  right: 0;
+  top: 36px;
+  width: 360px;
+  z-index: 1050;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(18, 18, 18, 0.12);
+}
+.notification-list .notification-item .text-truncate { max-width: 260px; }
+.notification-center .btn { padding: 6px 10px; }
+
+.notif-msg { max-width: 260px; color: #4b4b4b; }
+
+/* Backdrop shown when panel is open (covers rest of UI) */
+.notification-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.28);
+  z-index: 1040;
+}
+
+.notification-list .card-header {
+  background: linear-gradient(180deg,#fff,#fbfbfb);
+  padding: 0.6rem 0.8rem;
+}
+.notification-list .card-body { background: #fff; }
+.notification-item { transition: background .12s ease; }
+.notification-item:hover { background: #fbfbfb; }
+
+/* Close button small adjustment */
+.close-btn { padding: 0.25rem 0.4rem; border-radius: 6px; }
+
+/* Mobile adjustments */
+@media (max-width: 576px) {
+  .notification-list {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 72px !important;
+    width: 100vw !important;
+    height: calc(100vh - 56px);
+    overflow: auto;
+    border-radius: 0.5rem 0.5rem 0 0;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+  }
+  .notification-list .card-header { position: sticky; top: 0; background: #fff; z-index: 10; }
+  .notification-list .notification-item .text-truncate { max-width: calc(100% - 110px); }
+}
+
+/* Slide-in animation for open */
+.notification-list {
+  animation: ap-notify-slide .18s cubic-bezier(.2,.9,.2,1);
+}
+@keyframes ap-notify-slide {
+  from { transform: translateY(-8px) translateX(6px); opacity: 0; }
+  to { transform: translateY(0) translateX(0); opacity: 1; }
+}
+
+/* Icon sizing */
+.notification-center .icon-bell { display: inline-block; vertical-align: middle; color: var(--wise-green); }
+.notification-center .icon-volume, .notification-center .icon-volume-off, .notification-center .icon-close { display:inline-block; vertical-align: middle; color: var(--wise-green); }

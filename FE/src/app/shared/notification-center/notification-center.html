@@ -1,0 +1,61 @@
+<div class="notification-center position-relative">
+  <button class="btn btn-outline-secondary d-flex align-items-center gap-2" (click)="toggle($event)" aria-label="Thông báo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-bell">
+      <path d="M12 22c1.1 0 2-.9 2-2H10c0 1.1.9 2 2 2z" fill="var(--wise-green)"/>
+      <path d="M18 16v-5c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-1.99 2H20l-2-2z" fill="currentColor" opacity="0.9"/>
+    </svg>
+    <span class="visually-hidden">Thông báo</span>
+    <span *ngIf="unreadCount > 0" class="badge bg-danger rounded-pill">{{ unreadCount }}</span>
+  </button>
+
+  <!-- Backdrop for mobile and small screens; clicking closes the panel -->
+  <div *ngIf="open" class="notification-backdrop" (click)="toggle()" aria-hidden="true"></div>
+
+  <div *ngIf="open" class="notification-list card shadow position-absolute" style="right:0; top:36px; width:360px; z-index:1050;">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <strong>Thông báo</strong>
+          <small class="text-muted ms-1">{{ unreadCount ? (unreadCount + ' mới') : '' }}</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-secondary" (click)="toggleMute($event)" aria-label="Bật/Tắt âm lượng">
+            <svg *ngIf="!muted" width="16" height="16" viewBox="0 0 24 24" class="icon-volume" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 10v4h4l5 5V5L7 10H3z" fill="var(--wise-green)"/>
+              <path d="M16.5 12a4.5 4.5 0 0 0-1.5-3.5v7a4.5 4.5 0 0 0 1.5-3.5z" fill="currentColor" opacity="0.85"/>
+            </svg>
+            <svg *ngIf="muted" width="16" height="16" viewBox="0 0 24 24" class="icon-volume-off" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 7l-1.41 1.41L18.17 12l-3.58 3.59L16 17l5-5-5-5z" fill="var(--wise-green)"/>
+              <path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor" opacity="0.9"/>
+            </svg>
+          </button>
+          <button class="btn btn-sm btn-link" (click)="markAllRead()">Đánh dấu tất cả</button>
+          <button class="btn btn-sm btn-outline-secondary close-btn" (click)="toggle($event)" aria-label="Đóng thông báo">
+            <svg width="16" height="16" viewBox="0 0 24 24" class="icon-close" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.71 2.88 18.3 9.18 12 2.88 5.71 4.29 4.29 10.59 10.6 16.88 4.29z" fill="var(--wise-green)"/>
+            </svg>
+          </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="p-3">Đang tải...</div>
+      <ul *ngIf="!loading" class="list-unstyled mb-0">
+        <li *ngFor="let n of notifications" class="notification-item p-3 border-bottom d-flex">
+          <div class="flex-grow-1">
+            <a class="notification-link d-block" (click)="openNotification(n)">
+              <strong>{{ n.title }}</strong>
+            </a>
+            <div class="small text-muted notif-msg">{{ n.message }}</div>
+            <div class="small text-muted mt-1">{{ n.createdAt | date:'short' }}</div>
+          </div>
+          <div class="ms-2 text-end d-flex flex-column align-items-end">
+            <div *ngIf="n.status === 'PENDING' && !n.readAt">
+              <button class="btn btn-sm btn-outline-primary" (click)="markRead(n, $event)">Đã đọc</button>
+            </div>
+            <div *ngIf="n.status !== 'PENDING' || n.readAt" class="small text-success">Đã đọc</div>
+            <button class="btn btn-sm btn-outline-danger mt-2" (click)="removeNotification(n, $event)">Xóa</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

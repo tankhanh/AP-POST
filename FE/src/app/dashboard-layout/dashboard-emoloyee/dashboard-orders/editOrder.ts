@@ -2,6 +2,7 @@ import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OrdersService } from '../../../services/dashboard/orders.service';
+import { AuthService } from '../../../services/auth.service';
 import { LocationService } from '../../../services/location.service';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -37,6 +38,7 @@ export class EditOrder implements OnInit {
     public router: Router,
     private ordersService: OrdersService,
     private locationService: LocationService,
+    private authService: AuthService,
   ) {
     this.createForm();
   }
@@ -45,7 +47,8 @@ export class EditOrder implements OnInit {
     this.orderId = this.route.snapshot.params['id'];
     if (!this.orderId) {
       Swal.fire('Lỗi', 'Không tìm thấy ID đơn hàng', 'error');
-      this.router.navigate(['/employee/orders/list']);
+          const base = this.authService.isCustomer() ? '/customer' : this.authService.isEmployee() ? '/employee' : '/admin';
+          this.router.navigate([`${base}/orders/list`]);
       return;
     }
 
@@ -314,7 +317,8 @@ export class EditOrder implements OnInit {
               error: (err) => console.warn('Gửi email thất bại:', err),
             });
           }
-          this.router.navigate(['/employee/orders/list']);
+          const base = this.authService.isCustomer() ? '/customer' : this.authService.isEmployee() ? '/employee' : '/admin';
+          this.router.navigate([`${base}/orders/list`]);
         });
       },
       error: (err) => {

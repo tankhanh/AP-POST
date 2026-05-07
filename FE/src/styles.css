@@ -522,6 +522,31 @@ label {
   color: var(--wise-black) !important;
 }
 
+/* Account dropdown backdrop and animation */
+.account-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.22);
+  z-index: 1040;
+}
+.dropdown-menu-end {
+  animation: ap-account-slide .16s cubic-bezier(.2,.9,.2,1);
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(8,8,8,0.12);
+}
+@keyframes ap-account-slide {
+  from { transform: translateY(-6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.icon-menu, .icon-account, .icon-chev { vertical-align: middle; }
+
+/* Ensure dropdown menu appears above the mobile backdrop so items are clickable */
+.dropdown.position-relative .dropdown-menu,
+.dropdown.d-lg-none .dropdown-menu {
+  z-index: 1060 !important;
+  position: absolute;
+}
+
 .ap-hero {
   position: relative;
   min-height: 720px;
@@ -1108,6 +1133,81 @@ label {
   border-bottom: 1px solid var(--wise-line);
   backdrop-filter: blur(16px);
 }
+
+/* Mobile / small-screen sidebar overlay behavior */
+@media (max-width: 991px) {
+  .ap-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 1040;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    transform: translateX(-100%);
+    will-change: transform;
+  }
+
+  .ap-sidebar.collapsed { transform: translateX(-100%); }
+  .ap-sidebar:not(.collapsed) { transform: translateX(0); }
+
+  .ap-sidebar-inner { padding: 18px; }
+
+  .ap-sidebar-backdrop {
+    position: fixed;
+    inset: 0 0 0 0;
+    background: rgba(0,0,0,0.36);
+    z-index: 1030;
+    transition: opacity 180ms ease;
+  }
+}
+
+/* Mobile UX improvements */
+@media (max-width: 576px) {
+  .ap-hero .ap-hero__content .ap-hero-actions .btn { display: block; width: 100%; margin-bottom: 8px; }
+  .ap-feature-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .ap-feature-card { padding: 16px; }
+  .ap-sidebar-nav .nav-link { padding: 14px 16px; font-size: 15px; }
+  .btn { min-height: 44px; }
+  .ap-topbar { padding: 12px; }
+  .ap-main .ap-page-content { padding: 12px; }
+  .ap-sidebar-backdrop { touch-action: manipulation; }
+}
+
+/* Navbar dropdown behavior on small screens: make dropdowns flow inside collapse to avoid overlapping content */
+@media (max-width: 576px) {
+  .navbar-collapse .dropdown-menu {
+    position: static !important;
+    float: none !important;
+    display: block !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  .navbar-collapse .dropdown-item { background: #fff; margin: 0; }
+}
+
+/* Floating action button (FAB) for mobile */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #8ce26b;
+  color: #0b3a00;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  z-index: 1060;
+}
+.fab:active { transform: scale(0.98); }
+
+/* Make tables horizontally scrollable on small screens */
+.table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
 
 .ap-page-content {
   padding: 28px;

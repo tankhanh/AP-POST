@@ -17,10 +17,16 @@ export enum ShippingFeePayer {
   RECEIVER = 'RECEIVER',
 }
 
+export enum OrderChannel {
+  B2B_STAFF = 'B2B_STAFF',
+  B2C_GUEST = 'B2C_GUEST',
+  B2C_USER = 'B2C_USER',
+}
+
 @Schema({ timestamps: true })
 export class Order {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
-  userId: Types.ObjectId;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, default: null })
+  userId?: Types.ObjectId | null;
 
   @Prop({ required: true })
   snapshotPricingId: Types.ObjectId;
@@ -28,6 +34,7 @@ export class Order {
   @Prop({ required: true }) senderName: string;
   @Prop({ required: true }) receiverName: string;
   @Prop({ required: true }) receiverPhone: string;
+  @Prop() senderPhone?: string;
   @Prop({ trim: true, lowercase: true })
   email?: string;
 
@@ -106,9 +113,28 @@ export class Order {
     default: 'CASH',
   })
   paymentMethod?: string;
+
+  @Prop({
+    type: String,
+    enum: OrderChannel,
+    default: OrderChannel.B2B_STAFF,
+  })
+  channel: OrderChannel;
+
+  @Prop({
+    type: String,
+    enum: ['DROPOFF', 'PICKUP'],
+    default: 'DROPOFF',
+  })
+  pickupMethod?: 'DROPOFF' | 'PICKUP';
+
+  @Prop()
+  pickupSlot?: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
 OrderSchema.index({ waybill: 1 });
 OrderSchema.index({ userId: 1, createdAt: -1 });
+OrderSchema.index({ channel: 1, userId: 1, createdAt: -1 });
+OrderSchema.index({ senderPhone: 1, channel: 1 });
 OrderSchema.plugin(softDeletePlugin);

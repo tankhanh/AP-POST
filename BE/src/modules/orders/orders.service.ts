@@ -11,7 +11,12 @@ import { Connection, Types } from 'mongoose';
 import { IUser } from 'src/types/user.interface';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { Order, OrderDocument, OrderStatus } from './schemas/order.schemas';
+import {
+  Order,
+  OrderDocument,
+  OrderStatus,
+  OrderChannel,
+} from './schemas/order.schemas';
 import { Address, AddressDocument } from '../location/schemas/address.schema';
 import { Commune, CommuneDocument } from '../location/schemas/commune.schema';
 import {
@@ -19,14 +24,30 @@ import {
   ProvinceDocument,
 } from '../location/schemas/province.schema';
 import { PricingService } from '../pricing/pricing.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/schemas/notification.schemas';
+import { User, UserDocument } from '../users/schemas/user.schema';
 import { ProvinceCode } from 'src/types/location.type';
 import { Tracking } from '../tracking/schemas/tracking.schemas';
 import { PaymentsService } from '../payments/payments.service';
 import { MailService } from '../mail/mail.service';
+import { Branch, BranchDocument } from '../branches/schemas/branch.schemas';
+import { customAlphabet } from 'nanoid';
+import dayjs from 'dayjs';
+import { ConfigService } from '@nestjs/config';
+import {
+  PublicOrderOtp,
+  PublicOrderOtpDocument,
+} from './schemas/public-order-otp.schema';
 
 @Injectable()
 export class OrdersService {
   private trackingModel: any;
+  private readonly genOtp = customAlphabet('0123456789', 6);
+  private readonly genOtpToken = customAlphabet(
+    '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+    32,
+  );
 
   constructor(
     @InjectModel(Order.name)
@@ -37,16 +58,189 @@ export class OrdersService {
     private readonly communeModel: SoftDeleteModel<CommuneDocument>,
     @InjectModel(Province.name)
     private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
+    @InjectModel(Branch.name)
+    private readonly branchModel: SoftDeleteModel<BranchDocument>,
+    @InjectModel(PublicOrderOtp.name)
+    private readonly publicOrderOtpModel: SoftDeleteModel<PublicOrderOtpDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: SoftDeleteModel<UserDocument>,
     @InjectConnection() private connection: Connection,
     private pricingService: PricingService,
     private paymentsService: PaymentsService,
     private mailService: MailService,
+    private configService: ConfigService,
+    private notificationsService: NotificationsService,
   ) {
     this.trackingModel = this.connection.model(Tracking.name);
   }
 
   private normalizeEmail(email: string) {
     return (email || '').trim().toLowerCase();
+  }
+
+  private normalizePhone(phone: string) {
+    return (phone || '').replace(/\s+/g, '').trim();
+  }
+
+  async requestPublicOtp(phoneRaw: string) {
+    const phone = this.normalizePhone(phoneRaw);
+    if (!/^[0-9]{9,11}$/.test(phone)) {
+      throw new BadRequestException('Số điện thoại không hợp lệ');
+    }
+
+    const cooldownSeconds = Number(
+      this.configService.get<string>('B2C_OTP_COOLDOWN_SECONDS', '60'),
+    );
+    const maxPerWindow = Number(
+      this.configService.get<string>('B2C_OTP_MAX_PER_30M', '5'),
+    );
+    const now = dayjs();
+
+    const recentOtp = await this.publicOrderOtpModel
+      .findOne({
+        phone,
+        createdAt: { $gte: now.subtract(cooldownSeconds, 'second').toDate() },
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+    if (recentOtp) {
+      throw new BadRequestException(
+        `Vui lòng chờ ${cooldownSeconds} giây trước khi gửi lại OTP`,
+      );
+    }
+
+    const sentCountInWindow = await this.publicOrderOtpModel.countDocuments({
+      phone,
+      createdAt: { $gte: now.subtract(30, 'minute').toDate() },
+    });
+    if (sentCountInWindow >= maxPerWindow) {
+      throw new BadRequestException(
+        'Bạn đã vượt quá số lần gửi OTP. Vui lòng thử lại sau 30 phút.',
+      );
+    }
+
+    const token = this.genOtpToken();
+    const code = this.genOtp();
+    await this.publicOrderOtpModel.create({
+      phone,
+      code,
+      token,
+      expiresAt: dayjs().add(5, 'minute').toDate(),
+    });
+
+    // Demo OTP cho môi trường dev/test: trả về code để test nhanh
+    return {
+      otpToken: token,
+      expiresInSeconds: 300,
+      devOtpCode:
+        this.configService.get<string>('NODE_ENV') === 'production'
+          ? undefined
+          : code,
+      message: 'OTP đã được tạo. Vui lòng xác thực trước khi tạo đơn.',
+    };
+  }
+
+  async verifyPublicOtp(phoneRaw: string, codeRaw: string) {
+    const phone = this.normalizePhone(phoneRaw);
+    const code = (codeRaw || '').trim();
+
+    const otpRecord = await this.publicOrderOtpModel
+      .findOne({
+        phone,
+        usedAt: null,
+      })
+      .sort({ createdAt: -1 });
+
+    if (!otpRecord) {
+      throw new BadRequestException('Không tìm thấy phiên OTP hợp lệ');
+    }
+
+    if (dayjs().isAfter(otpRecord.expiresAt)) {
+      throw new BadRequestException('OTP đã hết hạn');
+    }
+
+    if (otpRecord.attempts >= 5) {
+      throw new BadRequestException('Bạn đã nhập sai OTP quá nhiều lần');
+    }
+
+    if (otpRecord.code !== code) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      throw new BadRequestException('OTP không đúng');
+    }
+
+    otpRecord.verifiedAt = new Date();
+    await otpRecord.save();
+
+    return {
+      otpToken: otpRecord.token,
+      verified: true,
+      message: 'Xác thực OTP thành công',
+    };
+  }
+
+  private async assertPublicOtpVerified(
+    phoneRaw: string,
+    otpToken?: string,
+  ): Promise<PublicOrderOtpDocument> {
+    const phone = this.normalizePhone(phoneRaw);
+    if (!otpToken) {
+      throw new BadRequestException('Thiếu OTP token cho đơn B2C');
+    }
+
+    const otpRecord = await this.publicOrderOtpModel.findOne({
+      token: otpToken,
+      phone,
+      usedAt: null,
+    });
+    if (!otpRecord) {
+      throw new BadRequestException('OTP token không hợp lệ');
+    }
+    if (!otpRecord.verifiedAt) {
+      throw new BadRequestException('OTP chưa được xác thực');
+    }
+    if (dayjs().isAfter(otpRecord.expiresAt)) {
+      throw new BadRequestException('OTP token đã hết hạn');
+    }
+    return otpRecord;
+  }
+
+  private async resolveBranchForPublicOrder(
+    pickupProvinceId: string,
+    pickupCommuneId?: string,
+  ): Promise<Types.ObjectId | null> {
+    if (pickupCommuneId) {
+      const commune = await this.communeModel.findById(pickupCommuneId).lean();
+      if (commune?.name) {
+        const communeBranch = await this.branchModel
+          .findOne({
+            isDeleted: false,
+            isActive: true,
+            communeName: new RegExp(`^${commune.name}$`, 'i'),
+          })
+          .sort({ createdAt: 1 })
+          .lean();
+
+        if (communeBranch?._id) {
+          return new Types.ObjectId(communeBranch._id);
+        }
+      }
+    }
+
+    const province = await this.provinceModel.findById(pickupProvinceId).lean();
+    if (!province?.name) return null;
+
+    const branch = await this.branchModel
+      .findOne({
+        isDeleted: false,
+        isActive: true,
+        provinceName: new RegExp(`^${province.name}$`, 'i'),
+      })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    if (!branch?._id) return null;
+    return new Types.ObjectId(branch._id);
   }
 
   // ====================== TẠO ĐƠN HÀNG (ĐÃ TỐI ƯU) ======================
@@ -138,6 +332,7 @@ export class OrdersService {
       status: OrderStatus.PENDING,
       createdBy: { _id: new Types.ObjectId(user._id), email: user.email },
       paymentMethod: dto.paymentMethod || 'CASH',
+      channel: user.role === 'STAFF' ? OrderChannel.B2B_STAFF : OrderChannel.B2C_USER,
     });
 
     await this.trackingModel.create({
@@ -183,6 +378,247 @@ export class OrdersService {
         createdBy: { _id: user._id, email: user.email },
       },
     );
+
+    // Emit a notification to the customer if possible
+    try {
+      let recipient: string | null = null;
+
+      const emailNorm = this.normalizeEmail(dto.email);
+      const receiverPhoneNorm = this.normalizePhone(dto.receiverPhone);
+      const senderPhoneNorm = this.normalizePhone(dto.senderPhone);
+
+      if (emailNorm) {
+        const found = await this.userModel.findOne({ email: emailNorm }).lean();
+        if (found && found._id) recipient = String(found._id);
+      }
+
+      if (!recipient && receiverPhoneNorm) {
+        const foundByPhone = await this.userModel.findOne({ phone: receiverPhoneNorm }).lean();
+        if (foundByPhone && foundByPhone._id) recipient = String(foundByPhone._id);
+      }
+
+      if (!recipient && senderPhoneNorm) {
+        const foundByPhone = await this.userModel.findOne({ phone: senderPhoneNorm }).lean();
+        if (foundByPhone && foundByPhone._id) recipient = String(foundByPhone._id);
+      }
+
+      // If we couldn't resolve to a user id, fallback to email (will broadcast)
+      const notifyRecipient = recipient || (emailNorm ? emailNorm : null);
+
+      if (notifyRecipient) {
+        await this.notificationsService.create({
+          recipient: notifyRecipient,
+          title: `Đơn ${newOrder.waybill} đã tạo`,
+          message: `Đơn ${newOrder.waybill} được tạo thành công. Vui lòng theo dõi trạng thái.`,
+          type: NotificationType.PUSH,
+        } as any);
+      }
+      // Notify operational staff (role:STAFF) so employees see new incoming orders in real-time
+      try {
+        await this.notificationsService.create({
+          recipient: 'role:staff',
+          title: `Đơn mới ${newOrder.waybill}`,
+          message: `Có đơn mới ${newOrder.waybill} cần xử lý.`,
+          type: NotificationType.PUSH,
+        } as any);
+      } catch (e) {
+        // ignore
+      }
+    } catch (err) {
+      console.warn('Failed to create/send order notification:', err?.message || err);
+    }
+
+    return {
+      order: newOrder,
+      payment,
+    };
+  }
+
+  async createPublic(dto: CreateOrderDto) {
+    if (!dto.senderPhone) {
+      throw new BadRequestException('Đơn B2C cần số điện thoại người gửi');
+    }
+    const otpRecord = await this.assertPublicOtpVerified(
+      dto.senderPhone,
+      dto.publicOtpToken,
+    );
+
+    const waybill = await this.generateUniqueWaybill();
+
+    const originProv = await this.provinceModel
+      .findById(dto.pickupAddress.provinceId)
+      .lean();
+    const destProv = await this.provinceModel
+      .findById(dto.deliveryAddress.provinceId)
+      .lean();
+
+    if (!originProv?.code || !destProv?.code) {
+      throw new BadRequestException('Tỉnh/thành phố không hợp lệ');
+    }
+
+    const calcResult = await this.pricingService.calculateShipping(
+      originProv.code as ProvinceCode,
+      destProv.code as ProvinceCode,
+      dto.serviceCode || 'STD',
+      dto.weightKg,
+      originProv.code === destProv.code,
+    );
+
+    const activePricing =
+      await this.pricingService.getActivePricingByServiceCode(
+        dto.serviceCode || 'STD',
+      );
+
+    const shippingFee = Number(calcResult.totalPrice) || 0;
+    const shippingFeePayer = dto.shippingFeePayer || 'SENDER';
+    const codValue = Number(dto.codValue) || 0;
+
+    let senderPayAmount = shippingFeePayer === 'SENDER' ? shippingFee : 0;
+    let receiverPayAmount =
+      codValue + (shippingFeePayer === 'RECEIVER' ? shippingFee : 0);
+
+    const isOnlinePayment = dto.paymentMethod === 'MOMO';
+    if (isOnlinePayment && shippingFeePayer === 'SENDER') {
+      senderPayAmount += codValue;
+      receiverPayAmount = 0;
+    }
+
+    const totalOrderValue = codValue + shippingFee;
+    const [pickupAddr, deliveryAddr] = await Promise.all([
+      this.addressModel.create(dto.pickupAddress),
+      this.addressModel.create(dto.deliveryAddress),
+    ]);
+
+    const assignedBranchId = await this.resolveBranchForPublicOrder(
+      dto.pickupAddress.provinceId,
+      dto.pickupAddress.communeId,
+    );
+
+    const newOrder = await this.orderModel.create({
+      ...dto,
+      pickupAddressId: pickupAddr._id,
+      deliveryAddressId: deliveryAddr._id,
+      userId: null,
+      branchId: assignedBranchId,
+      codValue,
+      details: dto.details || null,
+      shippingFee,
+      totalPrice: totalOrderValue,
+      serviceCode: dto.serviceCode || 'STD',
+      weightKg: dto.weightKg,
+      waybill,
+      shippingFeePayer,
+      senderPayAmount,
+      receiverPayAmount,
+      totalOrderValue,
+      snapshotPricingId: activePricing._id,
+      snapshotBasePrice: activePricing.basePrice,
+      snapshotOverweightFee: calcResult.breakdown.overweightFee || 0,
+      snapshotRegionFee: calcResult.breakdown.regionFee || 0,
+      snapshotIsLocal: calcResult.breakdown.isLocal,
+      snapshotServiceCode: dto.serviceCode || 'STD',
+      snapshotWeightKg: dto.weightKg,
+      snapshotBreakdown: calcResult.breakdown,
+      status: OrderStatus.PENDING,
+      createdBy: null,
+      paymentMethod: dto.paymentMethod || 'CASH',
+      channel: OrderChannel.B2C_GUEST,
+      senderPhone: this.normalizePhone(dto.senderPhone),
+      pickupMethod: dto.pickupMethod || 'DROPOFF',
+      pickupSlot: dto.pickupSlot ? new Date(dto.pickupSlot) : null,
+    });
+
+    await this.trackingModel.create({
+      orderId: newOrder._id,
+      status: OrderStatus.PENDING,
+      timestamp: new Date(),
+      location: originProv?.name || 'Khách lẻ tạo đơn trực tuyến',
+      note: `Đơn B2C được tạo. Người gửi trả: ${senderPayAmount.toLocaleString(
+        'vi-VN',
+      )}₫ | Người nhận trả: ${receiverPayAmount.toLocaleString(
+        'vi-VN',
+      )}₫ | Hình thức: ${dto.pickupMethod || 'DROPOFF'}`,
+      createdBy: null,
+      branchId: assignedBranchId,
+    });
+
+    const customerEmail = this.normalizeEmail(dto.email);
+    if (customerEmail && !isOnlinePayment) {
+      this.mailService
+        .sendOrderConfirmation({
+          to: customerEmail,
+          receiverName: dto.receiverName,
+          waybill: newOrder.waybill,
+          shippingFee,
+          codValue,
+          senderPayAmount,
+          receiverPayAmount,
+          totalOrderValue,
+          shippingFeePayer,
+        })
+        .catch((err) =>
+          console.warn('Gửi email xác nhận B2C thất bại:', err.message),
+        );
+    }
+
+    const payment = await this.paymentsService.createPaymentForOrder(
+      newOrder._id.toString(),
+      {
+        method: dto.paymentMethod || 'CASH',
+        amount: senderPayAmount || totalOrderValue,
+        status: dto.paymentMethod === 'CASH' ? 'paid' : 'pending',
+        transactionId: newOrder._id.toString(),
+        createdBy: null,
+      },
+    );
+
+    otpRecord.usedAt = new Date();
+    await otpRecord.save();
+
+    // Emit notification for guest/public order if possible (resolve to user id by email/phone)
+    try {
+      let recipient: string | null = null;
+
+      const emailNorm = this.normalizeEmail(dto.email);
+      const receiverPhoneNorm = this.normalizePhone(dto.receiverPhone);
+      const senderPhoneNorm = this.normalizePhone(dto.senderPhone);
+
+      if (emailNorm) {
+        const found = await this.userModel.findOne({ email: emailNorm }).lean();
+        if (found && found._id) recipient = String(found._id);
+      }
+
+      if (!recipient && receiverPhoneNorm) {
+        const foundByPhone = await this.userModel.findOne({ phone: receiverPhoneNorm }).lean();
+        if (foundByPhone && foundByPhone._id) recipient = String(foundByPhone._id);
+      }
+
+      if (!recipient && senderPhoneNorm) {
+        const foundByPhone = await this.userModel.findOne({ phone: senderPhoneNorm }).lean();
+        if (foundByPhone && foundByPhone._id) recipient = String(foundByPhone._id);
+      }
+
+      const notifyRecipient = recipient || (emailNorm ? emailNorm : null);
+      if (notifyRecipient) {
+        await this.notificationsService.create({
+          recipient: notifyRecipient,
+          title: `Đơn ${newOrder.waybill} đã tạo`,
+          message: `Đơn ${newOrder.waybill} được tạo thành công. Vui lòng theo dõi trạng thái.`,
+          type: NotificationType.PUSH,
+        } as any);
+      }
+      // Notify operational staff (role:STAFF) about public/guest order
+      try {
+        await this.notificationsService.create({
+          recipient: 'role:staff',
+          title: `Đơn mới ${newOrder.waybill}`,
+          message: `Đơn B2C ${newOrder.waybill} được tạo bởi khách lẻ. Vui lòng kiểm tra.`,
+          type: NotificationType.PUSH,
+        } as any);
+      } catch (e) {}
+    } catch (err) {
+      console.warn('Failed to create/send public order notification:', err?.message || err);
+    }
 
     return {
       order: newOrder,
@@ -496,7 +932,10 @@ export class OrdersService {
           receiverName: order.receiverName || 'Khách hàng',
           waybill: order.waybill,
           status: status,
-          trackingUrl: `https://ap-post.vercel.app/tracking/${order.waybill}`,
+          trackingUrl: `${this.configService.get<string>(
+            'PUBLIC_APP_URL',
+            'http://localhost:4200',
+          )}/tracking/${order.waybill}`,
           codValue: order.codValue,
         })
         .catch((err) => console.error(`Gửi email trạng thái thất bại:`, err));

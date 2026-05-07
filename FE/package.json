@@ -44,6 +44,7 @@
     "ngx-toastr": "^19.1.0",
     "owl.carousel": "^2.3.4",
     "rxjs": "~7.8.0",
+    "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.3",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

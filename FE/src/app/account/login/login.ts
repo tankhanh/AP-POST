@@ -66,10 +66,19 @@ export class Login implements OnInit {
 
         if (this.authService.isAdmin(data.user)) {
           this.router.navigateByUrl('/admin/dashboard');
+        } else if (this.authService.isEmployee(data.user)) {
+          this.router.navigateByUrl('/employee/dashboard');
+        } else if (this.authService.isCustomer(data.user)) {
+          // Customers: prefer returnUrl when present, otherwise send to customer dashboard
+          if (this.returnUrl && this.returnUrl !== '/login') {
+            this.router.navigateByUrl(this.returnUrl);
+          } else {
+            this.router.navigateByUrl('/customer/dashboard');
+          }
         } else if (this.returnUrl && this.returnUrl !== '/login') {
           this.router.navigateByUrl(this.returnUrl);
         } else {
-          this.router.navigate(['/employee/dashboard']);
+          this.router.navigateByUrl('/');
         }
       },
       error: (err) => {

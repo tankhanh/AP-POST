@@ -1,5 +1,5 @@
 <div class="container mt-4">
-  <h4 class="fw-bold mb-3">Tạo đơn hàng mới</h4>
+  <h4 class="fw-bold mb-3">{{ pageTitle }}</h4>
 
   <form [formGroup]="orderForm" (ngSubmit)="submit()">
     <div class="row g-4">
@@ -13,6 +13,40 @@
             formControlName="senderName"
             placeholder="Nhập tên người gửi"
           />
+        </div>
+        <div class="mb-3" *ngIf="isPublicFlow">
+          <label class="form-label fw-semibold mb-2">SĐT người gửi (xác thực OTP)</label>
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              formControlName="senderPhone"
+              placeholder="0901234567"
+            />
+            <button
+              class="btn btn-outline-primary"
+              type="button"
+              (click)="requestOtp()"
+              [disabled]="requestingOtp"
+            >
+              {{ requestingOtp ? 'Đang gửi...' : 'Gửi OTP' }}
+            </button>
+          </div>
+        </div>
+        <div class="mb-3" *ngIf="isPublicFlow">
+          <label class="form-label fw-semibold mb-2">Mã OTP</label>
+          <div class="input-group">
+            <input type="text" class="form-control" [(ngModel)]="otpCode" [ngModelOptions]="{ standalone: true }" />
+            <button
+              class="btn btn-outline-success"
+              type="button"
+              (click)="verifyOtp()"
+              [disabled]="verifyingOtp"
+            >
+              {{ verifyingOtp ? 'Đang xác thực...' : 'Xác thực OTP' }}
+            </button>
+          </div>
+          <small *ngIf="otpVerified" class="text-success">SĐT đã xác thực thành công.</small>
         </div>
 
         <label class="form-label fw-semibold mb-2">Địa chỉ lấy hàng</label>
@@ -80,6 +114,17 @@
               formControlName="details"
               placeholder="Giao giờ hành chính..."
             ></textarea>
+          </div>
+          <div class="col-md-4" *ngIf="isPublicFlow">
+            <label class="form-label fw-semibold mb-2">Hình thức gửi</label>
+            <select class="form-control" formControlName="pickupMethod">
+              <option value="DROPOFF">Mang ra bưu cục</option>
+              <option value="PICKUP">Lấy hàng tận nơi</option>
+            </select>
+          </div>
+          <div class="col-md-8" *ngIf="isPublicFlow && orderForm.value.pickupMethod === 'PICKUP'">
+            <label class="form-label fw-semibold mb-2">Khung giờ lấy hàng</label>
+            <input type="datetime-local" class="form-control" formControlName="pickupSlot" />
           </div>
         </div>
         <!-- ==================== BẢN ĐỒ DUY NHẤT - LUÔN HIỂN THỊ ==================== -->
@@ -200,7 +245,7 @@
 
     <div class="text-center mt-3">
       <button class="btn btn-danger btn-lg px-5" [disabled]="loading || orderForm.invalid">
-        <span *ngIf="!loading">Tạo đơn hàng</span>
+        <span *ngIf="!loading">{{ submitLabel }}</span>
         <span *ngIf="loading">Đang tạo...</span>
       </button>
     </div>

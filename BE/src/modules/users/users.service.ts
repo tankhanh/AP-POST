@@ -14,12 +14,15 @@ import dayjs from 'dayjs';
 import { CodeAuthDto } from './dto/code-auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { customAlphabet } from 'nanoid';
+import { Order, OrderChannel, OrderDocument } from '../orders/schemas/order.schemas';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(UserM.name)
     private userModel: SoftDeleteModel<UserDocument>,
+    @InjectModel(Order.name)
+    private orderModel: SoftDeleteModel<OrderDocument>,
     private mailerService: MailerService,
   ) {}
 
@@ -32,6 +35,10 @@ export class UsersService {
 
   private normalizeEmail(email: string) {
     return (email || '').trim().toLowerCase();
+  }
+
+  private normalizePhone(phone: string | number | undefined) {
+    return phone === undefined || phone === null ? '' : String(phone).trim();
   }
 
   // Hash password bằng bcrypt
@@ -104,7 +111,7 @@ export class UsersService {
 
   /* ------------ Self-register ------------ */
   async register(user: RegisterUserDto) {
-    const { name, email, password, age, gender, address } = user;
+    const { name, email, password, age, gender, address, phone } = user;
 
     const emailNorm = this.normalizeEmail(email);
     const isExist = await this.userModel.findOne({ email: emailNorm });
@@ -123,6 +130,7 @@ export class UsersService {
       age,
       gender,
       address,
+      phone: this.normalizePhone(phone),
       role: 'USER',
       isActive: false,
       codeId,
@@ -130,7 +138,35 @@ export class UsersService {
     });
 
     await this.sendVerificationEmail(emailNorm, name, codeId);
+
     return newRegister;
+  }
+
+  private async linkGuestOrdersToUser(userId: string) {
+    const account = await this.userModel.findById(userId).lean();
+    if (!account) return 0;
+
+    const emailNorm = this.normalizeEmail(account.email);
+    const phoneNorm = this.normalizePhone(account.phone);
+    const linkConditions: any[] = [];
+    if (emailNorm) linkConditions.push({ email: emailNorm });
+    if (phoneNorm) linkConditions.push({ senderPhone: phoneNorm });
+    if (!linkConditions.length) return 0;
+
+    const result = await this.orderModel.updateMany(
+      {
+        channel: OrderChannel.B2C_GUEST,
+        userId: null,
+        isDeleted: false,
+        $or: linkConditions,
+      },
+      {
+        userId: new mongoose.Types.ObjectId(userId),
+        channel: OrderChannel.B2C_USER,
+      },
+    );
+
+    return result.modifiedCount || 0;
   }
 
   /* ------------ Active by code ------------ */
@@ -146,7 +182,11 @@ export class UsersService {
     }
 
     await this.userModel.updateOne({ _id: data._id }, { isActive: true });
-    return { message: 'Account activated successfully' };
+    const linkedOrders = await this.linkGuestOrdersToUser(data._id);
+    return {
+      message: 'Account activated successfully',
+      linkedGuestOrders: linkedOrders,
+    };
   }
 
   /* ------------ Retry Active (resend code) ------------ */

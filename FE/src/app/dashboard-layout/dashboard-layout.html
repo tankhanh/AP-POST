@@ -8,29 +8,29 @@
 
       <nav class="ap-sidebar-nav">
         <div class="ap-sidebar-section">Công việc</div>
-        <a [routerLink]="['/employee/dashboard']" routerLinkActive="active" class="nav-link">
+        <a [routerLink]="['dashboard']" routerLinkActive="active" class="nav-link">
           <iconify-icon icon="mdi:home-analytics"></iconify-icon>
           <span>Dashboard</span>
         </a>
-        <a [routerLink]="['/employee/order/create']" routerLinkActive="active" class="nav-link">
+        <a [routerLink]="['order','create']" routerLinkActive="active" class="nav-link">
           <iconify-icon icon="mdi:package-plus"></iconify-icon>
           <span>Tạo đơn</span>
         </a>
-        <a [routerLink]="['/employee/orders/list']" routerLinkActive="active" class="nav-link">
+        <a [routerLink]="['orders','list']" routerLinkActive="active" class="nav-link">
           <iconify-icon icon="mdi:package-variant-closed"></iconify-icon>
           <span>Quản lý đơn</span>
         </a>
 
         <div class="ap-sidebar-section">Tham chiếu</div>
-        <a [routerLink]="['/employee/pricing']" routerLinkActive="active" class="nav-link">
+        <a [routerLink]="['pricing']" routerLinkActive="active" class="nav-link">
           <iconify-icon icon="mdi:tag-multiple-outline"></iconify-icon>
           <span>Bảng giá</span>
         </a>
-        <a [routerLink]="['/employee/branch']" routerLinkActive="active" class="nav-link">
+        <a [routerLink]="['branch']" routerLinkActive="active" class="nav-link">
           <iconify-icon icon="mdi:office-building-marker-outline"></iconify-icon>
           <span>Chi nhánh</span>
         </a>
-        <a [routerLink]="['/employee/profile']" routerLinkActive="active" class="nav-link">
+        <a [routerLink]="['profile']" routerLinkActive="active" class="nav-link">
           <iconify-icon icon="mdi:account-outline"></iconify-icon>
           <span>Hồ sơ</span>
         </a>
@@ -54,19 +54,23 @@
     </div>
   </aside>
 
+  <!-- backdrop for mobile sidebar -->
+  <div *ngIf="!sidebarOpen === false && sidebarOpen && innerWidth < 992" class="ap-sidebar-backdrop" (click)="toggleSidebar()"></div>
+
   <main class="ap-main">
     <div class="ap-topbar">
       <div class="d-flex align-items-center gap-2">
         <button class="btn btn-secondary d-lg-none" (click)="toggleSidebar()" aria-label="Mở sidebar">
           <iconify-icon icon="mdi:menu"></iconify-icon>
         </button>
-        <div>
+          <div>
           <div class="ap-dashboard-kicker">AP Post</div>
-          <strong>Khu vực nhân viên</strong>
+          <strong>{{ user?.role === 'USER' ? 'Khu vực khách hàng' : 'Khu vực nhân viên' }}</strong>
         </div>
       </div>
 
       <div class="d-flex align-items-center gap-2">
+        <app-notification-center></app-notification-center>
         <a [routerLink]="['/tracking']" class="btn btn-secondary btn-sm">
           <iconify-icon icon="mdi:magnify-scan"></iconify-icon>
           Tra cứu
