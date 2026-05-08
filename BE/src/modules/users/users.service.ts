@@ -137,7 +137,15 @@ export class UsersService {
       codeExpired: dayjs().add(1, 'day'),
     });
 
-    await this.sendVerificationEmail(emailNorm, name, codeId);
+    try {
+      await this.sendVerificationEmail(emailNorm, name, codeId);
+    } catch (error: any) {
+      // Không rollback account nếu lỗi email: user vẫn có thể dùng retry-active để gửi lại mã.
+      console.error(
+        'Không gửi được email xác thực khi đăng ký:',
+        error?.message || error,
+      );
+    }
 
     return newRegister;
   }

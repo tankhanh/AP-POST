@@ -31,6 +31,7 @@ import { VietQrModule } from './modules/vietqr/vietqr.module';
 import { VnpayModule } from './modules/vnpay/vnpay.module';
 import { join } from 'path';
 import { MomoModule } from './modules/momo/momo.module';
+import { existsSync } from 'fs';
 
 @Module({
   imports: [
@@ -107,27 +108,61 @@ import { MomoModule } from './modules/momo/momo.module';
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        transport: {
-          host: configService.get<string>('mail_host'),
-          port: configService.get<number>('mail_port'),
-          secure: false,
-          auth: {
-            user: configService.get<string>('mail_username'),
-            pass: configService.get<string>('mail_password'),
+      useFactory: (configService: ConfigService) => {
+        const host =
+          configService.get<string>('EMAIL_HOST') ??
+          configService.get<string>('mail_host');
+        const port = Number(
+          configService.get<string>('EMAIL_PORT') ??
+            configService.get<string>('mail_port') ??
+            587,
+        );
+        const user =
+          configService.get<string>('EMAIL_AUTH_USER') ??
+          configService.get<string>('mail_username');
+        const pass =
+          configService.get<string>('EMAIL_AUTH_PASS') ??
+          configService.get<string>('mail_password');
+        const secure =
+          (configService.get<string>('EMAIL_SECURE') ?? 'false') === 'true' ||
+          port === 465;
+        const from =
+          configService.get<string>('EMAIL_FROM') ??
+          configService.get<string>('EMAIL_AUTH_USER') ??
+          'no-reply@ap-post.local';
+
+        const distTemplateDir = join(process.cwd(), 'dist/modules/mail/templates');
+        const srcTemplateDir = join(process.cwd(), 'src/modules/mail/templates');
+        const templateDir = existsSync(distTemplateDir)
+          ? distTemplateDir
+          : srcTemplateDir;
+
+        return {
+          transport: {
+            host,
+            port,
+            secure,
+            auth: {
+              user,
+              pass,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 10000,
+            tls: {
+              rejectUnauthorized: false,
+            },
           },
-          tls: {
-            rejectUnauthorized: false,
+          defaults: { from },
+          template: {
+            dir: templateDir,
+            adapter: new HandlebarsAdapter(),
+            options: {
+              strict: true,
+            },
           },
-        },
-        template: {
-          dir: join(process.cwd(), 'src/modules/mail/templates'),
-          adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
-        },
-      }),
+        };
+      },
     }),
   ],
   controllers: [AppController],
