@@ -1,16 +1,136 @@
-// src/modules/mail/mail.service.ts
-import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
+import * as SibApiV3Sdk from 'sib-api-v3-sdk';
+import * as handlebars from 'handlebars';
+import * as fs from 'fs';
+import * as path from 'path';
+import { existsSync } from 'fs';
 
 @Injectable()
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {}
+  private apiInstance: SibApiV3Sdk.TransactionalEmailsApi;
+
+  constructor() {
+    const client = SibApiV3Sdk.ApiClient.instance;
+
+    client.authentications['api-key'].apiKey = process.env.BREVO_API_KEY || '';
+
+    this.apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  }
 
   private formatPrice(num: number): string {
     return num.toLocaleString('vi-VN');
   }
 
-  // ====================== GỬI EMAIL XÁC NHẬN ĐƠN HÀNG ======================
+  // ================= TEMPLATE RENDER =================
+  private renderTemplate(templateName: string, context: any): string {
+    const distTemplatePath = path.join(
+      process.cwd(),
+      'dist/modules/mail/templates',
+      `${templateName}.hbs`,
+    );
+
+    const srcTemplatePath = path.join(
+      process.cwd(),
+      'src/modules/mail/templates',
+      `${templateName}.hbs`,
+    );
+
+    const templatePath = existsSync(distTemplatePath)
+      ? distTemplatePath
+      : srcTemplatePath;
+
+    const source = fs.readFileSync(templatePath, 'utf8');
+
+    const compiled = handlebars.compile(source);
+
+    return compiled(context);
+  }
+
+  // ================= SEND TEMPLATE MAIL =================
+  async sendTemplateMail(
+    to: string,
+    subject: string,
+    template: string,
+    context: any,
+  ): Promise<boolean> {
+    try {
+      const htmlContent = this.renderTemplate(template, context);
+
+      await this.apiInstance.sendTransacEmail({
+        sender: {
+          email: process.env.EMAIL_FROM || '',
+          name: 'AP Post',
+        },
+
+        to: [{ email: to }],
+
+        subject,
+
+        htmlContent,
+      });
+
+      console.log(`📧 EMAIL ĐÃ GỬI → ${to}`);
+
+      return true;
+    } catch (error) {
+      console.error('❌ BREVO SEND ERROR:', error);
+      return false;
+    }
+  }
+
+  // ================= GENERIC HTML =================
+  async send(to: string, subject: string, html: string): Promise<boolean> {
+    try {
+      await this.apiInstance.sendTransacEmail({
+        sender: {
+          email: process.env.EMAIL_FROM || '',
+          name: 'AP Post',
+        },
+
+        to: [{ email: to }],
+
+        subject,
+
+        htmlContent: html,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ GENERIC MAIL ERROR:', error);
+      return false;
+    }
+  }
+
+  // ================= VERIFY EMAIL =================
+  async sendVerificationEmail(
+    email: string,
+    name: string,
+    codeId: string,
+  ): Promise<boolean> {
+    return this.sendTemplateMail(email, 'Activate your account', 'register', {
+      name: name ?? email,
+      activationCode: codeId,
+    });
+  }
+
+  // ================= RESET PASSWORD =================
+  async sendResetPasswordEmail(
+    email: string,
+    name: string,
+    codeId: string,
+  ): Promise<boolean> {
+    return this.sendTemplateMail(
+      email,
+      'Change your password active code',
+      'resetpassword',
+      {
+        name,
+        resetCode: codeId,
+      },
+    );
+  }
+
+  // ================= ORDER CONFIRM =================
   async sendOrderConfirmation(params: {
     to: string;
     receiverName: string;
@@ -38,20 +158,15 @@ export class MailService {
       isReceiverPayFee: params.shippingFeePayer === 'RECEIVER',
     };
 
-    try {
-      await this.mailerService.sendMail({
-        to: params.to,
-        subject: `Đơn hàng ${params.waybill} đã được tạo thành công! | AP Post`,
-        template: 'status/pending', // ← Dùng dấu /
-        context,
-      });
-      console.log(`📧 EMAIL XÁC NHẬN ĐÃ GỬI → ${params.to}`);
-    } catch (error) {
-      console.error('❌ LỖI GỬI EMAIL XÁC NHẬN:', error);
-    }
+    await this.sendTemplateMail(
+      params.to,
+      `Đơn hàng ${params.waybill} đã được tạo thành công! | AP Post`,
+      'status/pending',
+      context,
+    );
   }
 
-  // ====================== GỬI EMAIL CẬP NHẬT TRẠNG THÁI ======================
+  // ================= STATUS UPDATE =================
   async sendStatusUpdate(params: {
     to: string;
     receiverName: string;
@@ -68,18 +183,22 @@ export class MailService {
           subject: 'Đơn hàng của bạn đã được tạo',
           templateKey: 'status/pending',
         },
+
         CONFIRMED: {
           subject: 'Đơn hàng đã được xác nhận',
           templateKey: 'status/confirmed',
         },
+
         SHIPPING: {
           subject: 'Đơn hàng đang trên đường giao đến bạn',
           templateKey: 'status/shipping',
         },
+
         COMPLETED: {
           subject: 'Giao hàng thành công! Cảm ơn bạn',
           templateKey: 'status/completed',
         },
+
         CANCELED: {
           subject: 'Đơn hàng đã bị hủy',
           templateKey: 'status/canceled',
@@ -87,10 +206,8 @@ export class MailService {
       };
 
     const config = statusMap[params.status];
-    if (!config) {
-      console.warn(`⚠️ Status không hỗ trợ gửi email: ${params.status}`);
-      return;
-    }
+
+    if (!config) return;
 
     const context = {
       name: params.receiverName || 'Khách hàng',
@@ -100,41 +217,11 @@ export class MailService {
       codValue: params.codValue ? this.formatPrice(params.codValue) : null,
     };
 
-    try {
-      await this.mailerService.sendMail({
-        to: params.to,
-        subject: `${config.subject} | ${params.waybill}`,
-        template: config.templateKey, // ← Đã dùng đúng /
-        context,
-      });
-      console.log(`📧 EMAIL TRẠNG THÁI ${params.status} ĐÃ GỬI → ${params.to}`);
-    } catch (error) {
-      console.error(`❌ LỖI GỬI EMAIL TRẠNG THÁI ${params.status}:`, error);
-    }
-  }
-
-  // ====================== GỬI EMAIL GENERIC (nếu bạn còn dùng) ======================
-  async send(
-    to: string,
-    subject: string,
-    templateOrHtml: string,
-    context?: any,
-  ): Promise<boolean> {
-    try {
-      const mailOptions: any = { to, subject };
-
-      if (context) {
-        mailOptions.template = templateOrHtml;
-        mailOptions.context = context;
-      } else {
-        mailOptions.html = templateOrHtml;
-      }
-
-      await this.mailerService.sendMail(mailOptions);
-      return true;
-    } catch (error) {
-      console.error('❌ Lỗi gửi email generic:', error);
-      return false;
-    }
+    await this.sendTemplateMail(
+      params.to,
+      `${config.subject} | ${params.waybill}`,
+      config.templateKey,
+      context,
+    );
   }
 }

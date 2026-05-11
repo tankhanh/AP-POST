@@ -2,17 +2,18 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from '../mail/mail.service';
 import aqp from 'api-query-params';
-import mongoose from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { IUser } from 'src/types/user.interface';
-import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+
 import {
   Notification,
   NotificationDocument,
   NotificationStatus,
   NotificationType,
 } from './schemas/notification.schemas';
+
 import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
@@ -21,9 +22,11 @@ export class NotificationsService {
 
   constructor(
     @InjectModel(Notification.name)
-    private notificationModel: SoftDeleteModel<NotificationDocument>,
-    private readonly mailerService: MailerService,
-    private readonly gateway: NotificationsGateway,
+    private notificationModel: Model<NotificationDocument>,
+
+    private mailService: MailService,
+
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   private normalizeRecipient(recipient?: string) {
@@ -42,6 +45,7 @@ export class NotificationsService {
 
   async create(dto: CreateNotificationDto) {
     const recipient = this.normalizeRecipient(dto.recipient);
+
     const notification = await this.notificationModel.create({
       ...dto,
       recipient,
@@ -49,31 +53,55 @@ export class NotificationsService {
       isDeleted: false,
     });
 
-    // Gửi thực tế theo type
+    // gửi email nếu là EMAIL notification
     if (dto.type === NotificationType.EMAIL) {
       await this.sendEmail(notification);
     }
 
-    // Emit real-time notification. If recipient looks like an ObjectId send to room, otherwise broadcast.
     try {
-      // support role-based recipients (e.g., 'role:ADMIN')
-      if (recipient && typeof recipient === 'string' && recipient.startsWith('role:')) {
+      if (
+        recipient &&
+        typeof recipient === 'string' &&
+        recipient.startsWith('role:')
+      ) {
         const roleRoom = recipient;
-        this.gateway.server.to(roleRoom).emit('notification', notification);
-        this.logger.log(`Emitted notification ${notification._id} to role room ${roleRoom}`);
+
+        this.notificationsGateway.server
+          .to(roleRoom)
+          .emit('notification', notification);
+
+        this.logger.log(
+          `Emitted notification ${notification._id} to role room ${roleRoom}`,
+        );
+
         return notification;
       }
+
       const isObjectId = mongoose.Types.ObjectId.isValid(recipient);
+
       if (isObjectId) {
-        this.gateway.sendToUser(recipient, 'notification', notification);
-        this.logger.log(`Emitted notification ${notification._id} to user room ${recipient}`);
+        this.notificationsGateway.sendToUser(
+          recipient,
+          'notification',
+          notification,
+        );
+
+        this.logger.log(
+          `Emitted notification ${notification._id} to user room ${recipient}`,
+        );
       } else if (recipient && recipient.includes('@')) {
-        // recipient looks like an email — emit to the email room only (avoid double-delivery)
         const em = String(recipient).trim().toLowerCase();
-        this.gateway.server.to(`email:${em}`).emit('notification', notification);
-        this.logger.log(`Emitted notification ${notification._id} to email room email:${em}`);
+
+        this.notificationsGateway.server
+          .to(`email:${em}`)
+          .emit('notification', notification);
+
+        this.logger.log(
+          `Emitted notification ${notification._id} to email room email:${em}`,
+        );
       } else {
-        this.gateway.broadcast('notification', notification);
+        this.notificationsGateway.broadcast('notification', notification);
+
         this.logger.log(`Broadcasted notification ${notification._id}`);
       }
     } catch (err) {
@@ -85,31 +113,49 @@ export class NotificationsService {
 
   async findAll(currentPage = 1, limit = 10, qs: any = {}) {
     const { filter, sort } = aqp(qs);
+
     delete filter.current;
     delete filter.pageSize;
 
-    if (filter.isDeleted === undefined) filter.isDeleted = false;
+    if (filter.isDeleted === undefined) {
+      filter.isDeleted = false;
+    }
 
-    // Normalize recipient filter: support comma-separated values or arrays -> $in
     if (filter.recipient) {
       if (Array.isArray(filter.recipient)) {
-        const arr = filter.recipient.map((r: any) => this.normalizeRecipient(r));
+        const arr = filter.recipient.map((r: any) =>
+          this.normalizeRecipient(r),
+        );
+
         filter.recipient = { $in: arr };
-      } else if (typeof filter.recipient === 'string' && filter.recipient.includes(',')) {
-        const arr = filter.recipient.split(',').map((s) => this.normalizeRecipient(s)).filter(Boolean);
-        if (arr.length) filter.recipient = { $in: arr };
+      } else if (
+        typeof filter.recipient === 'string' &&
+        filter.recipient.includes(',')
+      ) {
+        const arr = filter.recipient
+          .split(',')
+          .map((s) => this.normalizeRecipient(s))
+          .filter(Boolean);
+
+        if (arr.length) {
+          filter.recipient = { $in: arr };
+        }
       } else if (typeof filter.recipient === 'string') {
         filter.recipient = this.normalizeRecipient(filter.recipient);
-      } else if (filter.recipient.$in) {
-        filter.recipient.$in = filter.recipient.$in.map((r: any) => this.normalizeRecipient(r)).filter(Boolean);
       }
     }
 
     const page = Number(currentPage) > 0 ? Number(currentPage) : 1;
+
     const size = Number(limit) > 0 ? Number(limit) : 10;
+
     const offset = (page - 1) * size;
-    const sortOption = sort && Object.keys(sort as any).length ? sort : { createdAt: -1 };
+
+    const sortOption =
+      sort && Object.keys(sort as any).length ? sort : { createdAt: -1 };
+
     const totalItems = await this.notificationModel.countDocuments(filter);
+
     const totalPages = Math.ceil(totalItems / size);
 
     const results = await this.notificationModel
@@ -132,62 +178,102 @@ export class NotificationsService {
 
   async findOne(id: string) {
     const notification = await this.notificationModel.findById(id);
-    if (!notification || notification.isDeleted) throw new NotFoundException('Notification not found');
+
+    if (!notification || notification.isDeleted) {
+      throw new NotFoundException('Notification not found');
+    }
+
     return notification;
   }
 
   async update(id: string, dto: UpdateNotificationDto) {
     const notification = await this.notificationModel.findOneAndUpdate(
-      { _id: id, isDeleted: false },
+      {
+        _id: id,
+        isDeleted: false,
+      },
       dto,
       {
         new: true,
       },
     );
-    if (!notification) throw new NotFoundException('Notification not found');
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found');
+    }
+
     return notification;
   }
 
   async markAllRead(user: IUser) {
     const now = new Date();
+
     const recipients = this.getUserRecipients(user);
-    if (!recipients.length) return { modified: 0 };
+
+    if (!recipients.length) {
+      return { modified: 0 };
+    }
 
     const res = await this.notificationModel.updateMany(
-      { recipient: { $in: recipients }, status: { $ne: NotificationStatus.SENT }, isDeleted: false },
-      { $set: { status: NotificationStatus.SENT, readAt: now } },
+      {
+        recipient: { $in: recipients },
+        status: { $ne: NotificationStatus.SENT },
+        isDeleted: false,
+      },
+      {
+        $set: {
+          status: NotificationStatus.SENT,
+          readAt: now,
+        },
+      },
     );
-    return { modified: res.modifiedCount || 0 };
+
+    return {
+      modified: res.modifiedCount || 0,
+    };
   }
 
   async remove(id: string, user: IUser) {
     const notification = await this.notificationModel.findById(id);
-    if (!notification || notification.isDeleted) throw new NotFoundException('Notification not found');
+
+    if (!notification || notification.isDeleted) {
+      throw new NotFoundException('Notification not found');
+    }
 
     notification.isDeleted = true;
+
     notification.deletedAt = new Date();
+
     notification.deletedBy = {
       _id: new mongoose.Types.ObjectId(user._id),
       email: user.email,
     };
 
     await notification.save();
-    return { message: 'Notification deleted' };
+
+    return {
+      message: 'Notification deleted',
+    };
   }
 
+  // ================= SEND EMAIL =================
   private async sendEmail(notification: NotificationDocument) {
-    await this.mailerService.sendMail({
-      to: notification.recipient,
-      subject: notification.title,
-      template: 'notification.hbs',
-      context: {
+    const result = await this.mailService.sendTemplateMail(
+      notification.recipient,
+      notification.title,
+      'notification',
+      {
         message: notification.message,
       },
-    });
-
-    await this.notificationModel.updateOne(
-      { _id: notification._id },
-      { status: 'SENT' },
     );
+
+    if (result) {
+      await this.notificationModel.updateOne(
+        { _id: notification._id },
+        {
+          status: NotificationStatus.SENT,
+        },
+      );
+    }
   }
 }

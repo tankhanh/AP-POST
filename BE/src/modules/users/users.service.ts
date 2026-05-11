@@ -9,12 +9,16 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import aqp from 'api-query-params';
 import { Users } from 'src/health/decorator/customize';
 import { IUser } from 'src/types/user.interface';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from '../mail/mail.service';
 import dayjs from 'dayjs';
 import { CodeAuthDto } from './dto/code-auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { customAlphabet } from 'nanoid';
-import { Order, OrderChannel, OrderDocument } from '../orders/schemas/order.schemas';
+import {
+  Order,
+  OrderChannel,
+  OrderDocument,
+} from '../orders/schemas/order.schemas';
 
 @Injectable()
 export class UsersService {
@@ -23,7 +27,7 @@ export class UsersService {
     private userModel: SoftDeleteModel<UserDocument>,
     @InjectModel(Order.name)
     private orderModel: SoftDeleteModel<OrderDocument>,
-    private mailerService: MailerService,
+    private mailService: MailService,
   ) {}
 
   /* ------------ Helpers ------------ */
@@ -49,15 +53,7 @@ export class UsersService {
 
   // Gửi email kích hoạt
   async sendVerificationEmail(email: string, name: string, codeId: string) {
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Activate your account',
-      template: 'register.hbs',
-      context: {
-        name: name ?? email,
-        activationCode: codeId,
-      },
-    });
+    await this.mailService.sendVerificationEmail(email, name, codeId);
   }
 
   /* ------------ Admin create STAFF user ------------ */
@@ -237,15 +233,11 @@ export class UsersService {
       },
     );
 
-    await this.mailerService.sendMail({
-      to: user.email,
-      subject: 'Change your password active code',
-      template: 'resetpassword.hbs',
-      context: {
-        name: user?.name ?? user.email,
-        resetCode: codeId,
-      },
-    });
+    await this.mailService.sendResetPasswordEmail(
+      user.email,
+      user?.name ?? user.email,
+      codeId,
+    );
 
     return { _id: user._id, email: user.email };
   }

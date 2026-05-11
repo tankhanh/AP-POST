@@ -10,8 +10,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { HealthModule } from './health/health.module';
 import google_oauth_config from './config/google_oauth_config';
 import { MailerModule } from '@nestjs-modules/mailer';
-// import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+// import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { UsersModule } from './modules/users/users.module';
 import { FilesModule } from './modules/files/files.module';
 import { DatabasesModule } from './modules/databases/databases.module';
@@ -79,88 +79,6 @@ import { MailModule } from './modules/mail/mail.module';
     VnpayModule,
     MomoModule,
     MailModule,
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const host =
-          configService.get<string>('EMAIL_HOST') ??
-          configService.get<string>('mail_host');
-        const port = Number(
-          configService.get<string>('EMAIL_PORT') ??
-            configService.get<string>('mail_port') ??
-            587,
-        );
-        const user =
-          configService.get<string>('EMAIL_AUTH_USER') ??
-          configService.get<string>('mail_username');
-        const pass =
-          configService.get<string>('EMAIL_AUTH_PASS') ??
-          configService.get<string>('mail_password');
-        const secure =
-          (configService.get<string>('EMAIL_SECURE') ?? 'false') === 'true' ||
-          port === 465;
-        const from =
-          configService.get<string>('EMAIL_FROM') ??
-          configService.get<string>('EMAIL_AUTH_USER') ??
-          'no-reply@ap-post.local';
-
-        const distTemplateDir = join(
-          process.cwd(),
-          'dist/modules/mail/templates',
-        );
-        const srcTemplateDir = join(
-          process.cwd(),
-          'src/modules/mail/templates',
-        );
-        const templateDir = existsSync(distTemplateDir)
-          ? distTemplateDir
-          : srcTemplateDir;
-
-        console.log({
-          host,
-          port,
-          user,
-          secure,
-          from,
-        });
-
-        return {
-          transport: {
-            host,
-            port,
-            secure: false,
-
-            auth: {
-              user,
-              pass,
-            },
-
-            requireTLS: true,
-
-            tls: {
-              rejectUnauthorized: false,
-              family: 4,
-            },
-
-            logger: true,
-            debug: true,
-
-            connectionTimeout: 30000,
-            greetingTimeout: 30000,
-            socketTimeout: 30000,
-          },
-          defaults: { from },
-          template: {
-            dir: templateDir,
-            adapter: new HandlebarsAdapter(),
-            options: {
-              strict: true,
-            },
-          },
-        };
-      },
-    }),
   ],
   controllers: [AppController],
   providers: [AppService],
