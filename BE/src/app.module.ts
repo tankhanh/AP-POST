@@ -32,6 +32,7 @@ import { VnpayModule } from './modules/vnpay/vnpay.module';
 import { join } from 'path';
 import { MomoModule } from './modules/momo/momo.module';
 import { existsSync } from 'fs';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -57,34 +58,6 @@ import { existsSync } from 'fs';
       isGlobal: true,
       load: [google_oauth_config],
     }),
-    /// mailer
-    // MailerModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: async (configService: ConfigService) => ({
-    //     transport: {
-    //       host: 'smtp.gmail.com',
-    //       port: 465,
-    //       secure: true,
-    //       auth: {
-    //         user: configService.get<string>('EMAIL_AUTH_USER'),
-    //         pass: configService.get<string>('EMAIL_AUTH_PASS'),
-    //       },
-    //     },
-
-    //     defaults: {
-    //       from: 'dinhtankhanh14@gmail.com',
-    //     },
-    //     template: {
-    //       dir: process.cwd() + '/src/mail/templates/',
-    //       adapter: new HandlebarsAdapter(), // or new PugAdapter() or new EjsAdapter()
-    //       options: {
-    //         strict: true,
-    //       },
-    //     },
-    //   }),
-    //   inject: [ConfigService],
-    // }),
-    ///
     UsersModule,
     AuthModule,
     FilesModule,
@@ -105,6 +78,7 @@ import { existsSync } from 'fs';
     VietQrModule,
     VnpayModule,
     MomoModule,
+    MailModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -131,27 +105,50 @@ import { existsSync } from 'fs';
           configService.get<string>('EMAIL_AUTH_USER') ??
           'no-reply@ap-post.local';
 
-        const distTemplateDir = join(process.cwd(), 'dist/modules/mail/templates');
-        const srcTemplateDir = join(process.cwd(), 'src/modules/mail/templates');
+        const distTemplateDir = join(
+          process.cwd(),
+          'dist/modules/mail/templates',
+        );
+        const srcTemplateDir = join(
+          process.cwd(),
+          'src/modules/mail/templates',
+        );
         const templateDir = existsSync(distTemplateDir)
           ? distTemplateDir
           : srcTemplateDir;
+
+        console.log({
+          host,
+          port,
+          user,
+          secure,
+          from,
+        });
 
         return {
           transport: {
             host,
             port,
-            secure,
+            secure: false,
+
             auth: {
               user,
               pass,
             },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 10000,
+
+            requireTLS: true,
+
             tls: {
               rejectUnauthorized: false,
+              family: 4,
             },
+
+            logger: true,
+            debug: true,
+
+            connectionTimeout: 30000,
+            greetingTimeout: 30000,
+            socketTimeout: 30000,
           },
           defaults: { from },
           template: {

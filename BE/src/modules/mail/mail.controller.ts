@@ -6,6 +6,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { MailService } from './mail.service';
+import { Public } from 'src/health/decorator/customize';
 
 interface SendMailDto {
   to: string;
@@ -20,6 +21,7 @@ export class MailController {
   constructor(private readonly mailService: MailService) {}
 
   @Post('send')
+  @Public()
   async send(@Body() body: SendMailDto) {
     let result = false;
 
