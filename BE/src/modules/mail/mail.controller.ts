@@ -5,15 +5,14 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
-
 import { MailService } from './mail.service';
 
 interface SendMailDto {
   to: string;
   subject: string;
-  html?: string;
-  template?: string;
-  context?: any;
+  html?: string;           // gửi HTML thô
+  template?: string;       // tên template (status/pending, ...)
+  context?: any;           // dữ liệu cho template
 }
 
 @Controller('mail')
@@ -25,34 +24,30 @@ export class MailController {
     let result = false;
 
     if (body.template && body.context) {
-      result = await this.mailService.sendTemplateMail(
+      // Gửi theo template
+      result = await this.mailService.send(
         body.to,
         body.subject,
         body.template,
         body.context,
       );
     } else if (body.html) {
+      // Gửi HTML thô (giữ tương thích cũ)
       result = await this.mailService.send(body.to, body.subject, body.html);
     } else {
       throw new HttpException(
-        {
-          msg: 'Cần truyền html hoặc (template + context)',
-        },
+        { msg: 'Cần truyền html hoặc (template + context)' },
         HttpStatus.BAD_REQUEST,
       );
     }
 
     if (result) {
-      return {
-        msg: 'Email sent successfully',
-      };
+      return { msg: 'Email sent successfully' };
+    } else {
+      throw new HttpException(
+        { msg: 'Failed to send email' },
+        HttpStatus.BAD_REQUEST,
+      );
     }
-
-    throw new HttpException(
-      {
-        msg: 'Failed to send email',
-      },
-      HttpStatus.BAD_REQUEST,
-    );
   }
 }

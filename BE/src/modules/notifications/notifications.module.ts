@@ -6,17 +6,17 @@ import {
 import { MongooseModule } from '@nestjs/mongoose';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
+import { MailerModule } from '@nestjs-modules/mailer';
 import { NotificationsGateway } from './notifications.gateway';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Notification.name, schema: NotificationSchema },
     ]),
-    MailModule,
+    MailerModule,
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

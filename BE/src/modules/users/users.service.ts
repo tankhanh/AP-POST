@@ -9,16 +9,12 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import aqp from 'api-query-params';
 import { Users } from 'src/health/decorator/customize';
 import { IUser } from 'src/types/user.interface';
-import { MailService } from '../mail/mail.service';
+import { MailerService } from '@nestjs-modules/mailer';
 import dayjs from 'dayjs';
 import { CodeAuthDto } from './dto/code-auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { customAlphabet } from 'nanoid';
-import {
-  Order,
-  OrderChannel,
-  OrderDocument,
-} from '../orders/schemas/order.schemas';
+import { Order, OrderChannel, OrderDocument } from '../orders/schemas/order.schemas';
 
 @Injectable()
 export class UsersService {
@@ -27,7 +23,7 @@ export class UsersService {
     private userModel: SoftDeleteModel<UserDocument>,
     @InjectModel(Order.name)
     private orderModel: SoftDeleteModel<OrderDocument>,
-    private mailService: MailService,
+    private mailerService: MailerService,
   ) {}
 
   /* ------------ Helpers ------------ */
@@ -53,7 +49,20 @@ export class UsersService {
 
   // Gửi email kích hoạt
   async sendVerificationEmail(email: string, name: string, codeId: string) {
-    await this.mailService.sendVerificationEmail(email, name, codeId);
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Activate your account',
+        template: 'register.hbs',
+        context: {
+          name: name ?? email,
+          activationCode: codeId,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Verification email failed:', error);
+      // Continue without failing the registration process
+    }
   }
 
   /* ------------ Admin create STAFF user ------------ */
@@ -133,15 +142,7 @@ export class UsersService {
       codeExpired: dayjs().add(1, 'day'),
     });
 
-    try {
-      await this.sendVerificationEmail(emailNorm, name, codeId);
-    } catch (error: any) {
-      // Không rollback account nếu lỗi email: user vẫn có thể dùng retry-active để gửi lại mã.
-      console.error(
-        'Không gửi được email xác thực khi đăng ký:',
-        error?.message || error,
-      );
-    }
+    await this.sendVerificationEmail(emailNorm, name, codeId);
 
     return newRegister;
   }
@@ -233,11 +234,20 @@ export class UsersService {
       },
     );
 
-    await this.mailService.sendResetPasswordEmail(
-      user.email,
-      user?.name ?? user.email,
-      codeId,
-    );
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Change your password active code',
+        template: 'resetpassword.hbs',
+        context: {
+          name: user?.name ?? user.email,
+          resetCode: codeId,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Password reset email failed:', error);
+      // Continue without failing the process
+    }
 
     return { _id: user._id, email: user.email };
   }
