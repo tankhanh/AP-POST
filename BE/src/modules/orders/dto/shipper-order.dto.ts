@@ -54,7 +54,7 @@ export class CompleteDeliveryDto {
   @IsOptional()
   @IsString()
   @Matches(
-    /^(?:https?:\/\/[^\s]+)?\/images\/proof\/[a-f0-9-]+\.(?:jpg|png)$/i,
+    /^(?:https?:\/\/[^\s]+)?\/images\/proof\/[a-f0-9-]+\.(?:jpg|png|heic|heif)$/i,
     { message: 'proofOfDeliveryUrl không hợp lệ' },
   )
   @MaxLength(500)

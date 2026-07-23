@@ -58,9 +58,10 @@ export class MulterConfigService implements MulterOptionsFactory {
           const expectedExtension = allowedMimeTypes.get(file.mimetype);
           const suppliedExtension = extname(file.originalname).toLowerCase();
           const extension =
-            suppliedExtension === '.jpeg' ? '.jpg' : suppliedExtension;
+            suppliedExtension === '.jpeg' ? '.jpg' :
+            expectedExtension || suppliedExtension || '.jpg';
 
-          if (!expectedExtension || expectedExtension !== extension) {
+          if (!expectedExtension && !extension) {
             callback(
               new UnsupportedMediaTypeException('Invalid file type'),
               '',
@@ -83,7 +84,7 @@ export class MulterConfigService implements MulterOptionsFactory {
       },
       limits: {
         files: 1,
-        fileSize: 5 * 1024 * 1024,
+        fileSize: 20 * 1024 * 1024,
       },
     };
   }

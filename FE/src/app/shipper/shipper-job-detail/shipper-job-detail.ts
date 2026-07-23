@@ -232,10 +232,10 @@ export class ShipperJobDetail implements OnInit, OnDestroy {
     if (!file) return;
     if (
       !['image/jpeg', 'image/png', 'image/heic', 'image/heif'].includes(file.type) ||
-      file.size > 5 * 1024 * 1024
+      file.size > 20 * 1024 * 1024
     ) {
       input.value = '';
-      void Swal.fire('Ảnh không hợp lệ', 'Chỉ nhận JPG/PNG/HEIC tối đa 5 MB.', 'warning');
+      void Swal.fire('Ảnh không hợp lệ', 'Chỉ nhận JPG/PNG/HEIC, tối đa 20 MB.', 'warning');
       return;
     }
     this.proofFile = file;
