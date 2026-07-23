@@ -1,4 +1,3 @@
-// src/orders/orders.controller.ts
 import {
   Controller,
   Get,
@@ -15,8 +14,6 @@ import {
   ParseEnumPipe,
   DefaultValuePipe,
   ParseIntPipe,
-  Inject,
-  forwardRef,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -29,12 +26,10 @@ import { OrderStatus } from './schemas/order.schemas';
 import { OrdersService } from './orders.service';
 import { Roles } from 'src/health/decorator/roles.decorator';
 import { ConfigService } from '@nestjs/config';
-import { MomoInitiationError, MomoService } from '../momo/momo.service';
+import { MomoService } from '../momo/momo.service';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { Request } from 'express';
 import { PaymentMethod } from '../payments/payment.constants';
-import { PaymentStatus } from '../payments/schemas/payment.schema';
 import { PaymentsService } from '../payments/payments.service';
 import {
   AssignShipperDto,
@@ -100,7 +95,7 @@ export class OrdersController {
   @Throttle({ default: { limit: 6, ttl: 60_000 } })
   @Post('public')
   @ResponseMessage('Tạo đơn hàng B2C (khách lẻ)')
-  async createPublic(@Body() dto: CreateOrderDto, @Req() request: Request) {
+  async createPublic(@Body() dto: CreateOrderDto) {
     this.logger.debug(`Creating public order with ${dto.paymentMethod}`);
     this.assertGatewayConfigured(dto.paymentMethod);
 
@@ -142,11 +137,7 @@ export class OrdersController {
 
   @Post()
   @ResponseMessage('Tạo đơn hàng mới')
-  async create(
-    @Body() dto: CreateOrderDto,
-    @Users() user: IUser,
-    @Req() request: Request,
-  ) {
+  async create(@Body() dto: CreateOrderDto, @Users() user: IUser) {
     this.logger.debug(`Creating order with ${dto.paymentMethod}`);
     this.assertGatewayConfigured(dto.paymentMethod);
 
@@ -264,11 +255,7 @@ export class OrdersController {
   @Post(':id/momo-payment')
   @Roles('ADMIN', 'STAFF')
   @ResponseMessage('Khởi tạo giao dịch MoMo cho đơn hàng')
-  async initiateMomoPayment(
-    @Param('id') id: string,
-    @Users() user: IUser,
-    @Req() request: Request,
-  ) {
+  async initiateMomoPayment(@Param('id') id: string, @Users() user: IUser) {
     const order = await this.ordersService.findOne(id, user);
     if (order.paymentMethod !== PaymentMethod.MOMO) {
       throw new BadRequestException('Đơn này không sử dụng phương thức MOMO');
@@ -443,18 +430,6 @@ export class OrdersController {
   }
 
   // ====================== PRIVATE HELPER ======================
-  private getIpAddress(request: Request): string {
-    const forwarded = request.headers['x-forwarded-for'];
-    const raw =
-      (Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(',')[0]) ||
-      request.socket.remoteAddress ||
-      '127.0.0.1';
-    const normalized = raw.replace(/^::ffff:/, '').trim();
-    return normalized === '::1' || normalized === 'unknown'
-      ? '127.0.0.1'
-      : normalized;
-  }
-
   private assertGatewayConfigured(method?: PaymentMethod): void {
     if (method === PaymentMethod.MOMO && !this.momoService.isConfigured()) {
       throw new BadRequestException('Cổng thanh toán MoMo chưa được cấu hình');
