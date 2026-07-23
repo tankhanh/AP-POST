@@ -1,14 +1,24 @@
-<div class="container mt-4">
-  <h2 class="mb-4 fw-bold">💰 Danh sách bảng giá dịch vụ</h2>
+<div class="container-fluid">
+  <header class="ap-dashboard-header">
+    <div>
+      <div class="ap-dashboard-kicker">Tham chiếu chi phí</div>
+      <h1 class="ap-dashboard-title">Bảng giá dịch vụ.</h1>
+    </div>
+  </header>
 
   <!-- Filter Card -->
   <div class="card mb-4 p-3 shadow-sm">
     <form class="row g-3 align-items-end">
-
       <!-- Trạng thái -->
       <div class="col-md-3">
-        <label class="form-label d-block mb-1">Trạng thái</label>
-        <select class="form-select" [(ngModel)]="filters.isActive" name="isActive" (ngModelChange)="applyFilters()">
+        <label class="form-label d-block mb-1" for="pricingStatus">Trạng thái</label>
+        <select
+          id="pricingStatus"
+          class="form-select"
+          [(ngModel)]="filters.isActive"
+          name="isActive"
+          (ngModelChange)="applyFilters()"
+        >
           <option value="">Tất cả</option>
           <option [value]="true">Đang áp dụng</option>
           <option [value]="false">Không hoạt động</option>
@@ -17,8 +27,9 @@
 
       <!-- Giá từ -->
       <div class="col-md-2">
-        <label class="form-label">Giá từ</label>
+        <label class="form-label" for="pricingMin">Giá từ</label>
         <input
+          id="pricingMin"
           type="number"
           class="form-control"
           [(ngModel)]="filters.minPrice"
@@ -29,8 +40,9 @@
 
       <!-- Giá đến -->
       <div class="col-md-2">
-        <label class="form-label">Giá đến</label>
+        <label class="form-label" for="pricingMax">Giá đến</label>
         <input
+          id="pricingMax"
           type="number"
           class="form-control"
           [(ngModel)]="filters.maxPrice"
@@ -41,8 +53,9 @@
 
       <!-- Tìm kiếm theo tên dịch vụ -->
       <div class="col-md-3">
-        <label class="form-label">Tìm kiếm</label>
+        <label class="form-label" for="pricingSearch">Tìm kiếm</label>
         <input
+          id="pricingSearch"
           type="text"
           class="form-control"
           placeholder="Tên dịch vụ / ID"
@@ -51,77 +64,93 @@
           (ngModelChange)="applyFilters()"
         />
       </div>
-
     </form>
   </div>
 
   <!-- Pricing Table -->
-  <table class="table table-bordered table-hover align-middle text-center">
-    <thead class="table-light">
-      <tr>
-        <th>Dịch vụ</th>
-        <th>Giá cơ bản</th>
-        <th>Ngưỡng quá cân</th>
-        <th>Phụ phí quá cân</th>
-        <th>Hiệu lực từ</th>
-        <th>Hiệu lực đến</th>
-        <th>Trạng thái</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <ng-container *ngFor="let p of pagedPrices()">
-        <tr (click)="toggleExpand(p._id)" style="cursor: pointer">
-          <td>{{ p.serviceId?.name || p.serviceId }}</td>
-          <td>{{ p.basePrice | number }} đ</td>
-          <td>{{ p.overweightThresholdKg }} kg</td>
-          <td>{{ p.overweightFee | number }} đ</td>
-          <td>{{ p.effectiveFrom | date : 'dd/MM/yyyy' }}</td>
-          <td>{{ p.effectiveTo ? (p.effectiveTo | date:'dd/MM/yyyy') : 'Không có' }}</td>
-
-          <td>
-            <span class="badge" [ngClass]="p.isActive ? 'bg-success' : 'bg-secondary'">
-              {{ p.isActive ? 'Đang áp dụng' : 'Không hoạt động' }}
-            </span>
-          </td>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle text-center">
+      <thead class="table-light">
+        <tr>
+          <th>Dịch vụ</th>
+          <th>Giá cơ bản</th>
+          <th>Ngưỡng quá cân</th>
+          <th>Phụ phí quá cân</th>
+          <th>Hiệu lực từ</th>
+          <th>Hiệu lực đến</th>
+          <th>Trạng thái</th>
         </tr>
+      </thead>
 
-        <!-- Chi tiết -->
-        <tr *ngIf="expandedId === p._id">
-          <td colspan="7">
-            <div class="bg-dark text-white p-3 rounded-3">
-              <h6 class="fw-bold text-warning mb-3">Chi tiết bảng giá</h6>
+      <tbody>
+        <ng-container *ngFor="let p of pagedPrices()">
+          <tr (click)="toggleExpand(p._id)" (keydown.enter)="toggleExpand(p._id)" tabindex="0">
+            <td>{{ p.serviceId?.name || p.serviceId }}</td>
+            <td>{{ p.basePrice | number }} đ</td>
+            <td>{{ p.overweightThresholdKg }} kg</td>
+            <td>{{ p.overweightFee | number }} đ</td>
+            <td>{{ p.effectiveFrom | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ p.effectiveTo ? (p.effectiveTo | date: 'dd/MM/yyyy') : 'Không có' }}</td>
 
-              <p><strong class="text-warning">ID:</strong> {{ p._id }}</p>
-              <p><strong class="text-warning">Dịch vụ:</strong> {{ p.serviceId?.name || p.serviceId }}</p>
+            <td>
+              <span class="badge" [ngClass]="p.isActive ? 'bg-success' : 'bg-secondary'">
+                {{ p.isActive ? 'Đang áp dụng' : 'Không hoạt động' }}
+              </span>
+            </td>
+          </tr>
 
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong class="text-warning">Giá cơ bản:</strong> {{ p.basePrice | number }} đ</p>
-                  <p><strong class="text-warning">Ngưỡng quá cân:</strong> {{ p.overweightThresholdKg }} kg</p>
+          <!-- Chi tiết -->
+          <tr *ngIf="expandedId === p._id">
+            <td colspan="7">
+              <div class="bg-dark text-white p-3 rounded-3">
+                <h6 class="fw-bold text-warning mb-3">Chi tiết bảng giá</h6>
+
+                <p><strong class="text-warning">ID:</strong> {{ p._id }}</p>
+                <p>
+                  <strong class="text-warning">Dịch vụ:</strong>
+                  {{ p.serviceId?.name || p.serviceId }}
+                </p>
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <p>
+                      <strong class="text-warning">Giá cơ bản:</strong> {{ p.basePrice | number }} đ
+                    </p>
+                    <p>
+                      <strong class="text-warning">Ngưỡng quá cân:</strong>
+                      {{ p.overweightThresholdKg }} kg
+                    </p>
+                  </div>
+
+                  <div class="col-md-6">
+                    <p>
+                      <strong class="text-warning">Phụ phí quá cân:</strong>
+                      {{ p.overweightFee | number }} đ
+                    </p>
+                    <p>
+                      <strong class="text-warning">Hiệu lực từ:</strong>
+                      {{ p.effectiveFrom | date: 'dd/MM/yyyy' }}
+                    </p>
+                    <p>
+                      <strong class="text-warning">Hiệu lực đến:</strong>
+                      {{ p.effectiveTo ? (p.effectiveTo | date: 'dd/MM/yyyy') : 'Không có' }}
+                    </p>
+                  </div>
                 </div>
 
-                <div class="col-md-6">
-                  <p><strong class="text-warning">Phụ phí quá cân:</strong> {{ p.overweightFee | number }} đ</p>
-                  <p><strong class="text-warning">Hiệu lực từ:</strong> {{ p.effectiveFrom | date:'dd/MM/yyyy' }}</p>
-                  <p><strong class="text-warning">Hiệu lực đến:</strong> 
-                    {{ p.effectiveTo ? (p.effectiveTo | date:'dd/MM/yyyy') : 'Không có' }}
-                  </p>
-                </div>
+                <p>
+                  <strong class="text-warning">Trạng thái:</strong>
+                  <span class="badge" [ngClass]="p.isActive ? 'bg-success' : 'bg-secondary'">
+                    {{ p.isActive ? 'Đang áp dụng' : 'Không hoạt động' }}
+                  </span>
+                </p>
               </div>
-
-              <p>
-                <strong class="text-warning">Trạng thái:</strong>
-                <span class="badge" [ngClass]="p.isActive ? 'bg-success' : 'bg-secondary'">
-                  {{ p.isActive ? 'Đang áp dụng' : 'Không hoạt động' }}
-                </span>
-              </p>
-            </div>
-          </td>
-        </tr>
-      </ng-container>
-    </tbody>
-  </table>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
 
   <div *ngIf="filteredPrices.length === 0" class="alert alert-info text-center mt-3">
     Không tìm thấy bảng giá nào.
@@ -131,19 +160,15 @@
   <nav *ngIf="filteredPrices.length >= pageSize">
     <ul class="pagination justify-content-center mt-3">
       <li class="page-item" [class.disabled]="currentPage === 1">
-        <button class="page-link" (click)="changePage(currentPage - 1)">Trước</button>
+        <button type="button" class="page-link" (click)="changePage(currentPage - 1)">Trước</button>
       </li>
 
-      <li
-        class="page-item"
-        *ngFor="let p of totalPages()"
-        [class.active]="p === currentPage"
-      >
-        <button class="page-link" (click)="changePage(p)">{{ p }}</button>
+      <li class="page-item" *ngFor="let p of totalPages()" [class.active]="p === currentPage">
+        <button type="button" class="page-link" (click)="changePage(p)">{{ p }}</button>
       </li>
 
       <li class="page-item" [class.disabled]="currentPage === totalPages().length">
-        <button class="page-link" (click)="changePage(currentPage + 1)">Sau</button>
+        <button type="button" class="page-link" (click)="changePage(currentPage + 1)">Sau</button>
       </li>
     </ul>
   </nav>

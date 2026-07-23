@@ -1,36 +1,74 @@
 <div class="ap-dashboard-shell">
-  <aside class="ap-sidebar" [class.collapsed]="!sidebarOpen && innerWidth < 992">
+  <aside
+    class="ap-sidebar"
+    [class.collapsed]="!sidebarOpen && innerWidth < 992"
+    [attr.aria-hidden]="innerWidth < 992 ? !sidebarOpen : null"
+  >
     <div class="ap-sidebar-inner">
       <a [routerLink]="['/']" class="ap-sidebar-brand">
         <span class="ap-brand-mark">AP</span>
         <span class="ap-brand-text">Post</span>
       </a>
 
-      <nav class="ap-sidebar-nav">
+      <nav class="ap-sidebar-nav" aria-label="Điều hướng khu vực làm việc">
         <div class="ap-sidebar-section">Công việc</div>
-        <a [routerLink]="['dashboard']" routerLinkActive="active" class="nav-link">
+        <a
+          [routerLink]="['dashboard']"
+          routerLinkActive="active"
+          class="nav-link"
+          (click)="closeSidebarOnMobile()"
+        >
           <iconify-icon icon="mdi:home-analytics"></iconify-icon>
           <span>Dashboard</span>
         </a>
-        <a [routerLink]="['order','create']" routerLinkActive="active" class="nav-link">
+        <a
+          [routerLink]="['order', 'create']"
+          routerLinkActive="active"
+          class="nav-link"
+          (click)="closeSidebarOnMobile()"
+        >
           <iconify-icon icon="mdi:package-plus"></iconify-icon>
           <span>Tạo đơn</span>
         </a>
-        <a [routerLink]="['orders','list']" routerLinkActive="active" class="nav-link">
+        <a
+          [routerLink]="['orders', 'list']"
+          routerLinkActive="active"
+          class="nav-link"
+          (click)="closeSidebarOnMobile()"
+        >
           <iconify-icon icon="mdi:package-variant-closed"></iconify-icon>
           <span>Quản lý đơn</span>
         </a>
 
-        <div class="ap-sidebar-section">Tham chiếu</div>
-        <a [routerLink]="['pricing']" routerLinkActive="active" class="nav-link">
-          <iconify-icon icon="mdi:tag-multiple-outline"></iconify-icon>
-          <span>Bảng giá</span>
-        </a>
-        <a [routerLink]="['branch']" routerLinkActive="active" class="nav-link">
-          <iconify-icon icon="mdi:office-building-marker-outline"></iconify-icon>
-          <span>Chi nhánh</span>
-        </a>
-        <a [routerLink]="['profile']" routerLinkActive="active" class="nav-link">
+        @if (!authService.isCustomer(user)) {
+          <div class="ap-sidebar-section">Tham chiếu</div>
+          <a
+            [routerLink]="['pricing']"
+            routerLinkActive="active"
+            class="nav-link"
+            (click)="closeSidebarOnMobile()"
+          >
+            <iconify-icon icon="mdi:tag-multiple-outline"></iconify-icon>
+            <span>Bảng giá</span>
+          </a>
+          <a
+            [routerLink]="['branch']"
+            routerLinkActive="active"
+            class="nav-link"
+            (click)="closeSidebarOnMobile()"
+          >
+            <iconify-icon icon="mdi:office-building-marker-outline"></iconify-icon>
+            <span>Chi nhánh</span>
+          </a>
+        }
+
+        <div class="ap-sidebar-section">Tài khoản</div>
+        <a
+          [routerLink]="['profile']"
+          routerLinkActive="active"
+          class="nav-link"
+          (click)="closeSidebarOnMobile()"
+        >
           <iconify-icon icon="mdi:account-outline"></iconify-icon>
           <span>Hồ sơ</span>
         </a>
@@ -46,7 +84,7 @@
             <div class="text-muted small text-truncate">{{ user?.email }}</div>
           </div>
         </div>
-        <button (click)="logout()" class="btn btn-secondary btn-sm w-100">
+        <button type="button" (click)="logout()" class="btn btn-secondary btn-sm w-100">
           <iconify-icon icon="mdi:logout"></iconify-icon>
           Đăng xuất
         </button>
@@ -54,16 +92,26 @@
     </div>
   </aside>
 
-  <!-- backdrop for mobile sidebar -->
-  <div *ngIf="!sidebarOpen === false && sidebarOpen && innerWidth < 992" class="ap-sidebar-backdrop" (click)="toggleSidebar()"></div>
+  <div
+    *ngIf="sidebarOpen && innerWidth < 992"
+    class="ap-sidebar-backdrop"
+    (click)="closeSidebarOnMobile()"
+    aria-hidden="true"
+  ></div>
 
   <main class="ap-main">
     <div class="ap-topbar">
       <div class="d-flex align-items-center gap-2">
-        <button class="btn btn-secondary d-lg-none" (click)="toggleSidebar()" aria-label="Mở sidebar">
+        <button
+          type="button"
+          class="btn btn-secondary d-lg-none"
+          (click)="toggleSidebar()"
+          [attr.aria-expanded]="sidebarOpen"
+          aria-label="Mở menu điều hướng"
+        >
           <iconify-icon icon="mdi:menu"></iconify-icon>
         </button>
-          <div>
+        <div>
           <div class="ap-dashboard-kicker">AP Post</div>
           <strong>{{ user?.role === 'USER' ? 'Khu vực khách hàng' : 'Khu vực nhân viên' }}</strong>
         </div>
@@ -71,13 +119,13 @@
 
       <div class="d-flex align-items-center gap-2">
         <app-notification-center></app-notification-center>
-        <a [routerLink]="['/tracking']" class="btn btn-secondary btn-sm">
+        <a [routerLink]="['/tracking']" class="btn btn-secondary btn-sm ap-topbar-action">
           <iconify-icon icon="mdi:magnify-scan"></iconify-icon>
-          Tra cứu
+          <span>Tra cứu</span>
         </a>
-        <a [routerLink]="['/calculator']" class="btn btn-primary btn-sm">
+        <a [routerLink]="['/calculator']" class="btn btn-primary btn-sm ap-topbar-action">
           <iconify-icon icon="mdi:calculator-variant"></iconify-icon>
-          Tính cước
+          <span>Tính cước</span>
         </a>
       </div>
     </div>

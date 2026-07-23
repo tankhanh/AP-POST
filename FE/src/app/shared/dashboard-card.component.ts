@@ -28,4 +28,3 @@ export class DashboardCardComponent {
   @Input() iconColor = 'var(--wise-green)';
   @Input() iconBackground = 'var(--wise-lime)';
 }
-

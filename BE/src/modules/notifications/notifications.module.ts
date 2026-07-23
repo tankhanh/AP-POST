@@ -6,17 +6,19 @@ import {
 import { MongooseModule } from '@nestjs/mongoose';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
-import { MailerModule } from '@nestjs-modules/mailer';
 import { NotificationsGateway } from './notifications.gateway';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Order, OrderSchema } from '../orders/schemas/order.schemas';
+import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Notification.name, schema: NotificationSchema },
+      { name: Order.name, schema: OrderSchema },
+      { name: User.name, schema: UserSchema },
     ]),
-    MailerModule,
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

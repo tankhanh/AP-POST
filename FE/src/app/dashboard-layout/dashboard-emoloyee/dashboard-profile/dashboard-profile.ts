@@ -3,11 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../../services/auth.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './dashboard-profile.html',
 })
 export class DashboardProfile implements OnInit {
@@ -17,7 +18,7 @@ export class DashboardProfile implements OnInit {
   constructor(
     private authService: AuthService,
     private toastr: ToastrService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit() {
@@ -25,15 +26,17 @@ export class DashboardProfile implements OnInit {
     if (this.isBrowser) {
       const stored = localStorage.getItem('user');
       if (stored) {
-        this.user = JSON.parse(stored);
-
-        // Bổ sung giá trị mặc định nếu thiếu
-        this.user.accountType = this.user.accountType || 'LOCAL';
-        this.user.role = this.user.role || 'USER';
-        this.user.createdAt = this.user.createdAt ? new Date(this.user.createdAt) : new Date();
+        try {
+          this.user = JSON.parse(stored);
+          this.user.accountType = this.user.accountType || 'LOCAL';
+          this.user.role = this.user.role || 'USER';
+          this.user.createdAt = this.user.createdAt ? new Date(this.user.createdAt) : new Date();
+        } catch {
+          localStorage.removeItem('user');
+          this.user = {};
+        }
       }
     }
-    console.log('User data:', this.user);
   }
 
   update() {
@@ -45,13 +48,8 @@ export class DashboardProfile implements OnInit {
       phone: this.user.phone,
     };
 
-    // Nếu có nhập mật khẩu mới thì thêm vào
-    if (this.user.password && this.user.password.trim() !== '') {
-      updateData.password = this.user.password;
-    }
-
     this.authService.updateAccount(this.user._id, updateData).subscribe({
-      next: (res) => {
+      next: () => {
         this.toastr.success('Cập nhật thông tin thành công');
         // Cập nhật lại user lưu trong localStorage
         this.authService.setUser({

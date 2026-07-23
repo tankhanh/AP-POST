@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { BranchService } from '../../../services/branch.service';
 
 @Component({
@@ -9,6 +8,7 @@ import { BranchService } from '../../../services/branch.service';
   templateUrl: './dashboard-branch.html',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class ListBranch implements OnInit {
   branches: any[] = [];
@@ -56,7 +56,7 @@ export class ListBranch implements OnInit {
         (b) =>
           b.code?.toLowerCase().includes(s) ||
           b.name?.toLowerCase().includes(s) ||
-          b.address?.toLowerCase().includes(s)
+          b.address?.toLowerCase().includes(s),
       );
     }
 
@@ -85,15 +85,15 @@ export class ListBranch implements OnInit {
     this.expandedId = this.expandedId === id ? null : id;
   }
 
-  // DELETE
-  deleteBranch(id: string, event: Event) {
-    event.stopPropagation();
+  statusText(isActive: boolean): string {
+    return isActive ? 'Hoạt động' : 'Tạm dừng';
+  }
 
-    if (!confirm('Bạn có chắc muốn xóa chi nhánh này?')) return;
-
-    this.branchService.delete(id).then(() => {
-      alert('Đã xóa chi nhánh');
-      this.loadBranches();
-    });
+  statusClass(isActive: boolean): any {
+    return {
+      'badge-status': true,
+      'status-completed': isActive,
+      'status-pending': !isActive,
+    };
   }
 }

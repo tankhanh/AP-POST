@@ -17,6 +17,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { ResponseMessage, Users } from 'src/health/decorator/customize';
 import { IUser } from 'src/types/user.interface';
+import { Roles } from 'src/health/decorator/roles.decorator';
 
 @ApiTags('notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,6 +26,7 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Post()
+  @Roles('ADMIN', 'STAFF')
   @ResponseMessage('Tạo thông báo mới')
   create(@Body() dto: CreateNotificationDto) {
     return this.notificationsService.create(dto);
@@ -36,27 +38,36 @@ export class NotificationsController {
     @Query('current') currentPage: string,
     @Query('pageSize') limit: string,
     @Query() qs?: any,
+    @Users() user?: IUser,
   ) {
-    return this.notificationsService.findAll(+currentPage, +limit, qs || {});
+    return this.notificationsService.findAll(
+      +currentPage,
+      +limit,
+      qs || {},
+      user,
+    );
   }
 
   @Get(':id')
   @ResponseMessage('Chi tiết thông báo')
-  findOne(@Param('id') id: string) {
-    return this.notificationsService.findOne(id);
+  findOne(@Param('id') id: string, @Users() user: IUser) {
+    return this.notificationsService.findOne(id, user);
   }
   @Patch('mark-all-read')
   @ResponseMessage('Đánh dấu tất cả đã đọc')
   markAllRead(@Users() user: IUser) {
     return this.notificationsService.markAllRead(user);
   }
-  
+
   @Patch(':id')
   @ResponseMessage('Cập nhật thông báo')
-  update(@Param('id') id: string, @Body() dto: UpdateNotificationDto) {
-    return this.notificationsService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateNotificationDto,
+    @Users() user: IUser,
+  ) {
+    return this.notificationsService.update(id, dto, user);
   }
-
 
   @Delete(':id')
   @ResponseMessage('Xóa thông báo')

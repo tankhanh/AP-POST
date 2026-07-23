@@ -9,7 +9,6 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
-import { SoundService } from '../../services/sound.service';
 import { NotificationCenter } from '../../shared/notification-center/notification-center';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -25,20 +24,18 @@ import { ToastrService } from 'ngx-toastr';
 export class EmployeeLayout implements OnInit, OnDestroy {
   isAuthPage = false;
   user: any = null;
-  balance = 0;
   isBrowser = false;
-  sidebarOpen = true;
-  innerWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
   private userSubscription?: Subscription;
   private routerSubscription?: Subscription;
   accountOpen = false;
+  publicMenuOpen = false;
+  showScrollToTop = false;
 
   constructor(
     public authService: AuthService,
     private router: Router,
     private toastr: ToastrService,
-    private sound: SoundService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
@@ -54,25 +51,34 @@ export class EmployeeLayout implements OnInit, OnDestroy {
 
     this.routerSubscription = this.router.events.subscribe((evt) => {
       if (evt instanceof NavigationEnd) {
-        // play a small sound when entering the dashboard area to give auditory feedback
-        const url = evt.urlAfterRedirects || '';
-        if (/(^|\/)employee(\/|$).*dashboard/.test(url) || /(^|\/)customer(\/|$).*dashboard/.test(url)) {
-          try { this.sound.play(); } catch (e) {}
-        }
         this.checkUrl(evt.urlAfterRedirects);
+        this.publicMenuOpen = false;
+        this.accountOpen = false;
       }
     });
   }
 
-  @HostListener('window:resize')
-  onResize() {
+  @HostListener('window:scroll')
+  onScroll() {
     if (!this.isBrowser) return;
-    this.innerWidth = window.innerWidth;
-    this.sidebarOpen = this.innerWidth >= 992;
+    this.showScrollToTop = window.scrollY > 100;
   }
 
-  toggleSidebar() {
-    this.sidebarOpen = !this.sidebarOpen;
+  togglePublicMenu() {
+    this.publicMenuOpen = !this.publicMenuOpen;
+    if (this.publicMenuOpen) this.accountOpen = false;
+  }
+
+  scrollToTop() {
+    if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  get orderSupportLink(): any[] {
+    if (!this.authService.isLoggedIn()) return ['/ship'];
+    if (this.authService.isAdmin(this.user)) return ['/admin/dashboard'];
+    if (this.authService.isShipper(this.user)) return ['/shipper'];
+    if (this.authService.isEmployee(this.user)) return ['/employee/dashboard'];
+    return ['/customer/dashboard'];
   }
 
   private checkUrl(url: string) {
@@ -91,9 +97,6 @@ export class EmployeeLayout implements OnInit, OnDestroy {
     this.authService.logout();
     this.router.navigate(['/']);
     this.toastr.success('Đăng xuất thành công!');
-    setTimeout(() => {
-      if (this.isBrowser) window.location.href = '/';
-    }, 800);
   }
 
   toggleAccount(event?: Event) {
@@ -103,6 +106,12 @@ export class EmployeeLayout implements OnInit, OnDestroy {
 
   closeAccount() {
     this.accountOpen = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  closeMenus() {
+    this.accountOpen = false;
+    this.publicMenuOpen = false;
   }
 
   ngOnDestroy(): void {

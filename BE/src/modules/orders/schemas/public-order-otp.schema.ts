@@ -8,6 +8,9 @@ export class PublicOrderOtp {
   @Prop({ required: true, index: true })
   phone: string;
 
+  @Prop({ required: true, index: true, trim: true, lowercase: true })
+  email: string;
+
   @Prop({ required: true })
   code: string;
 
@@ -27,5 +30,8 @@ export class PublicOrderOtp {
   usedAt?: Date;
 }
 
-export const PublicOrderOtpSchema = SchemaFactory.createForClass(PublicOrderOtp);
+export const PublicOrderOtpSchema =
+  SchemaFactory.createForClass(PublicOrderOtp);
 PublicOrderOtpSchema.index({ phone: 1, createdAt: -1 });
+PublicOrderOtpSchema.index({ email: 1, createdAt: -1 });
+PublicOrderOtpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

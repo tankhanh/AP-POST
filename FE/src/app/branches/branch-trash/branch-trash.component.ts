@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { BranchService } from '../../services/branch.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-branch-trash',
@@ -14,7 +15,10 @@ export class BranchTrashComponent implements OnInit {
   branches: any[] = [];
   isLoading = false;
 
-  constructor(private branchService: BranchService, private toastr: ToastrService) {}
+  constructor(
+    private branchService: BranchService,
+    private toastr: ToastrService,
+  ) {}
 
   ngOnInit(): void {
     this.loadTrash();
@@ -26,8 +30,7 @@ export class BranchTrashComponent implements OnInit {
     this.branchService
       .findTrash()
       .then((branches: any[]) => {
-        console.log('trash data = ', branches); // lúc này là Array(4)
-        this.branches = branches; // gán mảng
+        this.branches = branches;
         this.isLoading = false;
       })
       .catch((err) => {
@@ -37,8 +40,15 @@ export class BranchTrashComponent implements OnInit {
       });
   }
 
-  restore(id: string) {
-    if (!confirm('Khôi phục chi nhánh này?')) return;
+  async restore(id: string) {
+    const result = await Swal.fire({
+      title: 'Khôi phục chi nhánh?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Khôi phục',
+      cancelButtonText: 'Hủy',
+    });
+    if (!result.isConfirmed) return;
 
     this.isLoading = true;
     this.branchService
@@ -54,8 +64,17 @@ export class BranchTrashComponent implements OnInit {
       });
   }
 
-  hardDelete(id: string) {
-    if (!confirm('Xoá vĩnh viễn? Dữ liệu sẽ không thể khôi phục.')) return;
+  async hardDelete(id: string) {
+    const result = await Swal.fire({
+      title: 'Xóa vĩnh viễn chi nhánh?',
+      text: 'Dữ liệu sẽ không thể khôi phục.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xóa vĩnh viễn',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#d03238',
+    });
+    if (!result.isConfirmed) return;
 
     this.isLoading = true;
     this.branchService

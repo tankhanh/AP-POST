@@ -1,0 +1,236 @@
+<section class="shipper-page">
+  <header class="shipper-page-header">
+    <div>
+      <span class="eyebrow">Tuyến giao hôm nay</span>
+      <h1>{{ view === 'history' ? 'Lịch sử giao hàng' : 'Công việc của bạn' }}</h1>
+      <p>Nhận đơn, điều hướng và cập nhật kết quả ngay trên điện thoại.</p>
+    </div>
+    <button type="button" class="icon-button" (click)="refresh()" aria-label="Làm mới">
+      <iconify-icon icon="mdi:refresh"></iconify-icon>
+    </button>
+  </header>
+
+  <div class="summary-grid" *ngIf="view !== 'history'">
+    <article>
+      <span>Chờ xử lý</span>
+      <strong>{{ summary.assigned }}</strong>
+    </article>
+    <article>
+      <span>Đang giao</span>
+      <strong>{{ summary.delivering }}</strong>
+    </article>
+    <article class="accent">
+      <span>Hoàn tất hôm nay</span>
+      <strong>{{ summary.completedToday }}</strong>
+    </article>
+    <article class="wide">
+      <span>Tiền cần thu trên tuyến</span>
+      <strong>{{ summary.codToCollect | number }} đ</strong>
+    </article>
+  </div>
+
+  <div class="job-tools">
+    <label class="search-box">
+      <iconify-icon icon="mdi:magnify"></iconify-icon>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        (keyup.enter)="refresh()"
+        placeholder="Mã vận đơn, người nhận, số điện thoại"
+        aria-label="Tìm đơn giao"
+      />
+      <button
+        *ngIf="search"
+        type="button"
+        class="clear-search"
+        (click)="search = ''; refresh()"
+        aria-label="Xóa từ khóa"
+      >
+        <iconify-icon icon="mdi:close"></iconify-icon>
+      </button>
+    </label>
+    <div class="view-tabs" *ngIf="view !== 'history'">
+      <button [class.active]="view === 'active'" (click)="changeView('active')">Đang xử lý</button>
+      <button [class.active]="view === 'assigned'" (click)="changeView('assigned')">
+        Chờ nhận
+      </button>
+      <button [class.active]="view === 'failed'" (click)="changeView('failed')">Cần xử lý</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="state-panel" role="status">
+    <span class="spinner-border"></span>
+    <span>Đang tải tuyến giao...</span>
+  </div>
+
+  <div *ngIf="error && !loading" class="state-panel error">
+    <iconify-icon icon="mdi:alert-circle-outline"></iconify-icon>
+    <span>{{ error }}</span>
+    <button type="button" (click)="refresh()">Thử lại</button>
+  </div>
+
+  <div *ngIf="!loading && !error && jobs.length === 0" class="state-panel empty">
+    <iconify-icon icon="mdi:package-variant-closed-check"></iconify-icon>
+    <strong>Không có đơn trong nhóm này</strong>
+    <span>Tuyến giao mới sẽ xuất hiện tại đây.</span>
+  </div>
+
+  <div class="result-caption" *ngIf="!loading && !error && jobs.length">
+    <span>{{ totalJobs }} đơn trong nhóm</span>
+    <span>Đã hiển thị {{ jobs.length }}</span>
+  </div>
+
+  <div class="job-list" *ngIf="!loading && !error" aria-live="polite">
+    <article class="job-card" *ngFor="let job of jobs; trackBy: trackJob">
+      <div class="job-card-head">
+        <div>
+          <a class="waybill" [routerLink]="['/shipper/jobs', job._id]">{{ job.waybill }}</a>
+          <small>{{ job.serviceCode }} · {{ job.weightKg | number: '1.0-2' }} kg</small>
+        </div>
+        <span class="state-badge" [attr.data-state]="job.deliveryState">
+          {{ stateLabel(job.deliveryState) }}
+        </span>
+      </div>
+
+      <div class="recipient-row">
+        <span class="recipient-avatar">{{ (job.receiverName || 'N').slice(0, 1) }}</span>
+        <div>
+          <strong>{{ job.receiverName }}</strong>
+          <a [href]="'tel:' + job.receiverPhone">{{ job.receiverPhone }}</a>
+        </div>
+        <a class="round-action" [href]="'tel:' + job.receiverPhone" aria-label="Gọi người nhận">
+          <iconify-icon icon="mdi:phone-outline"></iconify-icon>
+        </a>
+      </div>
+
+      <div class="address-block">
+        <iconify-icon icon="mdi:map-marker-outline"></iconify-icon>
+        <div>
+          <span>Điểm giao</span>
+          <strong>{{ formatAddress(job.deliveryAddressId) }}</strong>
+        </div>
+      </div>
+
+      <div class="pickup-hint">
+        <iconify-icon icon="mdi:package-variant-closed"></iconify-icon>
+        <span><strong>Lấy từ:</strong> {{ formatAddress(job.pickupAddressId) }}</span>
+      </div>
+
+      <div class="money-row">
+        <span>COD cần thu</span>
+        <strong>{{ job.receiverPayAmount || job.codValue || 0 | number }} đ</strong>
+      </div>
+
+      <div class="failure-note" *ngIf="job.deliveryState === 'FAILED'">
+        <iconify-icon icon="mdi:alert-outline"></iconify-icon>
+        <span>{{ job.deliveryFailureReason || 'Đang chờ điều phối xử lý lại.' }}</span>
+      </div>
+
+      <div class="assignment-deadline" *ngIf="job.deliveryState === 'ASSIGNED'">
+        <iconify-icon icon="mdi:timer-sand"></iconify-icon>
+        <span>
+          Phản hồi phân công
+          <strong *ngIf="job.assignmentExpiresAt">
+            trước {{ job.assignmentExpiresAt | date: 'HH:mm, dd/MM' }}
+          </strong>
+          <strong *ngIf="!job.assignmentExpiresAt">sớm nhất có thể</strong>
+        </span>
+      </div>
+
+      <div class="proof-row" *ngIf="job.deliveryState === 'DELIVERING'">
+        <label>
+          <iconify-icon icon="mdi:camera-outline"></iconify-icon>
+          <span>{{ proofName(job._id) || 'Thêm ảnh giao hàng' }}</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png"
+            capture="environment"
+            (change)="selectProof(job._id, $event)"
+          />
+        </label>
+        <small>JPG/PNG, tối đa 1 MB</small>
+      </div>
+
+      <div class="job-actions">
+        <a class="detail-action" [routerLink]="['/shipper/jobs', job._id]">
+          <iconify-icon icon="mdi:text-box-search-outline"></iconify-icon>
+          Chi tiết
+        </a>
+        <a class="secondary-action" [href]="mapUrl(job)" target="_blank" rel="noopener">
+          <iconify-icon icon="mdi:navigation-variant-outline"></iconify-icon>
+          Chỉ đường
+        </a>
+
+        <button
+          *ngIf="job.deliveryState === 'ASSIGNED'"
+          class="primary-action"
+          [disabled]="busyOrderId === job._id"
+          (click)="accept(job)"
+        >
+          Nhận đơn
+        </button>
+        <button
+          *ngIf="job.deliveryState === 'ASSIGNED'"
+          class="danger-action"
+          [disabled]="busyOrderId === job._id"
+          (click)="reject(job)"
+        >
+          Từ chối
+        </button>
+        <button
+          *ngIf="job.deliveryState === 'ACCEPTED'"
+          class="primary-action"
+          [disabled]="busyOrderId === job._id"
+          (click)="start(job)"
+        >
+          Bắt đầu giao
+        </button>
+        <button
+          *ngIf="job.deliveryState === 'FAILED'"
+          class="primary-action"
+          type="button"
+          [disabled]="busyOrderId === job._id"
+          (click)="retry(job)"
+        >
+          Giao lại
+        </button>
+        <button
+          *ngIf="job.deliveryState === 'DELIVERING'"
+          class="location-action"
+          [disabled]="busyOrderId === job._id"
+          (click)="shareLocation(job)"
+          aria-label="Cập nhật vị trí"
+        >
+          <iconify-icon icon="mdi:crosshairs-gps"></iconify-icon>
+        </button>
+        <button
+          *ngIf="job.deliveryState === 'DELIVERING'"
+          class="primary-action"
+          [disabled]="busyOrderId === job._id"
+          (click)="complete(job)"
+        >
+          Đã giao
+        </button>
+        <button
+          *ngIf="job.deliveryState === 'DELIVERING'"
+          class="danger-action"
+          [disabled]="busyOrderId === job._id"
+          (click)="fail(job)"
+        >
+          Giao lỗi
+        </button>
+      </div>
+    </article>
+  </div>
+
+  <button
+    *ngIf="!loading && !error && currentPage < totalPages"
+    type="button"
+    class="load-more"
+    [disabled]="loadingMore"
+    (click)="loadMore()"
+  >
+    <span *ngIf="!loadingMore">Xem thêm đơn giao</span>
+    <span *ngIf="loadingMore">Đang tải thêm...</span>
+  </button>
+</section>

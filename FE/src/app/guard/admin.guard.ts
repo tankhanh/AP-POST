@@ -12,13 +12,14 @@ import { AuthService } from '../services/auth.service';
   providedIn: 'root',
 })
 export class AdminGuard implements CanActivate {
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
     const isLoggedIn = this.authService.isLoggedIn();
     const isAdmin = this.authService.isAdmin(); // ✅ dùng hàm đã normalize trong AuthService
-
-    console.log('AdminGuard => isLoggedIn:', isLoggedIn, 'isAdmin:', isAdmin);
 
     if (isLoggedIn && isAdmin) {
       return true;
@@ -31,7 +32,6 @@ export class AdminGuard implements CanActivate {
       });
     }
 
-    // Đã login nhưng không phải admin → cho về dashboard user
-    return this.router.createUrlTree(['/dashboard']);
+    return this.router.createUrlTree([this.authService.dashboardUrl()]);
   }
 }

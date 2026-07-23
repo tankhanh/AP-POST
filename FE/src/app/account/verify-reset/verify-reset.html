@@ -1,7 +1,11 @@
 <section class="auth-page">
   <div class="container">
     <div class="auth-card auth-card-narrow">
-      <a href="/" class="auth-brand">
+      <a [routerLink]="['/forget-password']" class="auth-back-link">
+        <span class="auth-back-arrow" aria-hidden="true">←</span>
+        <span>Quay lại</span>
+      </a>
+      <a [routerLink]="['/']" class="auth-brand">
         <span class="ap-brand-mark">AP</span>
         <span class="ap-brand-text">AP Post</span>
       </a>
@@ -19,20 +23,24 @@
             placeholder="Nhập mã"
             [(ngModel)]="code"
             name="code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
             required
           />
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg w-100">
-          Xác nhận
-        </button>
+        <button type="submit" class="btn btn-primary btn-lg w-100">Xác nhận</button>
       </form>
 
       @if (successMessage) {
-        <div class="alert alert-success mt-3">{{ successMessage }}</div>
+        <div class="alert alert-success mt-3" role="status" aria-live="polite">
+          {{ successMessage }}
+        </div>
       }
       @if (errorMessage) {
-        <div class="alert alert-danger mt-3">{{ errorMessage }}</div>
+        <div class="alert alert-danger mt-3" role="alert" aria-live="polite">
+          {{ errorMessage }}
+        </div>
       }
     </div>
   </div>

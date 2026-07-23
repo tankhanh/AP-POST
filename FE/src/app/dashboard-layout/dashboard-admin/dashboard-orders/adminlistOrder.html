@@ -1,24 +1,15 @@
 <div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0 fw-bold">Danh sách đơn hàng của bạn</h2>
+  <div class="ap-dashboard-header">
+    <div>
+      <div class="ap-dashboard-kicker">Vận hành đơn hàng</div>
+      <h1 class="ap-dashboard-title">Quản lý đơn hàng.</h1>
+    </div>
     <a
       routerLink="/admin/order/create"
       class="btn btn-success btn-lg shadow-sm d-flex align-items-center gap-2"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        fill="currentColor"
-        class="bi bi-plus-circle"
-        viewBox="0 0 16 16"
-      >
-        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-        <path
-          d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"
-        />
-      </svg>
-      <span class="fw-semibold">Tạo đơn hàng mới</span>
+      <i class="bi bi-plus-circle" aria-hidden="true"></i>
+      <span class="fw-semibold">Tạo đơn mới</span>
     </a>
   </div>
 
@@ -26,16 +17,18 @@
   <div class="card mb-4 p-3 shadow-sm">
     <form class="row g-3 align-items-end">
       <div class="col-md-3">
-        <label class="form-label d-block mb-1">Trạng thái</label>
+        <label class="form-label d-block mb-1" for="statusFilter">Trạng thái</label>
         <div class="dropdown">
           <button
+            id="statusFilter"
             class="btn btn-outline-secondary dropdown-toggle w-100 btn-sm"
             type="button"
-            data-bs-toggle="dropdown"
+            (click)="statusFilterOpen = !statusFilterOpen"
+            [attr.aria-expanded]="statusFilterOpen"
           >
             Chọn trạng thái ({{ filters.status.length }})
           </button>
-          <ul class="dropdown-menu p-2" style="min-width: 200px">
+          <ul class="dropdown-menu p-2 status-filter-menu" [class.show]="statusFilterOpen">
             <li *ngFor="let s of statusOptions">
               <div class="form-check mb-1">
                 <input
@@ -53,8 +46,9 @@
       </div>
 
       <div class="col-md-2">
-        <label class="form-label">Từ ngày</label>
+        <label class="form-label" for="fromDateFilter">Từ ngày</label>
         <input
+          id="fromDateFilter"
           type="date"
           class="form-control"
           [(ngModel)]="filters.fromDate"
@@ -63,8 +57,9 @@
         />
       </div>
       <div class="col-md-2">
-        <label class="form-label">Đến ngày</label>
+        <label class="form-label" for="toDateFilter">Đến ngày</label>
         <input
+          id="toDateFilter"
           type="date"
           class="form-control"
           [(ngModel)]="filters.toDate"
@@ -73,8 +68,9 @@
         />
       </div>
       <div class="col-md-2">
-        <label class="form-label">Giá từ</label>
+        <label class="form-label" for="minPriceFilter">Giá từ</label>
         <input
+          id="minPriceFilter"
           type="number"
           class="form-control"
           [(ngModel)]="filters.minPrice"
@@ -83,8 +79,9 @@
         />
       </div>
       <div class="col-md-2">
-        <label class="form-label">Giá đến</label>
+        <label class="form-label" for="maxPriceFilter">Giá đến</label>
         <input
+          id="maxPriceFilter"
           type="number"
           class="form-control"
           [(ngModel)]="filters.maxPrice"
@@ -93,8 +90,9 @@
         />
       </div>
       <div class="col-md-3">
-        <label class="form-label">Tìm kiếm mã vận đơn</label>
+        <label class="form-label" for="waybillFilter">Tìm kiếm mã vận đơn</label>
         <input
+          id="waybillFilter"
           type="text"
           class="form-control"
           placeholder="VD: HN123456..."
@@ -104,8 +102,9 @@
         />
       </div>
       <div class="col-md-3">
-        <label class="form-label">Người nhận</label>
+        <label class="form-label" for="receiverNameFilter">Người nhận</label>
         <input
+          id="receiverNameFilter"
           type="text"
           class="form-control"
           placeholder="Tên người nhận"
@@ -115,8 +114,9 @@
         />
       </div>
       <div class="col-md-3">
-        <label class="form-label">SĐT người nhận</label>
+        <label class="form-label" for="receiverPhoneFilter">SĐT người nhận</label>
         <input
+          id="receiverPhoneFilter"
           type="text"
           class="form-control"
           placeholder="SĐT"
@@ -129,195 +129,243 @@
   </div>
 
   <!-- Orders Table -->
-  <table class="table table-bordered table-hover align-middle text-center">
-    <thead class="table-light">
-      <tr>
-        <th>Mã vận đơn</th>
-        <th>Người nhận</th>
-        <th>Điện thoại</th>
-        <th>Giá trị</th>
-        <th>Trạng thái</th>
-        <th>Ngày tạo</th>
-        <th>Ngày cập nhật</th>
-        <th>Thao tác</th>
-      </tr>
-    </thead>
-    <tbody>
-      <ng-container *ngFor="let order of pagedOrders()">
-        <tr
-          (click)="toggleExpand(order._id)"
-          [class.table-primary]="expandedOrderId === order._id"
-          style="cursor: pointer"
-        >
-          <!-- Cột Mã vận đơn + Copy -->
-          <td class="position-relative">
-            <div class="d-flex align-items-center justify-content-center gap-2">
-              <span class="fw-bold fs-5 text-warning">{{ order.waybill || '—' }}</span>
-              <button
-                *ngIf="order.waybill"
-                class="btn btn-sm btn-dark p-1"
-                title="Copy mã vận đơn"
-                (click)="copyWaybill(order.waybill, $event)"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                >
-                  <path
-                    d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"
-                  />
-                  <path
-                    d="M9.5 1a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5v-4z"
-                  />
-                </svg>
-              </button>
-            </div>
-            <small class="text-muted d-block">({{ order._id }})</small>
+  <div *ngIf="loading" class="ap-loading-state" role="status">
+    <span class="spinner-border" aria-hidden="true"></span>
+    <span>Đang tải đơn hàng...</span>
+  </div>
 
-            <!-- Hiệu ứng "Đã copy!" -->
-            <div
-              *ngIf="copiedWaybill === order.waybill"
-              class="position-absolute top-50 start-100 translate-middle badge rounded-pill bg-success shadow-sm"
-              style="font-size: 0.75rem; z-index: 10"
-            >
-              Đã copy!
-            </div>
-          </td>
+  <div
+    *ngIf="loadError"
+    class="alert alert-danger d-flex align-items-center justify-content-between gap-3"
+    role="alert"
+  >
+    <span>{{ loadError }}</span>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="loadOrders()">Thử lại</button>
+  </div>
 
-          <td>{{ order.receiverName }}</td>
-          <td>{{ order.receiverPhone }}</td>
-          <td>{{ order.totalPrice | number }} đ</td>
-          <td>
-            <span [ngClass]="statusClass(order.status)">{{ statusText(order.status) }}</span>
-          </td>
-          <td>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
-          <td>{{ order.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
-
-          <!-- Thao tác -->
-          <td (click)="$event.stopPropagation()">
-            <button
-              *ngIf="canEdit(order)"
-              class="btn btn-warning btn-sm py-2 px-3 me-1"
-              [routerLink]="['/admin/order/edit', order._id]"
-            >
-              Sửa
-            </button>
-
-            <button
-              *ngIf="canDelete(order)"
-              class="btn btn-danger btn-sm py-2 px-3 me-1"
-              (click)="deleteOrder(order._id, $event)"
-            >
-              Xóa
-            </button>
-
-            <!-- Nút In -->
-            <button
-              class="btn btn-info btn-sm py-2 px-3 text-white"
-              (click)="printOrder(order)"
-              title="In vận đơn"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                fill="currentColor"
-                viewBox="0 0 16 16"
-              >
-                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z" />
-                <path
-                  d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5z"
-                />
-              </svg>
-              In
-            </button>
-
-            <button
-              *ngIf="order.paymentMethod === 'QR' && order.status === 'PENDING'"
-              class="btn btn-info btn-sm py-2 px-3 text-white ms-1"
-              (click)="showQr(order._id, $event)"
-            >
-              <i class="bi bi-qr-code-scan"></i> QR
-            </button>
-          </td>
+  <div *ngIf="!loading && !loadError" class="table-responsive">
+    <table class="table ap-table align-middle text-center">
+      <thead>
+        <tr>
+          <th>Mã vận đơn</th>
+          <th>Người nhận</th>
+          <th>Điện thoại</th>
+          <th>Giá trị</th>
+          <th>Trạng thái</th>
+          <th>Ngày tạo</th>
+          <th>Ngày cập nhật</th>
+          <th>Thao tác</th>
         </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let order of pagedOrders()">
+          <!-- Main row -->
+          <tr
+            class="ap-row-expand"
+            [class.expanded]="expandedOrderId === order._id"
+            (click)="toggleExpand(order._id)"
+            (keydown.enter)="toggleExpand(order._id)"
+            tabindex="0"
+          >
+            <td data-label="Mã vận đơn" class="position-relative">
+              <div class="d-flex align-items-center justify-content-center gap-2">
+                <span class="fw-bold fs-5">{{ order.waybill || '—' }}</span>
+                <button
+                  *ngIf="order.waybill"
+                  type="button"
+                  class="btn btn-sm btn-secondary ap-btn-icon"
+                  title="Copy mã vận đơn"
+                  (click)="copyWaybill(order.waybill, $event)"
+                >
+                  <iconify-icon icon="mdi:content-copy"></iconify-icon>
+                </button>
+              </div>
+              <small class="text-muted d-block">({{ order._id }})</small>
 
-        <!-- Chi tiết mở rộng -->
-        <tr *ngIf="expandedOrderId === order._id">
-          <td colspan="8">
-            <div class="bg-dark text-white p-4 rounded-3">
-              <h6 class="fw-bold text-warning mb-3">Chi tiết đơn hàng</h6>
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong class="text-warning">Người gửi:</strong> {{ order.senderName }}</p>
-                  <p>
-                    <strong class="text-warning">Lấy hàng:</strong>
-                    {{ formatAddress(order.pickupAddressId) }}
-                  </p>
+              <!-- Hiệu ứng "Đã copy!" -->
+              <div
+                *ngIf="copiedWaybill === order.waybill"
+                class="position-absolute top-50 start-100 translate-middle badge rounded-pill bg-success shadow-sm copy-feedback"
+              >
+                Đã copy!
+              </div>
+            </td>
+
+            <td data-label="Người nhận">{{ order.receiverName }}</td>
+            <td data-label="Điện thoại">{{ order.receiverPhone }}</td>
+            <td data-label="Giá trị">{{ order.totalPrice | number }} đ</td>
+            <td data-label="Trạng thái">
+              <span class="badge-status" [ngClass]="'status-' + order.status.toLowerCase()">
+                {{ statusText(order.status) }}
+              </span>
+            </td>
+            <td data-label="Ngày tạo">{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td data-label="Ngày cập nhật">{{ order.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+
+            <!-- Thao tác -->
+            <td data-label="Thao tác" (click)="$event.stopPropagation()">
+              <div class="ap-actions-cell">
+                <button
+                  *ngIf="canEdit(order)"
+                  type="button"
+                  class="btn btn-warning btn-sm"
+                  [routerLink]="['/admin/order/edit', order._id]"
+                >
+                  Sửa
+                </button>
+
+                <button
+                  *ngIf="canDelete(order)"
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  (click)="deleteOrder(order._id, $event)"
+                >
+                  Xóa
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-info btn-sm"
+                  (click)="printOrder(order)"
+                  title="In vận đơn"
+                >
+                  <iconify-icon icon="mdi:printer-outline"></iconify-icon>
+                  In
+                </button>
+
+                <button
+                  *ngIf="
+                    order.status === 'PENDING' &&
+                    (order.paymentMethod === 'CASH' || order.paymentMethod === 'COD')
+                  "
+                  type="button"
+                  class="btn btn-success btn-sm"
+                  (click)="confirmManualPayment(order, $event)"
+                >
+                  Đã nhận tiền
+                </button>
+
+                <button
+                  *ngIf="order.status === 'PENDING' && order.paymentMethod === 'MOMO'"
+                  type="button"
+                  class="btn btn-warning btn-sm"
+                  (click)="retryMomoPayment(order, $event)"
+                >
+                  <iconify-icon icon="mdi:wallet-outline"></iconify-icon>
+                  MoMo
+                </button>
+
+                <button
+                  *ngIf="order.status === 'CONFIRMED' || order.status === 'SHIPPING'"
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  (click)="manageShipper(order, $event)"
+                >
+                  <iconify-icon icon="mdi:account-hard-hat-outline"></iconify-icon>
+                  {{ order.assignedShipperId ? 'Đổi' : 'Giao' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Chi tiết mở rộng - LIGHT THEME -->
+          <tr *ngIf="expandedOrderId === order._id" class="ap-detail-expand">
+            <td colspan="8">
+              <div class="ap-detail-card">
+                <h6>Chi tiết đơn hàng</h6>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">Người gửi</span>
+                    <span class="info-value">{{ order.senderName || '—' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Địa chỉ lấy hàng</span>
+                    <span class="info-value">{{ formatAddress(order.pickupAddressId) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Người nhận</span>
+                    <span class="info-value">{{ order.receiverName }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Địa chỉ giao hàng</span>
+                    <span class="info-value">{{ formatAddress(order.deliveryAddressId) }}</span>
+                  </div>
+                  <div class="info-item" *ngIf="order.assignedShipperId">
+                    <span class="info-label">Shipper</span>
+                    <span class="info-value">{{ order.assignedShipperId.name || order.assignedShipperId }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Dịch vụ</span>
+                    <span class="info-value">{{ order.serviceCode }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">COD</span>
+                    <span class="info-value">{{ order.codValue | number }} đ</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Phí ship</span>
+                    <span class="info-value">{{ order.shippingFee | number }} đ</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Khối lượng</span>
+                    <span class="info-value">{{ order.weightKg }} kg</span>
+                  </div>
                 </div>
-                <div class="col-md-6">
-                  <p><strong class="text-warning">Người nhận:</strong> {{ order.receiverName }}</p>
-                  <p>
-                    <strong class="text-warning">Giao hàng:</strong>
-                    {{ formatAddress(order.deliveryAddressId) }}
-                  </p>
+
+                <div *ngIf="order.items?.length">
+                  <hr />
+                  <h6>Danh sách hàng hóa</h6>
+                  <table class="items-table">
+                    <thead>
+                      <tr>
+                        <th>Tên SP</th>
+                        <th>SL</th>
+                        <th>Đơn giá</th>
+                        <th>Thành tiền</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let it of order.items">
+                        <td>{{ it.productName }}</td>
+                        <td>{{ it.quantity }}</td>
+                        <td>{{ it.price | number }} đ</td>
+                        <td>{{ it.quantity * it.price | number }} đ</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              <hr class="border-secondary" />
-              <p>
-                <strong>Dịch vụ:</strong> {{ order.serviceCode }} | <strong>COD:</strong>
-                {{ order.codValue | number }} đ | <strong>Phí ship:</strong>
-                {{ order.shippingFee | number }} đ | <strong>KL:</strong> {{ order.weightKg }} kg
-              </p>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
 
-              <div *ngIf="order.items?.length">
-                <h6 class="mt-3 text-info">Danh sách hàng hóa</h6>
-                <table
-                  class="table table-sm table-bordered table-striped mt-2 bg-secondary bg-opacity-25 text-white"
-                >
-                  <thead class="table-secondary text-dark">
-                    <tr>
-                      <th>Tên SP</th>
-                      <th>SL</th>
-                      <th>Đơn giá</th>
-                      <th>Thành tiền</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let it of order.items">
-                      <td>{{ it.productName }}</td>
-                      <td>{{ it.quantity }}</td>
-                      <td>{{ it.price | number }} đ</td>
-                      <td>{{ it.quantity * it.price | number }} đ</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </td>
-        </tr>
-      </ng-container>
-    </tbody>
-  </table>
-
-  <div *ngIf="filteredOrders.length === 0" class="alert alert-info text-center mt-3">
-    Không tìm thấy đơn hàng nào.
+  <div
+    *ngIf="!loading && !loadError && filteredOrders.length === 0"
+    class="ap-empty-state"
+    role="status"
+  >
+    <iconify-icon icon="mdi:package-variant-closed"></iconify-icon>
+    <p>Không tìm thấy đơn hàng nào.</p>
   </div>
 
   <!-- Pagination -->
   <nav *ngIf="filteredOrders.length >= pageSize">
-    <ul class="pagination justify-content-center mt-3">
+    <ul class="ap-pagination">
       <li class="page-item" [class.disabled]="currentPage === 1">
-        <button class="page-link" (click)="changePage(currentPage - 1)">Trước</button>
+        <button type="button" class="page-link" (click)="changePage(currentPage - 1)">
+          <iconify-icon icon="mdi:chevron-left"></iconify-icon>
+        </button>
       </li>
       <li class="page-item" *ngFor="let p of totalPages()" [class.active]="p === currentPage">
-        <button class="page-link" (click)="changePage(p)">{{ p }}</button>
+        <button type="button" class="page-link" (click)="changePage(p)">{{ p }}</button>
       </li>
       <li class="page-item" [class.disabled]="currentPage === totalPages().length">
-        <button class="page-link" (click)="changePage(currentPage + 1)">Sau</button>
+        <button type="button" class="page-link" (click)="changePage(currentPage + 1)">
+          <iconify-icon icon="mdi:chevron-right"></iconify-icon>
+        </button>
       </li>
     </ul>
   </nav>

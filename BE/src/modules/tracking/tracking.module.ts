@@ -14,7 +14,7 @@ import { OrdersModule } from '../orders/orders.module';
       { name: Shipment.name, schema: ShipmentSchema },
       { name: Branch.name, schema: BranchSchema },
     ]),
-    OrdersModule
+    OrdersModule,
   ],
   controllers: [TrackingController],
   providers: [TrackingService],

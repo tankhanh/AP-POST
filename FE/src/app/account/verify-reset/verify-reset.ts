@@ -1,18 +1,18 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'verify-reset',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './verify-reset.html',
 })
 export class VerifyReset {
   code = '';
-  userId = '';
+  email = '';
   errorMessage = '';
   successMessage = '';
 
@@ -20,29 +20,30 @@ export class VerifyReset {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {
     if (isPlatformBrowser(this.platformId)) {
       this.route.queryParams.subscribe((params) => {
-        const fromQuery = params['user'];
-        const fromStorage = localStorage.getItem('reset_user_id');
-        this.userId = fromQuery || fromStorage || '';
+        const fromQuery = params['email'];
+        const fromStorage = sessionStorage.getItem('reset_email');
+        this.email = fromQuery || fromStorage || '';
       });
     }
   }
 
   verifyResetCode() {
-    if (!this.code || !this.userId) {
+    if (!this.code || !this.email) {
       this.errorMessage = 'Thiếu người dùng hoặc mã xác nhận.';
       return;
     }
 
-    this.authService.verifyReset({ _id: this.userId, code: this.code }).subscribe({
+    this.authService.verifyReset({ email: this.email, code: this.code }).subscribe({
       next: () => {
         this.successMessage = 'Xác thực thành công.';
         this.errorMessage = '';
         setTimeout(() => {
-          this.router.navigate(['/reset-password'], { queryParams: { user: this.userId } });
+          sessionStorage.setItem('reset_code', this.code);
+          this.router.navigate(['/reset-password']);
         }, 1000);
       },
       error: (err) => {

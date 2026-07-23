@@ -1,40 +1,35 @@
 <div class="container py-4">
   <div class="row justify-content-center">
     <div class="col-lg-8 col-md-10">
-      <div class="card shadow-sm border-0">
-        <div
-          class="card-header bg-white border-0 d-flex justify-content-between align-items-center"
-        >
-          <h5 class="mb-0">Cập nhật nhân viên</h5>
-          <button
-            class="btn btn-sm btn-outline-secondary"
-            (click)="backToList()"
-            type="button"
-          >
-            <i class="bi bi-arrow-left"></i> Quay lại
-          </button>
+      <div class="ap-dashboard-header">
+        <div>
+          <div class="ap-dashboard-kicker">Quản trị nhân sự</div>
+          <h1 class="ap-dashboard-title">Cập nhật nhân viên.</h1>
         </div>
+        <button class="btn btn-secondary" (click)="backToList()" type="button">
+          <iconify-icon icon="mdi:arrow-left"></iconify-icon>
+          Quay lại
+        </button>
+      </div>
 
-        <div class="card-body">
-          <form method="post" [formGroup]="editForm" (ngSubmit)="update()">
-            <div class="row g-3">
-              <!-- Họ tên -->
-              <div class="col-md-6">
-                <label class="form-label">
-                  Họ và tên <span class="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  class="form-control"
-                  formControlName="name"
-                  placeholder="VD: Nguyễn Văn A"
-                />
+      <div class="ap-form-panel">
+        <form method="post" [formGroup]="editForm" (ngSubmit)="update()">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="staff-name">
+                Họ và tên <span class="text-danger">*</span>
+              </label>
+              <input
+                id="staff-name"
+                type="text"
+                class="form-control"
+                formControlName="name"
+                placeholder="VD: Nguyễn Văn A"
+                autocomplete="name"
+              />
                 <div
                   class="text-danger small"
-                  *ngIf="
-                    editForm.get('name')?.invalid &&
-                    editForm.get('name')?.touched
-                  "
+                  *ngIf="editForm.get('name')?.invalid && editForm.get('name')?.touched"
                 >
                   Vui lòng nhập họ tên nhân viên
                 </div>
@@ -42,22 +37,21 @@
 
               <!-- Email -->
               <div class="col-md-6">
-                <label class="form-label">
+                <label class="form-label" for="staff-email">
                   Email <span class="text-danger">*</span>
                 </label>
                 <input
+                  id="staff-email"
                   type="email"
                   class="form-control"
                   formControlName="email"
                   placeholder="VD: nv.a@domain.com"
                   [readonly]="true"
+                  autocomplete="email"
                 />
                 <div
                   class="text-danger small"
-                  *ngIf="
-                    editForm.get('email')?.invalid &&
-                    editForm.get('email')?.touched
-                  "
+                  *ngIf="editForm.get('email')?.invalid && editForm.get('email')?.touched"
                 >
                   Vui lòng nhập email hợp lệ
                 </div>
@@ -65,10 +59,10 @@
 
               <!-- Chi nhánh -->
               <div class="col-md-6">
-                <label class="form-label">
+                <label class="form-label" for="staff-branch">
                   Chi nhánh làm việc <span class="text-danger">*</span>
                 </label>
-                <select class="form-select" formControlName="branchId">
+                <select id="staff-branch" class="form-select" formControlName="branchId">
                   <option value="">Chọn chi nhánh</option>
                   <option *ngFor="let b of branches" [value]="b._id">
                     {{ b.name }}
@@ -103,13 +97,8 @@
               {{ msg }}
             </div>
 
-            <!-- Nút -->
             <div class="mt-4 d-flex justify-content-end gap-2">
-              <button
-                type="button"
-                class="btn btn-outline-secondary"
-                (click)="backToList()"
-              >
+              <button type="button" class="btn btn-secondary" (click)="backToList()">
                 Hủy
               </button>
 
@@ -118,15 +107,12 @@
                 class="btn btn-primary"
                 [disabled]="editForm.invalid || loading"
               >
+                <iconify-icon icon="mdi:content-save"></iconify-icon>
                 <span *ngIf="!loading">Lưu thay đổi</span>
-                <span *ngIf="loading">
-                  <span class="spinner-border spinner-border-sm me-1"></span>
-                  Đang lưu...
-                </span>
+                <span *ngIf="loading">Đang lưu...</span>
               </button>
             </div>
           </form>
-        </div>
       </div>
     </div>
   </div>

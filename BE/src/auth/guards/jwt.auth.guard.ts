@@ -1,20 +1,15 @@
 import {
   ExecutionContext,
-  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import {
-  IS_PUBLIC_KEY,
-  IS_PUBLIC_PERMISSION,
-} from 'src/health/decorator/customize';
-import { request, Request } from 'express';
+import { IS_PUBLIC_KEY } from 'src/health/decorator/customize';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private reflector: Reflector) {
+  constructor(private readonly reflector: Reflector) {
     super();
   }
 
@@ -23,29 +18,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) {
-      return true;
-    }
-    return super.canActivate(context);
+    return isPublic ? true : super.canActivate(context);
   }
 
-  /// request
-
-  handleRequest(err, user, info, context: ExecutionContext) {
-    const request: Request = context.switchToHttp().getRequest();
-
-    const isSkipPermission = this.reflector.getAllAndOverride<boolean>(
-      IS_PUBLIC_PERMISSION,
-      [context.getHandler(), context.getClass()],
-    );
-
+  handleRequest<TUser = any>(err: any, user: any): TUser {
     if (err || !user) {
-      throw err || new UnauthorizedException('Invalid Token');
+      throw err instanceof Error
+        ? err
+        : new UnauthorizedException('Invalid token');
     }
-
-    // Tắt kiểm tra permission chi tiết nếu chưa cần
-    return user;
+    return user as TUser;
   }
-
-  ///
 }

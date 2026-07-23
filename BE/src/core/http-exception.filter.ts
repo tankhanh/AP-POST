@@ -1,27 +1,27 @@
 import {
-  ExceptionFilter,
-  Catch,
   ArgumentsHost,
+  Catch,
+  ExceptionFilter,
   HttpException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
-    const status = exception.getStatus();
+  catch(exception: HttpException, host: ArgumentsHost): void {
+    const context = host.switchToHttp();
+    const response = context.getResponse<Response>();
+    const request = context.getRequest<Request>();
+    const statusCode = exception.getStatus();
+    const details = exception.getResponse();
+    const payload =
+      typeof details === 'string' ? { message: details } : details;
 
-    response.status(status).json({
-      // statusCode: status,
-      // timestamp: new Date().toISOString(),
-      // path: request.url,
-
-      error: 'Payload Too Large',
-      message: 'File too large',
-      statusCode: status,
+    response.status(statusCode).json({
+      statusCode,
+      timestamp: new Date().toISOString(),
+      path: request.originalUrl,
+      ...payload,
     });
   }
 }

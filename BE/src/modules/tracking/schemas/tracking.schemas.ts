@@ -1,19 +1,18 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
-import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 import { OrderStatus } from '../../orders/schemas/order.schemas';
 
 export type TrackingDocument = HydratedDocument<Tracking>;
 
 export enum TrackingStatus {
-  CREATED = 'CREATED',           // Đã tạo đơn (người gửi mang đến)
-  ACCEPTED = 'ACCEPTED',         // Bưu cục tiếp nhận
-  IN_TRANSIT = 'IN_TRANSIT',     // Đang luân chuyển
+  CREATED = 'CREATED', // Đã tạo đơn (người gửi mang đến)
+  ACCEPTED = 'ACCEPTED', // Bưu cục tiếp nhận
+  IN_TRANSIT = 'IN_TRANSIT', // Đang luân chuyển
   OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY', // Phát thành công/neu that bai
-  DELIVERED = 'DELIVERED',       // Phát thành công
-  FAILED = 'FAILED',             // Phát thất bại
-  RETURNED = 'RETURNED',         // Hoàn về bưu cục gốc
-  CANCELED = 'CANCELED',         // Hủy đơn
+  DELIVERED = 'DELIVERED', // Phát thành công
+  FAILED = 'FAILED', // Phát thất bại
+  RETURNED = 'RETURNED', // Hoàn về bưu cục gốc
+  CANCELED = 'CANCELED', // Hủy đơn
 }
 
 @Schema({ timestamps: true })
@@ -53,4 +52,3 @@ export const TrackingSchema = SchemaFactory.createForClass(Tracking);
 TrackingSchema.index({ orderId: 1, timestamp: -1 });
 TrackingSchema.index({ status: 1, isDeleted: 1 });
 TrackingSchema.index({ branchId: 1, timestamp: -1 });
-TrackingSchema.plugin(softDeletePlugin);

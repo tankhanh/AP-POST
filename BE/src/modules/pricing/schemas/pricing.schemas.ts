@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
-import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 
 export type PricingDocument = HydratedDocument<Pricing> & {
   isDeleted: boolean;
@@ -72,4 +71,3 @@ PricingSchema.index({ serviceId: 1, isActive: 1, isDeleted: 1 });
 PricingSchema.index({ effectiveFrom: 1, effectiveTo: 1 });
 
 // Bật plugin soft delete
-PricingSchema.plugin(softDeletePlugin);

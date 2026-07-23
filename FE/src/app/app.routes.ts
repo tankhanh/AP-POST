@@ -1,142 +1,368 @@
 import { Routes } from '@angular/router';
-
-// USER features
-import { Home } from './home/home';
-import { Login } from './account/login/login';
-import { Register } from './account/register/register';
-import { ForgetPassword } from './account/forgetpassword/forgetpassword';
-import { Verify } from './account/verify/verify';
-import { VerifyReset } from './account/verify-reset/verify-reset';
-import { ResetPassword } from './account/reset-password/reset-password';
-import { DashboardLayout } from './dashboard-layout/dashboard-layout';
-import { DashboardHome } from './dashboard-layout/dashboard-emoloyee/dashboard-home/dashboard-home';
-// Guards
-import { AuthGuard } from './guard/auth.guard';
-// (tùy chọn) AdminGuard nếu có
 import { AdminGuard } from './guard/admin.guard';
-// Layouts mới
-import { EmployeeLayout } from './layouts/employee/employee-layout';
-import { DashboardProfile } from './dashboard-layout/dashboard-emoloyee/dashboard-profile/dashboard-profile';
-import { CreateOrder } from './dashboard-layout/dashboard-emoloyee/dashboard-orders/createOrder';
-import { ListOrder } from './dashboard-layout/dashboard-emoloyee/dashboard-orders/listOrder';
-import { EditOrder } from './dashboard-layout/dashboard-emoloyee/dashboard-orders/editOrder';
-import { AdminLayout } from './layouts/admin/admin-layout.component';
-import { DashboardAdmin } from './dashboard-layout/dashboard-admin/dashboard-admin.component';
-import { BranchListComponent } from './branches/branch-list/branch-list.component';
-import { ListPricing } from './dashboard-layout/dashboard-emoloyee/dashboard-pricing/listPricing';
-import { BranchCreateComponent } from './branches/branch-create/branch-create.component';
-import { BranchDetailComponent } from './branches/branch-detail/branch-detail.component';
-import { BranchUpdateComponent } from './branches/branch-update/branch-update.component';
-import { BranchTrashComponent } from './branches/branch-trash/branch-trash.component';
-import { AdminListOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminlistOrder';
-import { AdmninCreateOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminCreateOrder';
-import { AdminEditOrder } from './dashboard-layout/dashboard-admin/dashboard-orders/adminEditOrder';
-import { ListBranch } from './dashboard-layout/dashboard-emoloyee/dashboard-branches/dashboard-branch';
-import { TrackingComponent } from './dashboard-layout/dashboard-tracking/dashboard-tracking';
-import { StaffListComponent } from './dashboard-layout/dashboard-admin/staffs/staff-list/staff-list.component';
-import { StaffDetailComponent } from './dashboard-layout/dashboard-admin/staffs/staff-detail/staff-detail.component';
-import { StaffCreateComponent } from './dashboard-layout/dashboard-admin/staffs/staff-create/staff-create.component';
-import { StaffUpdateComponent } from './dashboard-layout/dashboard-admin/staffs/staff-update/staff-update.component';
-import { StaffTrashComponent } from './dashboard-layout/dashboard-admin/staffs/staff-trash/staff-trash.component';
-import { DashboardPricingComponent } from './dashboard-layout/dashboard-admin/dashboard-pricing/dashboard-pricing';
-import { CalculateShippingComponent } from './dashboard-layout/user-calculator/user-calculator';
-import { SupportComponent } from './dashboard-layout/dashboard-admin/support/support.component';
-import { PaymentSuccessComponent } from './payment/success/payment-success.component';
+import { AuthGuard } from './guard/auth.guard';
+import { RoleGuard } from './guard/role.guard';
 
 export const routes: Routes = [
-  { path: 'tracking', component: TrackingComponent },
-  { path: 'calculator', component: CalculateShippingComponent },
-  // public ship route removed — only logged-in customers may create orders
+  {
+    path: 'tracking',
+    loadComponent: () =>
+      import('./dashboard-layout/dashboard-tracking/dashboard-tracking').then(
+        (module) => module.TrackingComponent,
+      ),
+  },
+  {
+    path: 'calculator',
+    loadComponent: () =>
+      import('./dashboard-layout/user-calculator/user-calculator').then(
+        (module) => module.CalculateShippingComponent,
+      ),
+  },
+  {
+    path: 'ship',
+    data: { publicCreate: true },
+    loadComponent: () =>
+      import('./dashboard-layout/dashboard-emoloyee/dashboard-orders/createOrder').then(
+        (module) => module.CreateOrder,
+      ),
+  },
   {
     path: 'payment/success',
-    component: PaymentSuccessComponent,
+    loadComponent: () =>
+      import('./payment/success/payment-success.component').then(
+        (module) => module.PaymentSuccessComponent,
+      ),
   },
-
-  ,
-  // ----- USER LAYOUT -----
   {
     path: '',
-    component: EmployeeLayout,
+    loadComponent: () =>
+      import('./layouts/employee/employee-layout').then((module) => module.EmployeeLayout),
     children: [
-      { path: '', component: Home },
+      {
+        path: '',
+        loadComponent: () => import('./home/home').then((module) => module.Home),
+      },
       { path: 'home', redirectTo: '', pathMatch: 'full' },
-
-      { path: 'login', component: Login },
-      { path: 'register', component: Register },
-      { path: 'forget-password', component: ForgetPassword },
-      { path: 'verify', component: Verify },
-      { path: 'verify-reset', component: VerifyReset },
-      { path: 'reset-password', component: ResetPassword },
-
-      // dashboard của user (giữ nguyên thư mục/dashboard-layout)
+      {
+        path: 'login',
+        loadComponent: () => import('./account/login/login').then((module) => module.Login),
+      },
+      {
+        path: 'register',
+        loadComponent: () =>
+          import('./account/register/register').then((module) => module.Register),
+      },
+      {
+        path: 'forget-password',
+        loadComponent: () =>
+          import('./account/forgetpassword/forgetpassword').then((module) => module.ForgetPassword),
+      },
+      {
+        path: 'verify',
+        loadComponent: () => import('./account/verify/verify').then((module) => module.Verify),
+      },
+      {
+        path: 'verify-reset',
+        loadComponent: () =>
+          import('./account/verify-reset/verify-reset').then((module) => module.VerifyReset),
+      },
+      {
+        path: 'reset-password',
+        loadComponent: () =>
+          import('./account/reset-password/reset-password').then((module) => module.ResetPassword),
+      },
       {
         path: 'employee',
-        canActivate: [AuthGuard],
-        component: DashboardLayout,
-        children: [
-          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-          { path: 'dashboard', component: DashboardHome },
-          { path: 'home', component: DashboardHome },
-          { path: 'profile', component: DashboardProfile },
-          { path: 'order/create', component: CreateOrder },
-          { path: 'orders/list', component: ListOrder },
-          { path: 'order/edit/:id', component: EditOrder },
-          { path: 'pricing', component: ListPricing },
-          { path: 'branch', component: ListBranch },
-        ],
+        canActivate: [AuthGuard, RoleGuard],
+        data: { roles: ['STAFF'] },
+        loadComponent: () =>
+          import('./dashboard-layout/dashboard-layout').then((module) => module.DashboardLayout),
+        children: employeeRoutes(),
       },
-      // CUSTOMER area (separate path to distinguish from staff)
       {
         path: 'customer',
-        canActivate: [AuthGuard],
-        component: DashboardLayout,
-        children: [
-          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-          { path: 'dashboard', component: DashboardHome },
-          { path: 'profile', component: DashboardProfile },
-          { path: 'order/create', component: CreateOrder },
-          { path: 'orders/list', component: ListOrder },
-        ],
+        canActivate: [AuthGuard, RoleGuard],
+        data: { roles: ['USER'] },
+        loadComponent: () =>
+          import('./dashboard-layout/dashboard-layout').then((module) => module.DashboardLayout),
+        children: customerRoutes(),
       },
     ],
   },
-
   {
     path: 'admin',
-    component: AdminLayout,
     canActivate: [AuthGuard, AdminGuard],
+    loadComponent: () =>
+      import('./layouts/admin/admin-layout.component').then((module) => module.AdminLayout),
+    children: adminRoutes(),
+  },
+  {
+    path: 'shipper',
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['SHIPPER'] },
+    loadComponent: () =>
+      import('./layouts/shipper/shipper-layout').then((module) => module.ShipperLayout),
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', component: DashboardAdmin },
-      { path: 'order/create', component: AdmninCreateOrder },
-      { path: 'orders/list', component: AdminListOrder },
-      { path: 'order/edit/:id', component: AdminEditOrder },
-      { path: 'pricing', component: DashboardPricingComponent },
-      { path: 'support', component: SupportComponent },
-      { path: 'notifications/test', loadComponent: () => import('./dashboard-layout/dashboard-admin/notifications-test/notifications-test').then(m => m.NotificationsTest) },
       {
-        path: 'branch',
-        children: [
-          { path: '', component: BranchListComponent },
-          { path: 'create', component: BranchCreateComponent },
-          { path: 'detail/:id', component: BranchDetailComponent },
-          { path: 'update/:id', component: BranchUpdateComponent },
-          { path: 'trash', component: BranchTrashComponent },
-        ],
+        path: '',
+        pathMatch: 'full',
+        data: { view: 'active' },
+        loadComponent: () =>
+          import('./shipper/shipper-jobs/shipper-jobs').then((module) => module.ShipperJobs),
       },
       {
-        path: 'staff',
-        children: [
-          { path: '', component: StaffListComponent },
-          { path: 'create', component: StaffCreateComponent },
-          { path: 'detail/:id', component: StaffDetailComponent },
-          { path: 'update/:id', component: StaffUpdateComponent },
-          { path: 'trash', component: StaffTrashComponent },
-        ],
+        path: 'jobs',
+        data: { view: 'active' },
+        loadComponent: () =>
+          import('./shipper/shipper-jobs/shipper-jobs').then((module) => module.ShipperJobs),
+      },
+      {
+        path: 'jobs/:id',
+        loadComponent: () =>
+          import('./shipper/shipper-job-detail/shipper-job-detail').then(
+            (module) => module.ShipperJobDetail,
+          ),
+      },
+      {
+        path: 'history',
+        data: { view: 'history' },
+        loadComponent: () =>
+          import('./shipper/shipper-jobs/shipper-jobs').then((module) => module.ShipperJobs),
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./shipper/shipper-profile/shipper-profile').then(
+            (module) => module.ShipperProfile,
+          ),
       },
     ],
   },
-
-  // 404
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./shared/not-found/not-found').then((module) => module.NotFoundComponent),
+  },
 ];
+
+function employeeRoutes(): Routes {
+  return [
+    { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    dashboardHomeRoute('dashboard'),
+    dashboardHomeRoute('home'),
+    profileRoute(),
+    createOrderRoute(),
+    listOrdersRoute(),
+    editOrderRoute(),
+    {
+      path: 'pricing',
+      loadComponent: () =>
+        import('./dashboard-layout/dashboard-emoloyee/dashboard-pricing/listPricing').then(
+          (module) => module.ListPricing,
+        ),
+    },
+    {
+      path: 'branch',
+      loadComponent: () =>
+        import('./dashboard-layout/dashboard-emoloyee/dashboard-branches/dashboard-branch').then(
+          (module) => module.ListBranch,
+        ),
+    },
+  ];
+}
+
+function customerRoutes(): Routes {
+  return [
+    { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    dashboardHomeRoute('dashboard'),
+    profileRoute(),
+    createOrderRoute(),
+    listOrdersRoute(),
+    editOrderRoute(),
+  ];
+}
+
+function adminRoutes(): Routes {
+  return [
+    { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    {
+      path: 'dashboard',
+      loadComponent: () =>
+        import('./dashboard-layout/dashboard-admin/dashboard-admin.component').then(
+          (module) => module.DashboardAdmin,
+        ),
+    },
+    {
+      path: 'order/create',
+      loadComponent: () =>
+        import('./dashboard-layout/dashboard-admin/dashboard-orders/adminCreateOrder').then(
+          (module) => module.AdmninCreateOrder,
+        ),
+    },
+    {
+      path: 'orders/list',
+      loadComponent: () =>
+        import('./dashboard-layout/dashboard-admin/dashboard-orders/adminlistOrder').then(
+          (module) => module.AdminListOrder,
+        ),
+    },
+    {
+      path: 'order/edit/:id',
+      loadComponent: () =>
+        import('./dashboard-layout/dashboard-admin/dashboard-orders/adminEditOrder').then(
+          (module) => module.AdminEditOrder,
+        ),
+    },
+    {
+      path: 'pricing',
+      loadComponent: () =>
+        import('./dashboard-layout/dashboard-admin/dashboard-pricing/dashboard-pricing').then(
+          (module) => module.DashboardPricingComponent,
+        ),
+    },
+    {
+      path: 'support',
+      loadComponent: () =>
+        import('./dashboard-layout/dashboard-admin/support/support.component').then(
+          (module) => module.SupportComponent,
+        ),
+    },
+    {
+      path: 'branch',
+      children: [
+        {
+          path: '',
+          loadComponent: () =>
+            import('./branches/branch-list/branch-list.component').then(
+              (module) => module.BranchListComponent,
+            ),
+        },
+        {
+          path: 'create',
+          loadComponent: () =>
+            import('./branches/branch-create/branch-create.component').then(
+              (module) => module.BranchCreateComponent,
+            ),
+        },
+        {
+          path: 'detail/:id',
+          loadComponent: () =>
+            import('./branches/branch-detail/branch-detail.component').then(
+              (module) => module.BranchDetailComponent,
+            ),
+        },
+        {
+          path: 'update/:id',
+          loadComponent: () =>
+            import('./branches/branch-update/branch-update.component').then(
+              (module) => module.BranchUpdateComponent,
+            ),
+        },
+        {
+          path: 'trash',
+          loadComponent: () =>
+            import('./branches/branch-trash/branch-trash.component').then(
+              (module) => module.BranchTrashComponent,
+            ),
+        },
+      ],
+    },
+    {
+      path: 'staff',
+      children: [
+        {
+          path: '',
+          loadComponent: () =>
+            import('./dashboard-layout/dashboard-admin/staffs/staff-list/staff-list.component').then(
+              (module) => module.StaffListComponent,
+            ),
+        },
+        {
+          path: 'create',
+          loadComponent: () =>
+            import('./dashboard-layout/dashboard-admin/staffs/staff-create/staff-create.component').then(
+              (module) => module.StaffCreateComponent,
+            ),
+        },
+        {
+          path: 'detail/:id',
+          loadComponent: () =>
+            import('./dashboard-layout/dashboard-admin/staffs/staff-detail/staff-detail.component').then(
+              (module) => module.StaffDetailComponent,
+            ),
+        },
+        {
+          path: 'update/:id',
+          loadComponent: () =>
+            import('./dashboard-layout/dashboard-admin/staffs/staff-update/staff-update.component').then(
+              (module) => module.StaffUpdateComponent,
+            ),
+        },
+        {
+          path: 'trash',
+          loadComponent: () =>
+            import('./dashboard-layout/dashboard-admin/staffs/staff-trash/staff-trash.component').then(
+              (module) => module.StaffTrashComponent,
+            ),
+        },
+      ],
+    },
+    {
+      path: 'shippers',
+      loadComponent: () =>
+        import('./shipper/admin-shipper-management/admin-shipper-management').then(
+          (module) => module.AdminShipperManagement,
+        ),
+    },
+  ];
+}
+
+function dashboardHomeRoute(path: string): Routes[number] {
+  return {
+    path,
+    loadComponent: () =>
+      import('./dashboard-layout/dashboard-emoloyee/dashboard-home/dashboard-home').then(
+        (module) => module.DashboardHome,
+      ),
+  };
+}
+
+function profileRoute(): Routes[number] {
+  return {
+    path: 'profile',
+    loadComponent: () =>
+      import('./dashboard-layout/dashboard-emoloyee/dashboard-profile/dashboard-profile').then(
+        (module) => module.DashboardProfile,
+      ),
+  };
+}
+
+function createOrderRoute(): Routes[number] {
+  return {
+    path: 'order/create',
+    loadComponent: () =>
+      import('./dashboard-layout/dashboard-emoloyee/dashboard-orders/createOrder').then(
+        (module) => module.CreateOrder,
+      ),
+  };
+}
+
+function listOrdersRoute(): Routes[number] {
+  return {
+    path: 'orders/list',
+    loadComponent: () =>
+      import('./dashboard-layout/dashboard-emoloyee/dashboard-orders/listOrder').then(
+        (module) => module.ListOrder,
+      ),
+  };
+}
+
+function editOrderRoute(): Routes[number] {
+  return {
+    path: 'order/edit/:id',
+    loadComponent: () =>
+      import('./dashboard-layout/dashboard-emoloyee/dashboard-orders/editOrder').then(
+        (module) => module.EditOrder,
+      ),
+  };
+}

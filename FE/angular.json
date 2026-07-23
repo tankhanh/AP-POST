@@ -32,19 +32,12 @@
             "styles": [
               "src/assets/css/leaflet.css",
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
-              "node_modules/aos/dist/aos.css",
-              "node_modules/owl.carousel/dist/assets/owl.carousel.min.css",
-              "public/assets/css/styles.css",
+              "node_modules/bootstrap-icons/font/bootstrap-icons.min.css",
               "node_modules/ngx-toastr/toastr.css",
               "src/styles.css"
             ],
-            "scripts": [
-              "node_modules/jquery/dist/jquery.min.js",
-              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
-              "node_modules/owl.carousel/dist/owl.carousel.min.js",
-              "node_modules/aos/dist/aos.js",
-              "public/assets/js/custom.js"
-            ]
+            "scripts": [],
+            "allowedCommonJsDependencies": ["leaflet", "leaflet-routing-machine", "sweetalert2"]
           },
           "configurations": {
             "production": {
@@ -61,6 +54,7 @@
                 }
               ],
               "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json",
               "prerender": false,
               "ssr": false
             },
@@ -92,6 +86,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
+            "karmaConfig": "karma.conf.js",
             "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "tsconfig.spec.json",
             "assets": [

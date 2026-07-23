@@ -1,86 +1,87 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { mkdirSync } from 'fs';
+import { extname, resolve, sep } from 'path';
+import {
+  BadRequestException,
+  Injectable,
+  UnsupportedMediaTypeException,
+} from '@nestjs/common';
 import {
   MulterModuleOptions,
   MulterOptionsFactory,
 } from '@nestjs/platform-express';
-import fs from 'fs';
 import { diskStorage } from 'multer';
-import path, { join } from 'path';
+
+const allowedMimeTypes = new Map([
+  ['image/jpeg', '.jpg'],
+  ['image/png', '.png'],
+  ['image/gif', '.gif'],
+  ['application/pdf', '.pdf'],
+  ['application/msword', '.doc'],
+  [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.docx',
+  ],
+]);
 
 @Injectable()
 export class MulterConfigService implements MulterOptionsFactory {
-  getRootPath = () => {
-    return process.cwd();
-  };
-
-  ensureExists(targetDirectory: string) {
-    fs.mkdir(targetDirectory, { recursive: true }, (error) => {
-      if (!error) {
-        console.log('Directory successfully created, or it already exists.');
-        return;
-      }
-      switch (error.code) {
-        case 'EEXIST':
-          // Error:
-          // Requested location already exists, but it's not a directory.
-          break;
-        case 'ENOTDIR':
-          // Error:
-          // The parent hierarchy contains a file with the same name as the dir
-          // you're trying to create.
-          break;
-        default:
-          // Some other error like permission denied.
-          console.error(error);
-          break;
-      }
-    });
-  }
-
   createMulterOptions(): MulterModuleOptions {
+    const uploadRoot = resolve(process.cwd(), 'public', 'images');
+
     return {
       storage: diskStorage({
-        destination: (req, file, cb) => {
-          const folder = req?.headers?.folder_type ?? 'default';
-          this.ensureExists(`public/images/${folder}`);
-          cb(null, join(this.getRootPath(), `public/images/${folder}`));
+        destination: (request, _file, callback) => {
+          try {
+            const rawFolder = String(request.headers.folder_type ?? 'default');
+            if (!/^[a-zA-Z0-9_-]{1,40}$/.test(rawFolder)) {
+              throw new BadRequestException('Invalid upload folder');
+            }
+
+            const destination = resolve(uploadRoot, rawFolder);
+            if (
+              destination !== uploadRoot &&
+              !destination.startsWith(`${uploadRoot}${sep}`)
+            ) {
+              throw new BadRequestException('Invalid upload destination');
+            }
+
+            mkdirSync(destination, { recursive: true });
+            callback(null, destination);
+          } catch (error) {
+            callback(error, '');
+          }
         },
-        filename: (req, file, cb) => {
-          //get image extension
-          let extName = path.extname(file.originalname);
+        filename: (_request, file, callback) => {
+          const expectedExtension = allowedMimeTypes.get(file.mimetype);
+          const suppliedExtension = extname(file.originalname).toLowerCase();
+          const extension =
+            suppliedExtension === '.jpeg' ? '.jpg' : suppliedExtension;
 
-          //get image's name (without extension)
-          let baseName = path.basename(file.originalname, extName);
+          if (!expectedExtension || expectedExtension !== extension) {
+            callback(
+              new UnsupportedMediaTypeException('Invalid file type'),
+              '',
+            );
+            return;
+          }
 
-          let finalName = `${baseName}-${Date.now()}${extName}`;
-          cb(null, finalName);
+          callback(null, `${randomUUID()}${extension}`);
         },
       }),
-      fileFilter: (req, file, cb) => {
-        const allowedFileTypes = [
-          'jpg',
-          'jpeg',
-          'png',
-          'gif',
-          'pdf',
-          'doc',
-          'docx',
-        ];
-        const fileExtension = file.originalname.split('.').pop().toLowerCase();
-        const isValidFileType = allowedFileTypes.includes(fileExtension);
-
-        if (!isValidFileType) {
-          cb(
-            new HttpException(
-              'Invalid file type',
-              HttpStatus.UNPROCESSABLE_ENTITY,
-            ),
-            null,
+      fileFilter: (_request, file, callback) => {
+        if (!allowedMimeTypes.has(file.mimetype)) {
+          callback(
+            new UnsupportedMediaTypeException('Invalid file type'),
+            false,
           );
-        } else cb(null, true);
+          return;
+        }
+        callback(null, true);
       },
       limits: {
-        fileSize: 1024 * 1024 * 1, // 1MB
+        files: 1,
+        fileSize: 1024 * 1024,
       },
     };
   }

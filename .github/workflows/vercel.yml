@@ -2,26 +2,29 @@ name: Deploy Frontend to Vercel
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'FE/**'
+      - '.github/workflows/vercel.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read           # bắt buộc
-      pull-requests: write     # để comment link deploy (tùy chọn nhưng nên có)
     steps:
       - uses: actions/checkout@v4
 
       - name: Deploy to Vercel Production
-        uses: amondnet/vercel-action@v41.1.4   # ← Thay bằng action chính chủ mới
-        uses: vercel/action@v2                 # ← Dòng này là mới nhất (hiện tại là v2.1.0)
+        uses: amondnet/vercel-action@v42
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-          # github-comment: true                # nếu muốn comment link lên commit/PR
-          # github-token: ${{ secrets.GITHUB_TOKEN }}  # không cần nữa vì action mới tự xử lý
+          working-directory: FE

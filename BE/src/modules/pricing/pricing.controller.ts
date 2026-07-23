@@ -18,6 +18,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Public, ResponseMessage, Users } from 'src/health/decorator/customize';
 import { IUser } from 'src/types/user.interface';
 import { ProvinceCode } from 'src/types/location.type';
+import { Roles } from 'src/health/decorator/roles.decorator';
 
 @ApiTags('pricing')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,6 +27,7 @@ export class PricingController {
   constructor(private readonly pricingService: PricingService) {}
 
   @Post()
+  @Roles('ADMIN')
   @ResponseMessage('Tạo bảng giá mới')
   create(@Body() dto: CreatePricingDto) {
     return this.pricingService.create(dto);
@@ -71,12 +73,14 @@ export class PricingController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN')
   @ResponseMessage('Cập nhật bảng giá')
   update(@Param('id') id: string, @Body() dto: UpdatePricingDto) {
     return this.pricingService.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   @ResponseMessage('Xóa bảng giá (soft)')
   remove(@Param('id') id: string, @Users() user: IUser) {
     return this.pricingService.remove(id, user);

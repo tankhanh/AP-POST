@@ -21,7 +21,7 @@ export interface IOrder {
   senderName: string;
   senderPhone?: string;
   receiverName: string;
-  receiverPhone: string;
+  receiverPhone?: string;
   email?: string;
   pickupAddress: IOrderAddress;
   deliveryAddress: IOrderAddress;
@@ -31,7 +31,7 @@ export interface IOrder {
   details?: string;
   shippingFeePayer?: 'SENDER' | 'RECEIVER';
   shippingFee?: number;
-  paymentMethod?: 'CASH' | 'COD' | 'QR' | 'VNPAY' | 'BANK_TRANSFER' | 'MOMO';
+  paymentMethod?: 'CASH' | 'COD' | 'MOMO';
   status?: 'PENDING' | 'CONFIRMED' | 'DELIVERING' | 'COMPLETED' | 'CANCELED';
   items?: IOrderItem[];
   totalPrice?: number;

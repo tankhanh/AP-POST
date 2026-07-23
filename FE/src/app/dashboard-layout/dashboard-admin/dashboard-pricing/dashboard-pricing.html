@@ -1,55 +1,62 @@
-<div class="pricing-page" *ngIf="!loading; else loadingTpl">
-  <div class="pricing-header">
-    <button class="btn btn-primary" (click)="openCreate()" title="Tạo bảng giá mới">
-      + Tạo bảng giá mới
+  <div class="pricing-page" *ngIf="!loading; else loadingTpl">
+  <div class="ap-dashboard-header">
+    <div>
+      <div class="ap-dashboard-kicker">Bảng giá</div>
+      <h1 class="ap-dashboard-title">Danh sách bảng giá.</h1>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreate()" title="Tạo bảng giá mới">
+      <iconify-icon icon="mdi:plus"></iconify-icon>
+      Tạo bảng giá
     </button>
   </div>
 
-  <div class="card">
-    <div class="card-header" [ngStyle]="{ 'text-align': 'center' }">
-      <h2>Danh sách bảng giá</h2>
-    </div>
+  <div class="table-responsive">
+    <table class="table ap-table align-middle text-center">
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Dịch vụ</th>
+          <th>Giá cơ bản (đ)</th>
+          <th>Ngưỡng quá cân (kg)</th>
+          <th>Phụ phí quá cân (đ)</th>
+          <th>Hiệu lực từ</th>
+          <th>Hiệu lực đến</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
 
-    <div class="card-body">
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Dịch vụ</th>
-            <th>Base price (đ)</th>
-            <th>Ngưỡng quá cân (kg)</th>
-            <th>Phụ phí quá cân (đ)</th>
-            <th>Hiệu lực từ</th>
-            <th>Hiệu lực đến</th>
+      <tbody>
+        <tr *ngFor="let p of pricing; let i = index">
+          <td data-label="STT">{{ i + 1 }}</td>
+          <td data-label="Dịch vụ">{{ getServiceLabel(p) }}</td>
+          <td data-label="Giá cơ bản">{{ p.basePrice | number: '1.0-0' }}</td>
+          <td data-label="Ngưỡng quá cân">{{ p.overweightThresholdKg }}</td>
+          <td data-label="Phụ phí quá cân">{{ p.overweightFee | number: '1.0-0' }}</td>
+          <td data-label="Hiệu lực từ">{{ p.effectiveFrom | date: 'dd/MM/yyyy' }}</td>
+          <td data-label="Hiệu lực đến">
+            {{ p.effectiveTo ? (p.effectiveTo | date: 'dd/MM/yyyy') : '—' }}
+          </td>
 
-            <th>Hành động</th>
-          </tr>
-        </thead>
+          <td data-label="Hành động" class="col-actions">
+            <div class="ap-actions-cell">
+              <button type="button" class="btn btn-warning btn-sm" (click)="openEdit(p)" title="Sửa bảng giá">
+                Sửa
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" (click)="remove(p)" title="Xoá bảng giá">
+                Xoá
+              </button>
+            </div>
+          </td>
+        </tr>
 
-        <tbody>
-          <tr *ngFor="let p of pricing; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td>{{ getServiceLabel(p) }}</td>
-            <td>{{ p.basePrice | number : '1.0-0' }}</td>
-            <td>{{ p.overweightThresholdKg }}</td>
-            <td>{{ p.overweightFee | number : '1.0-0' }}</td>
-            <td>{{ p.effectiveFrom | date : 'dd/MM/yyyy' }}</td>
-            <td>
-              {{ p.effectiveTo ? (p.effectiveTo | date : 'dd/MM/yyyy') : '—' }}
-            </td>
-
-            <td class="actions-cell">
-              <button class="btn btn-edit" (click)="openEdit(p)" title="Sửa bảng giá">Sửa</button>
-              <button class="btn btn-delete" (click)="remove(p)" title="Xoá bảng giá">Xoá</button>
-            </td>
-          </tr>
-
-          <tr *ngIf="pricing.length === 0">
-            <td colspan="9" class="text-center">Chưa có bảng giá nào</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        <tr *ngIf="pricing.length === 0">
+          <td colspan="8" class="ap-empty-state" style="border: none;">
+            <iconify-icon icon="mdi:table-cog"></iconify-icon>
+            <p>Chưa có bảng giá nào</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -61,11 +68,25 @@
 </ng-template>
 
 <!-- ========= MODAL (ĐÃ ĐỔI TÊN CLASS) ========= -->
-<div class="pricing-modal-backdrop" *ngIf="modalOpen">
-  <div class="pricing-modal">
+<div class="pricing-modal-backdrop" *ngIf="modalOpen" (click)="closeModal()">
+  <div
+    class="pricing-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="pricingModalTitle"
+    (click)="$event.stopPropagation()"
+  >
     <div class="pricing-modal-header">
-      <h3>{{ editing ? 'Cập nhật bảng giá' : 'Tạo bảng giá mới' }}</h3>
-      <button class="pricing-modal-close" (click)="closeModal()" title="Đóng">X</button>
+      <h3 id="pricingModalTitle">{{ editing ? 'Cập nhật bảng giá' : 'Tạo bảng giá mới' }}</h3>
+      <button
+        type="button"
+        class="pricing-modal-close"
+        (click)="closeModal()"
+        title="Đóng"
+        aria-label="Đóng hộp thoại"
+      >
+        ×
+      </button>
     </div>
 
     <div class="pricing-modal-body">
@@ -153,6 +174,7 @@
 
     <div class="pricing-modal-footer">
       <button
+        type="button"
         class="btn btn-secondary"
         (click)="closeModal()"
         [disabled]="saving"
@@ -160,7 +182,13 @@
       >
         Hủy
       </button>
-      <button class="btn btn-primary" (click)="save()" [disabled]="saving" title="Lưu bảng giá">
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="save()"
+        [disabled]="saving"
+        title="Lưu bảng giá"
+      >
         {{ saving ? 'Đang lưu...' : 'Lưu' }}
       </button>
     </div>

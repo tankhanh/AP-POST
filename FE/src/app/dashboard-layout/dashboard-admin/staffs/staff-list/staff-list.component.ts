@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { StaffService } from '../../../../services/staff.service';  
+import { StaffService } from '../../../../services/staff.service';
+import Swal from 'sweetalert2';
 
 // Khai báo interface Staff đơn giản, có thể bổ sung thêm field nếu BE trả về
 interface Staff {
@@ -22,6 +23,7 @@ interface Staff {
   standalone: true,
   templateUrl: './staff-list.component.html',
   imports: [CommonModule, FormsModule, RouterLink],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class StaffListComponent implements OnInit {
   staffs: Staff[] = [];
@@ -57,7 +59,8 @@ export class StaffListComponent implements OnInit {
         res?.data?.result || // nếu decorator bọc dạng { data: { result } }
         res?.data || // hoặc { data: [...] }
         res?.result || // hoặc { result: [...] }
-        res || []; // hoặc trả mảng luôn
+        res ||
+        []; // hoặc trả mảng luôn
 
       this.staffs = list;
       this.filteredStaffs = [...this.staffs];
@@ -151,8 +154,16 @@ export class StaffListComponent implements OnInit {
 
   /* --------- Delete --------- */
   async delete(id: string) {
-    const ok = confirm('Bạn có chắc chắn muốn xoá nhân viên này?');
-    if (!ok) return;
+    const result = await Swal.fire({
+      title: 'Chuyển nhân viên vào thùng rác?',
+      text: 'Tài khoản sẽ không còn xuất hiện trong danh sách hoạt động.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Chuyển vào thùng rác',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#d03238',
+    });
+    if (!result.isConfirmed) return;
 
     try {
       // dùng method delete() trong StaffService kiểu mới
@@ -162,9 +173,11 @@ export class StaffListComponent implements OnInit {
       // remove khỏi list hiện tại
       this.staffs = this.staffs.filter((s) => s._id !== id);
       this.search(); // tính lại filter + paginate
+      await Swal.fire('Đã xóa', 'Nhân viên đã được chuyển vào thùng rác.', 'success');
     } catch (error) {
       console.error(error);
       this.msg = 'Không thể xoá nhân viên';
+      await Swal.fire('Không thể xóa', 'Vui lòng thử lại.', 'error');
     }
   }
 }

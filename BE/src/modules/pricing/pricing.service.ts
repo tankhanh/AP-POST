@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import aqp from 'api-query-params';
-import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { Model, Types } from 'mongoose';
 import { IUser } from 'src/types/user.interface';
 import { Pricing, PricingDocument } from './schemas/pricing.schemas';
@@ -17,7 +16,7 @@ import { Service, ServiceDocument } from '../services/schemas/service.schemas';
 export class PricingService {
   constructor(
     @InjectModel(Pricing.name)
-    private pricingModel: SoftDeleteModel<PricingDocument>,
+    private pricingModel: Model<PricingDocument>,
 
     @InjectModel(Branch.name)
     private branchModel: Model<BranchDocument>,
@@ -50,7 +49,7 @@ export class PricingService {
     if (filter.isDeleted === undefined) (filter as any).isDeleted = false;
 
     const page = Number(currentPage) > 0 ? Number(currentPage) : 1;
-    const size = Number(limit) > 0 ? Number(limit) : 10;
+    const size = Math.min(Number(limit) > 0 ? Number(limit) : 10, 100);
     const skip = (page - 1) * size;
 
     const total = await this.pricingModel.countDocuments(filter);
@@ -74,22 +73,30 @@ export class PricingService {
   }
 
   async update(id: string, dto: any) {
-    const doc = await this.pricingModel.findByIdAndUpdate(id, dto, {
-      new: true,
-    });
-    if (!doc || doc.isDeleted) throw new NotFoundException('Pricing not found');
+    const doc = await this.pricingModel.findOneAndUpdate(
+      { _id: id, isDeleted: { $ne: true } },
+      dto,
+      { new: true, runValidators: true },
+    );
+    if (!doc) throw new NotFoundException('Pricing not found');
     return doc;
   }
 
   // Soft delete đúng chuẩn plugin
   async remove(id: string, user?: IUser) {
-    const res = await this.pricingModel.softDelete({
-      _id: id,
-      deletedBy: user?._id
-        ? { _id: new Types.ObjectId(user._id), email: user.email }
-        : undefined,
-    } as any);
-    if (!res || (res as any).modifiedCount === 0)
+    const res = await this.pricingModel.updateOne(
+      { _id: id, isDeleted: { $ne: true } },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: user?._id
+            ? { _id: new Types.ObjectId(user._id), email: user.email }
+            : undefined,
+        },
+      },
+    );
+    if (res.modifiedCount === 0)
       throw new NotFoundException('Pricing not found');
     return { message: 'Pricing soft-deleted' };
   }
@@ -145,7 +152,7 @@ export class PricingService {
 
     const threshold = pricing.overweightThresholdKg ?? 0;
     const overweightFee =
-      threshold > 0 && weightKg > threshold ? pricing.overweightFee ?? 0 : 0;
+      threshold > 0 && weightKg > threshold ? (pricing.overweightFee ?? 0) : 0;
 
     // ========== Nội tỉnh / gần kho ==========
     if (isLocal) {

@@ -1,18 +1,30 @@
-const resolveApiBaseUrl = () => {
-  const host =
-    typeof window !== 'undefined' && window.location ? window.location.hostname : '';
-
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return 'http://localhost:8000/api/v1';
+declare global {
+  interface Window {
+    __AP_POST_CONFIG__?: { apiBaseUrl?: string };
   }
+}
 
-  return 'https://ap-post-api.onrender.com/api/v1';
+const normalizeBaseUrl = (value: string): string => value.trim().replace(/\/+$/, '');
+
+const resolveRuntimeEnvironment = () => {
+  const host = typeof window !== 'undefined' && window.location ? window.location.hostname : '';
+  const isLocal = host === 'localhost' || host === '127.0.0.1';
+  const runtimeUrl =
+    typeof window !== 'undefined' ? window.__AP_POST_CONFIG__?.apiBaseUrl : undefined;
+  const fallbackUrl = isLocal
+    ? 'http://localhost:8000/api/v1'
+    : 'https://ap-post-api.onrender.com/api/v1';
+
+  return {
+    production: !isLocal,
+    apiBaseUrl: normalizeBaseUrl(runtimeUrl || fallbackUrl),
+  };
 };
 
-const apiBaseUrl = resolveApiBaseUrl();
+const runtime = resolveRuntimeEnvironment();
 
 export const env = {
-  production: false,
-  baseUrl: apiBaseUrl,
-  apiUrl: apiBaseUrl,
+  production: runtime.production,
+  baseUrl: runtime.apiBaseUrl,
+  apiUrl: runtime.apiBaseUrl,
 };

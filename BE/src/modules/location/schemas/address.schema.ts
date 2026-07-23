@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument, Types } from 'mongoose';
-import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import { Province } from './province.schema';
 import { Commune } from './commune.schema';
 
@@ -27,7 +26,7 @@ export class Address {
   @Prop({ type: String }) contactPhone?: string;
   @Prop({ type: Boolean, default: true }) isActive?: boolean;
 
-  /** Soft delete cho phù hợp SoftDeleteModel */
+  /** Soft-delete metadata */
   @Prop({ default: false }) isDeleted?: boolean;
   @Prop() deletedAt?: Date;
   @Prop({ type: Object }) deletedBy?: { _id: Types.ObjectId; email: string };
@@ -56,4 +55,3 @@ AddressSchema.index({ provinceId: 1, communeId: 1, isDeleted: 1 });
 AddressSchema.index({ contactName: 1, isDeleted: 1 });
 
 /** Soft-delete plugin */
-AddressSchema.plugin(softDeletePlugin);

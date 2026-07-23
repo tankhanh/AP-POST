@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
-import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 
 export type ShipmentDocument = HydratedDocument<Shipment> & {
   createdAt: Date;
@@ -94,7 +93,4 @@ export class Shipment {
 }
 
 export const ShipmentSchema = SchemaFactory.createForClass(Shipment);
-ShipmentSchema.index({ trackingNumber: 1 }, { unique: true });
 ShipmentSchema.index({ status: 1, createdAt: -1 });
-
-ShipmentSchema.plugin(softDeletePlugin);

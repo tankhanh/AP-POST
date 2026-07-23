@@ -1,25 +1,32 @@
 <div class="shipping-page">
   <div class="shipping-card">
     <div class="shipping-topline">
-      <a href="/" class="btn btn-secondary btn-sm" target="_self" aria-label="Về trang chủ">
+      <a routerLink="/" class="btn btn-secondary btn-sm" aria-label="Về trang chủ">
         <i class="bi bi-arrow-left"></i>
+        <span>Trang chủ</span>
       </a>
       <span class="ap-eyebrow mb-0">Công cụ tính cước</span>
     </div>
 
     <div class="shipping-card-header">
       <h1>Ước tính phí vận chuyển.</h1>
-      <p>
-        Chọn tuyến gửi, dịch vụ, khối lượng và giá trị COD để xem chi phí dự kiến.
-      </p>
+      <p>Chọn tuyến gửi, dịch vụ, khối lượng và giá trị COD để xem chi phí dự kiến.</p>
     </div>
 
-    <div class="shipping-card-body">
+    <form class="shipping-card-body" (ngSubmit)="submit()">
       <div class="form-grid">
         <div class="form-group">
-          <label for="origin" title="Chọn tỉnh gửi hàng">Tỉnh gửi *</label>
-          <select id="origin" [(ngModel)]="formData.originProvinceCode" name="originProvinceCode">
-            <option value="">Chọn tỉnh gửi</option>
+          <label for="origin">Tỉnh gửi *</label>
+          <select
+            id="origin"
+            [(ngModel)]="formData.originProvinceCode"
+            name="originProvinceCode"
+            [disabled]="provincesLoading"
+            required
+          >
+            <option value="">
+              {{ provincesLoading ? 'Đang tải tỉnh thành...' : 'Chọn tỉnh gửi' }}
+            </option>
             <option *ngFor="let p of provinceOptions" [value]="p.value">
               {{ p.label }}
             </option>
@@ -27,9 +34,17 @@
         </div>
 
         <div class="form-group">
-          <label for="dest" title="Chọn tỉnh nhận hàng">Tỉnh nhận *</label>
-          <select id="dest" [(ngModel)]="formData.destProvinceCode" name="destProvinceCode">
-            <option value="">Chọn tỉnh nhận</option>
+          <label for="dest">Tỉnh nhận *</label>
+          <select
+            id="dest"
+            [(ngModel)]="formData.destProvinceCode"
+            name="destProvinceCode"
+            [disabled]="provincesLoading"
+            required
+          >
+            <option value="">
+              {{ provincesLoading ? 'Đang tải tỉnh thành...' : 'Chọn tỉnh nhận' }}
+            </option>
             <option *ngFor="let p of provinceOptions" [value]="p.value">
               {{ p.label }}
             </option>
@@ -37,8 +52,8 @@
         </div>
 
         <div class="form-group">
-          <label for="service" title="Chọn dịch vụ">Dịch vụ *</label>
-          <select id="service" [(ngModel)]="formData.serviceCode" name="serviceCode">
+          <label for="service">Dịch vụ *</label>
+          <select id="service" [(ngModel)]="formData.serviceCode" name="serviceCode" required>
             <option *ngFor="let s of serviceOptions" [value]="s.value">
               {{ s.label }}
             </option>
@@ -46,7 +61,7 @@
         </div>
 
         <div class="form-group">
-          <label for="weight" title="Nhập trọng lượng theo kg">Khối lượng (kg) *</label>
+          <label for="weight">Khối lượng (kg) *</label>
           <input
             id="weight"
             type="number"
@@ -55,11 +70,13 @@
             [(ngModel)]="formData.weightKg"
             name="weightKg"
             placeholder="VD: 1.5"
+            inputmode="decimal"
+            required
           />
         </div>
 
         <div class="form-group">
-          <label for="cod" title="Nhập giá trị tiền hàng">Tiền hàng (COD)</label>
+          <label for="cod">Tiền hàng (COD)</label>
           <input
             id="cod"
             type="number"
@@ -68,25 +85,39 @@
             [(ngModel)]="formData.codValue"
             name="codValue"
             placeholder="VD: 150000"
+            inputmode="numeric"
           />
         </div>
       </div>
 
       <div class="actions">
-        <button class="btn btn-secondary" (click)="resetForm()" [disabled]="loading">
+        <button type="button" class="btn btn-secondary" (click)="resetForm()" [disabled]="loading">
           Xóa form
         </button>
 
-        <button class="btn btn-primary" (click)="submit()" [disabled]="loading">
+        <button type="submit" class="btn btn-primary" [disabled]="loading || provincesLoading">
           {{ loading ? 'Đang tính...' : 'Tính cước' }}
         </button>
       </div>
 
-      <div class="alert alert-danger" *ngIf="errorMessage">
+      <div class="alert alert-danger" *ngIf="errorMessage" role="alert" aria-live="polite">
         {{ errorMessage }}
+        <button
+          *ngIf="!provinceOptions.length && !provincesLoading"
+          type="button"
+          class="btn btn-secondary btn-sm ms-2"
+          (click)="loadProvinces()"
+        >
+          Thử tải lại
+        </button>
       </div>
 
-      <div class="result-card" *ngIf="result">
+      <p class="calculator-note" *ngIf="!result && !errorMessage">
+        Mức phí là ước tính theo tuyến, dịch vụ và khối lượng; số tiền thực tế có thể thay đổi khi
+        bưu kiện được cân đo.
+      </p>
+
+      <div class="result-card" *ngIf="result" role="status" aria-live="polite">
         <div class="result-header">
           <h2>Kết quả ước tính</h2>
           <p *ngIf="result?.description">{{ result.description }}</p>
@@ -95,30 +126,33 @@
         <div class="result-main">
           <div class="result-total">
             <span class="result-label">Phí ship</span>
-            <span class="result-value">{{ result?.totalPrice | number : '1.0-0' }}đ</span>
+            <span class="result-value">{{ result?.totalPrice | number: '1.0-0' }}đ</span>
           </div>
 
           <div class="result-total" *ngIf="formData.codValue > 0">
             <span class="result-label">Tiền hàng COD</span>
-            <span class="result-value">{{ formData.codValue | number : '1.0-0' }}đ</span>
+            <span class="result-value">{{ formData.codValue | number: '1.0-0' }}đ</span>
           </div>
 
           <div class="result-total is-highlight" *ngIf="formData.codValue > 0">
             <span class="result-label">Tổng thu hộ</span>
-            <span class="result-value">{{ totalCollect | number : '1.0-0' }}đ</span>
+            <span class="result-value">{{ totalCollect | number: '1.0-0' }}đ</span>
           </div>
 
           <div class="result-breakdown">
             <h3>Chi tiết tính phí</h3>
             <table>
+              <caption class="visually-hidden">
+                Chi tiết các thành phần tính phí vận chuyển
+              </caption>
               <tbody>
                 <tr>
                   <td>Tỉnh gửi</td>
-                  <td>{{ result?.breakdown.originProvinceCode }}</td>
+                  <td>{{ provinceLabel(result?.breakdown.originProvinceCode) }}</td>
                 </tr>
                 <tr>
                   <td>Tỉnh nhận</td>
-                  <td>{{ result?.breakdown.destProvinceCode }}</td>
+                  <td>{{ provinceLabel(result?.breakdown.destProvinceCode) }}</td>
                 </tr>
                 <tr>
                   <td>Vùng gửi</td>
@@ -130,15 +164,15 @@
                 </tr>
                 <tr>
                   <td>Dịch vụ</td>
-                  <td>{{ result?.breakdown.serviceCode }}</td>
+                  <td>{{ serviceLabel(result?.breakdown.serviceCode) }}</td>
                 </tr>
                 <tr>
                   <td>Giá base dịch vụ</td>
-                  <td>{{ result?.breakdown.baseServicePrice | number : '1.0-0' }}đ</td>
+                  <td>{{ result?.breakdown.baseServicePrice | number: '1.0-0' }}đ</td>
                 </tr>
                 <tr>
                   <td>Phụ phí vùng</td>
-                  <td>{{ result?.breakdown.regionFee | number : '1.0-0' }}đ</td>
+                  <td>{{ result?.breakdown.regionFee | number: '1.0-0' }}đ</td>
                 </tr>
                 <tr>
                   <td>Ngưỡng quá cân</td>
@@ -146,21 +180,17 @@
                 </tr>
                 <tr>
                   <td>Phụ phí quá cân</td>
-                  <td>{{ result?.breakdown.overweightFee | number : '1.0-0' }}đ</td>
+                  <td>{{ result?.breakdown.overweightFee | number: '1.0-0' }}đ</td>
                 </tr>
                 <tr>
                   <td>Nội tỉnh</td>
                   <td>{{ result?.breakdown.isLocal ? 'Có' : 'Không' }}</td>
-                </tr>
-                <tr>
-                  <td>Pricing ID</td>
-                  <td>{{ result?.breakdown.pricingId }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
-    </div>
+    </form>
   </div>
 </div>

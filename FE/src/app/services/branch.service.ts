@@ -19,7 +19,7 @@ export class BranchService {
   // BranchService
   findById(id: string) {
     return lastValueFrom(this.httpClient.get<any>(env.baseUrl + '/branches/' + id)).then(
-      (res) => res.data
+      (res) => res.data,
     ); // chỉ trả về data
   }
 
@@ -51,7 +51,7 @@ export class BranchService {
   // GET /branches/trash – lấy tất cả chi nhánh đã xoá mềm
   findTrash() {
     return lastValueFrom(this.httpClient.get<any>(env.baseUrl + '/branches/trash')).then(
-      (res) => res.data
+      (res) => res.data,
     ); // <-- lấy đúng mảng data
   }
 }

@@ -19,10 +19,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
+      issuer: 'ap-post-api',
     });
   }
 
-  async validate(payload: IUser) {
+  async validate(payload: IUser & { tokenType?: string }) {
+    if (payload.tokenType !== 'access') {
+      throw new UnauthorizedException('Invalid access token');
+    }
     const { _id, role } = payload;
 
     // Kiểm tra user trong DB

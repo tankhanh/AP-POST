@@ -8,8 +8,13 @@ import {
   IsString,
   Min,
   ValidateNested,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  ORDER_PAYMENT_METHODS,
+  PaymentMethod,
+} from '../../payments/payment.constants';
 
 class AddressDto {
   @ApiProperty({ example: '65f2a2bb70f7a1f4fa11111' })
@@ -37,6 +42,10 @@ class AddressDto {
 }
 
 export class CreateOrderDto {
+  @IsOptional()
+  @IsUUID('4')
+  clientRequestId?: string;
+
   @ApiProperty({ example: 'Nguyễn Văn A' })
   @IsNotEmpty()
   @IsString()
@@ -101,13 +110,13 @@ export class CreateOrderDto {
   shippingFeePayer?: 'SENDER' | 'RECEIVER' = 'SENDER';
 
   @ApiProperty({
-    example: 'MOMO',
-    enum: ['CASH', 'COD', 'MOMO'],
+    example: PaymentMethod.MOMO,
+    enum: ORDER_PAYMENT_METHODS,
     description: 'Phương thức thanh toán',
   })
   @IsOptional()
-  @IsEnum(['CASH', 'COD', 'MOMO'])
-  paymentMethod?: string;
+  @IsEnum(PaymentMethod)
+  paymentMethod?: PaymentMethod;
 
   @ApiProperty({
     example: 'DROPOFF',

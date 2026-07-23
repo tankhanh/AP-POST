@@ -2,6 +2,7 @@
   min-height: 100vh;
   padding: 48px 24px;
   display: flex;
+  align-items: flex-start;
   justify-content: center;
   background: var(--wise-canvas);
 }
@@ -63,6 +64,16 @@
   flex-wrap: wrap;
   gap: 10px;
   margin: 20px 0;
+}
+
+.calculator-note {
+  margin: 4px 0 0;
+  border-radius: 18px;
+  padding: 14px 16px;
+  color: var(--wise-muted);
+  background: var(--wise-canvas);
+  font-size: 14px;
+  font-weight: 650;
 }
 
 .result-card {
@@ -181,5 +192,25 @@
   .result-total {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .shipping-card {
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .shipping-card-header h1 {
+    font-size: 38px;
+  }
+
+  .actions .btn {
+    flex: 1 1 100%;
+  }
+
+  .result-card {
+    padding: 16px;
+    border-radius: 22px;
   }
 }

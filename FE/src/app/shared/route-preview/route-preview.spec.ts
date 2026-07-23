@@ -1,18 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RoutePreview } from './route-preview';
+import { RoutePreviewComponent } from './route-preview';
 
-describe('RoutePreview', () => {
-  let component: RoutePreview;
-  let fixture: ComponentFixture<RoutePreview>;
+describe('RoutePreviewComponent', () => {
+  let component: RoutePreviewComponent;
+  let fixture: ComponentFixture<RoutePreviewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RoutePreview]
-    })
-    .compileComponents();
+      imports: [RoutePreviewComponent],
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(RoutePreview);
+    fixture = TestBed.createComponent(RoutePreviewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

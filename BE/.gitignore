@@ -1,7 +1,6 @@
 # compiled output
 /dist
 /node_modules
-package-lock.json
 
 # Logs
 logs
@@ -14,6 +13,8 @@ lerna-debug.log*
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # OS
 .DS_Store

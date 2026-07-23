@@ -7,7 +7,6 @@ import {
   OnDestroy,
   CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
 import Chart from 'chart.js/auto';
 import { DashboardService } from '../../../services/dashboard/dashboard.service';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +14,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
-  imports: [CommonModule, HttpClientModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard-home.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -181,7 +180,7 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
           0,
           0,
           this.statusChartCanvas.nativeElement.width,
-          this.statusChartCanvas.nativeElement.height
+          this.statusChartCanvas.nativeElement.height,
         );
         ctx.font = '16px Inter';
         ctx.fillStyle = '#868685';
@@ -215,7 +214,7 @@ export class DashboardHome implements AfterViewInit, OnDestroy {
             tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}` } },
           },
         },
-      }
+      },
     );
   }
 

@@ -7,6 +7,7 @@ import {
   ElementRef,
   Output,
   EventEmitter,
+  OnDestroy,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
@@ -14,8 +15,31 @@ import { isPlatformBrowser } from '@angular/common';
   selector: 'app-map-picker',
   standalone: true,
   templateUrl: './map-picker.html',
+  styles: `
+    .map-picker-canvas {
+      width: 100%;
+      height: 300px;
+      border-radius: 24px;
+    }
+
+    :host ::ng-deep .map-picker-marker {
+      border: 0;
+      background: transparent;
+    }
+
+    :host ::ng-deep .map-picker-marker span {
+      width: 38px;
+      height: 38px;
+      border: 3px solid #fff;
+      border-radius: 50% 50% 50% 10%;
+      display: block;
+      background: var(--wise-danger);
+      box-shadow: 0 5px 14px rgba(14, 15, 12, 0.28);
+      transform: rotate(-45deg);
+    }
+  `,
 })
-export class MapPickerComponent implements AfterViewInit {
+export class MapPickerComponent implements AfterViewInit, OnDestroy {
   @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
 
   @Output() locationSelect = new EventEmitter<{ lat: number; lng: number }>();
@@ -24,17 +48,15 @@ export class MapPickerComponent implements AfterViewInit {
   private marker: any;
   private L: any;
 
-  constructor(@Inject(PLATFORM_ID) private platformId: object) { }
+  constructor(@Inject(PLATFORM_ID) private platformId: object) {}
 
   async ngAfterViewInit() {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // ← DÒNG QUAN TRỌNG NHẤT: .default !!!
     const leafletModule = await import('leaflet');
-    this.L = leafletModule.default;  // ← ĐÚNG RỒI ĐÂY!
-    (window as any).L = this.L;     // gán để bên ngoài dùng chung
+    this.L = leafletModule.default;
+    (window as any).L = this.L;
 
-    // Bây giờ this.L.map chắc chắn là function
     this.map = this.L.map(this.mapContainer.nativeElement).setView([10.76, 106.66], 13);
 
     this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -52,6 +74,10 @@ export class MapPickerComponent implements AfterViewInit {
     this.setMarker(10.76, 106.66);
   }
 
+  ngOnDestroy() {
+    this.map?.remove();
+  }
+
   public setMarker(lat: number, lng: number) {
     if (!this.map || !this.L) {
       setTimeout(() => this.setMarker(lat, lng), 100);
@@ -61,16 +87,14 @@ export class MapPickerComponent implements AfterViewInit {
     if (this.marker) this.marker.remove();
 
     const icon = this.L.divIcon({
-      className: 'custom-marker',
-      html: `<iconify-icon icon="mdi:map-marker" width="44" height="44" style="color:#e74c3c; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));"></iconify-icon>`,
-      iconSize: [44, 44],
-      iconAnchor: [22, 44],
+      className: 'map-picker-marker',
+      html: '<span></span>',
+      iconSize: [38, 38],
+      iconAnchor: [19, 38],
     });
 
-    this.marker = this.L.marker([lat, lng], { icon }).addTo(this.map);
+    this.marker = this.L.marker([lat, lng], { icon, draggable: true }).addTo(this.map);
     this.map.setView([lat, lng], 15);
-
-    this.marker = this.L.marker([lat, lng], { draggable: true }).addTo(this.map);
 
     this.marker.on('dragend', (e: any) => {
       const pos = e.target.getLatLng();

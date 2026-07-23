@@ -1,8 +1,11 @@
-<div class="container mt-4" *ngIf="order">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0">Chỉnh sửa đơn hàng #{{ order._id }}</h4>
+<div class="container-fluid" *ngIf="order">
+  <header class="ap-dashboard-header">
+    <div>
+      <div class="ap-dashboard-kicker">Cập nhật đơn hàng</div>
+      <h1 class="ap-dashboard-title ap-order-id">#{{ order.waybill || order._id }}</h1>
+    </div>
     <span class="badge bg-primary fs-5">{{ statusText(order.status) }}</span>
-  </div>
+  </header>
 
   <!-- Thông tin tài chính -->
   <div class="row mb-4 g-3">
@@ -47,8 +50,9 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label class="form-label fw-semibold">Họ và tên</label>
+              <label class="form-label fw-semibold" for="editSenderName">Họ và tên</label>
               <input
+                id="editSenderName"
                 type="text"
                 class="form-control"
                 formControlName="senderName"
@@ -57,15 +61,16 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold">Tỉnh/Thành phố</label>
+              <div class="form-label fw-semibold">Tỉnh/Thành phố</div>
               <p class="form-control-static fw-medium text-muted">
                 {{ getProvinceName(orderForm.value.pickupProvinceId) || 'Chưa có thông tin' }}
               </p>
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold">Phường/Xã</label>
+              <label class="form-label fw-semibold" for="editPickupCommune">Phường/Xã</label>
               <select
+                id="editPickupCommune"
                 class="form-select"
                 formControlName="pickupCommuneId"
                 [disabled]="!canEditPickupAddress()"
@@ -76,8 +81,9 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold">Địa chỉ chi tiết</label>
+              <label class="form-label fw-semibold" for="editPickupAddress">Địa chỉ chi tiết</label>
               <input
+                id="editPickupAddress"
                 type="text"
                 class="form-control"
                 formControlName="pickupDetailAddress"
@@ -97,8 +103,9 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
-              <label class="form-label fw-semibold">Họ và tên</label>
+              <label class="form-label fw-semibold" for="editReceiverName">Họ và tên</label>
               <input
+                id="editReceiverName"
                 type="text"
                 class="form-control"
                 formControlName="receiverName"
@@ -107,8 +114,9 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold">Số điện thoại</label>
+              <label class="form-label fw-semibold" for="editReceiverPhone">Số điện thoại</label>
               <input
+                id="editReceiverPhone"
                 type="text"
                 class="form-control"
                 formControlName="receiverPhone"
@@ -117,8 +125,9 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold">Email</label>
+              <label class="form-label fw-semibold" for="editReceiverEmail">Email</label>
               <input
+                id="editReceiverEmail"
                 type="email"
                 class="form-control"
                 formControlName="email"
@@ -127,15 +136,16 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold">Tỉnh/Thành phố</label>
+              <div class="form-label fw-semibold">Tỉnh/Thành phố</div>
               <p class="form-control-static fw-medium text-muted">
                 {{ getProvinceName(orderForm.value.deliveryProvinceId) || 'Chưa có thông tin' }}
               </p>
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold">Phường/Xã</label>
+              <label class="form-label fw-semibold" for="editDeliveryCommune">Phường/Xã</label>
               <select
+                id="editDeliveryCommune"
                 class="form-select"
                 formControlName="deliveryCommuneId"
                 [disabled]="!canEditDeliveryAddress()"
@@ -146,8 +156,11 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold">Địa chỉ chi tiết</label>
+              <label class="form-label fw-semibold" for="editDeliveryAddress"
+                >Địa chỉ chi tiết</label
+              >
               <input
+                id="editDeliveryAddress"
                 type="text"
                 class="form-control"
                 formControlName="deliveryDetailAddress"
@@ -168,8 +181,15 @@
           <div class="card-body">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Trạng thái đơn hàng</label>
-                <select class="form-select" formControlName="status" [disabled]="!canEditStatus()">
+                <label class="form-label fw-semibold" for="editOrderStatus"
+                  >Trạng thái đơn hàng</label
+                >
+                <select
+                  id="editOrderStatus"
+                  class="form-select"
+                  formControlName="status"
+                  [disabled]="!canEditStatus()"
+                >
                   <option *ngFor="let s of orderStatusOptions" [value]="s.value">
                     {{ s.label }}
                   </option>
@@ -177,8 +197,11 @@
               </div>
 
               <div class="col-md-12 mt-3">
-                <label class="form-label fw-semibold">Ghi chú nội bộ / Hướng dẫn shipper</label>
+                <label class="form-label fw-semibold" for="editOrderDetails"
+                  >Ghi chú nội bộ / Hướng dẫn shipper</label
+                >
                 <textarea
+                  id="editOrderDetails"
                   class="form-control"
                   rows="4"
                   formControlName="details"

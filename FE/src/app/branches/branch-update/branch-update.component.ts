@@ -34,7 +34,7 @@ export class BranchUpdateComponent implements OnInit {
     private formBuilder: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit(): void {
@@ -85,7 +85,6 @@ export class BranchUpdateComponent implements OnInit {
     try {
       this.loading = true;
       const branch: any = await this.branchService.findById(this.branchId);
-      console.log('BRANCH FROM API = ', branch);
 
       // Map provinceName -> provinceId
       let provinceId: string | '' = '';

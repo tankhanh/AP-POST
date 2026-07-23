@@ -1,0 +1,49 @@
+<div class="shipper-shell">
+  <a class="skip-link" href="#shipper-main">Bỏ qua điều hướng</a>
+  <header class="shipper-topbar">
+    <a routerLink="/shipper" class="shipper-brand" aria-label="AP Post Shipper">
+      <span class="ap-brand-mark">AP</span>
+      <span>
+        <strong>AP Post Driver</strong>
+        <small [class.offline]="!online">
+          <span class="connection-dot"></span>
+          {{ online ? 'Đang trực tuyến' : 'Mất kết nối' }}
+        </small>
+      </span>
+    </a>
+    <div class="topbar-actions">
+      <span class="driver-name" *ngIf="authService.currentUser$ | async as user">
+        {{ user.name || 'Shipper' }}
+      </span>
+      <app-notification-center></app-notification-center>
+    </div>
+  </header>
+
+  <div class="offline-banner" *ngIf="!online" role="status">
+    <iconify-icon icon="mdi:wifi-off"></iconify-icon>
+    Dữ liệu sẽ không thể cập nhật cho đến khi có kết nối trở lại.
+  </div>
+
+  <main class="shipper-content" id="shipper-main" tabindex="-1">
+    <router-outlet></router-outlet>
+  </main>
+
+  <nav class="shipper-bottom-nav" aria-label="Điều hướng chính của shipper">
+    <a routerLink="/shipper" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <iconify-icon icon="mdi:view-dashboard-outline"></iconify-icon>
+      <span>Tổng quan</span>
+    </a>
+    <a routerLink="/shipper/jobs" routerLinkActive="active">
+      <iconify-icon icon="mdi:truck-delivery-outline"></iconify-icon>
+      <span>Đơn giao</span>
+    </a>
+    <a routerLink="/shipper/history" routerLinkActive="active">
+      <iconify-icon icon="mdi:history"></iconify-icon>
+      <span>Lịch sử</span>
+    </a>
+    <a routerLink="/shipper/profile" routerLinkActive="active">
+      <iconify-icon icon="mdi:account-outline"></iconify-icon>
+      <span>Tài khoản</span>
+    </a>
+  </nav>
+</div>

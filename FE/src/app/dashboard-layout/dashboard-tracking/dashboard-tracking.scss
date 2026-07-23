@@ -57,9 +57,16 @@
   gap: 12px;
 }
 
+.tracking-help {
+  margin-top: 12px;
+  color: var(--wise-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
 .tracking-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   overflow: hidden;
   margin-bottom: 20px;
@@ -144,5 +151,22 @@
   .tracking-search-form,
   .tracking-summary {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .tracking-header h1 {
+    font-size: 38px;
+  }
+
+  .tracking-search-card,
+  .tracking-timeline-card {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .tracking-summary,
+  .tracking-empty {
+    border-radius: 22px;
   }
 }

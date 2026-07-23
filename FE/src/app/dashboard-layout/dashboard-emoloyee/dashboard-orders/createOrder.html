@@ -1,58 +1,147 @@
-<div class="container mt-4">
-  <h4 class="fw-bold mb-3">{{ pageTitle }}</h4>
+<div class="container-fluid" [class.ap-public-ship-page]="isPublicFlow">
+  @if (isPublicFlow) {
+    <a routerLink="/" class="ap-back-link mb-3">
+      <iconify-icon icon="mdi:arrow-left"></iconify-icon>
+      Về trang chủ
+    </a>
+  }
+  <header class="ap-dashboard-header">
+    <div>
+      <div class="ap-dashboard-kicker">
+        {{ isPublicFlow ? 'Gửi hàng trực tuyến' : 'Đơn hàng mới' }}
+      </div>
+      <h1 class="ap-dashboard-title">{{ pageTitle }}</h1>
+      @if (isPublicFlow) {
+        <p class="ap-subtitle mb-0">
+          Khai báo thông tin, xác thực email và nhận mã vận đơn ngay sau khi hoàn tất.
+        </p>
+      }
+    </div>
+    @if (isPublicFlow) {
+      <div class="ap-ship-steps" aria-label="Quy trình tạo đơn">
+        <span><strong>1</strong> Thông tin</span>
+        <span><strong>2</strong> Xác thực</span>
+        <span><strong>3</strong> Mã vận đơn</span>
+      </div>
+    }
+  </header>
 
-  <form [formGroup]="orderForm" (ngSubmit)="submit()">
+  @if (provincesLoading) {
+    <div class="ap-loading-state" role="status">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      Đang tải danh sách địa danh...
+    </div>
+  }
+  @if (provincesError) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ provincesError }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="loadProvinces()">
+        Thử lại
+      </button>
+    </div>
+  }
+
+  <form [formGroup]="orderForm" (ngSubmit)="submit()" class="ap-form-panel">
     <div class="row g-4">
       <!-- CỘT TRÁI - Người gửi & Lấy hàng -->
       <div class="col-lg-6">
         <div class="mb-3">
-          <label class="form-label fw-semibold mb-2">Người gửi</label>
+          <label class="form-label fw-semibold mb-2" for="senderName">Người gửi</label>
           <input
+            id="senderName"
             type="text"
             class="form-control"
             formControlName="senderName"
             placeholder="Nhập tên người gửi"
+            autocomplete="name"
           />
         </div>
-        <div class="mb-3" *ngIf="isPublicFlow">
-          <label class="form-label fw-semibold mb-2">SĐT người gửi (xác thực OTP)</label>
-          <div class="input-group">
-            <input
-              type="text"
-              class="form-control"
-              formControlName="senderPhone"
-              placeholder="0901234567"
-            />
-            <button
-              class="btn btn-outline-primary"
-              type="button"
-              (click)="requestOtp()"
-              [disabled]="requestingOtp"
-            >
-              {{ requestingOtp ? 'Đang gửi...' : 'Gửi OTP' }}
-            </button>
-          </div>
-        </div>
-        <div class="mb-3" *ngIf="isPublicFlow">
-          <label class="form-label fw-semibold mb-2">Mã OTP</label>
-          <div class="input-group">
-            <input type="text" class="form-control" [(ngModel)]="otpCode" [ngModelOptions]="{ standalone: true }" />
-            <button
-              class="btn btn-outline-success"
-              type="button"
-              (click)="verifyOtp()"
-              [disabled]="verifyingOtp"
-            >
-              {{ verifyingOtp ? 'Đang xác thực...' : 'Xác thực OTP' }}
-            </button>
-          </div>
-          <small *ngIf="otpVerified" class="text-success">SĐT đã xác thực thành công.</small>
-        </div>
+        @if (isPublicFlow) {
+          <div class="ap-otp-panel mb-4">
+            <div class="ap-otp-panel__heading">
+              <span class="ap-otp-panel__icon" aria-hidden="true">
+                <iconify-icon icon="mdi:shield-check-outline"></iconify-icon>
+              </span>
+              <div>
+                <h2>Xác thực liên hệ</h2>
+                <p>OTP sẽ được gửi đến email và chỉ có hiệu lực trong 5 phút.</p>
+              </div>
+            </div>
 
-        <label class="form-label fw-semibold mb-2">Địa chỉ lấy hàng</label>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold mb-2" for="senderPhone">
+                  Số điện thoại người gửi <span class="text-danger">*</span>
+                </label>
+                <input
+                  id="senderPhone"
+                  type="tel"
+                  class="form-control"
+                  formControlName="senderPhone"
+                  placeholder="0901234567"
+                  autocomplete="tel"
+                  inputmode="tel"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold mb-2" for="senderEmail">
+                  Email nhận OTP <span class="text-danger">*</span>
+                </label>
+                <input
+                  id="senderEmail"
+                  type="email"
+                  class="form-control"
+                  formControlName="email"
+                  placeholder="ban@example.com"
+                  autocomplete="email"
+                />
+              </div>
+            </div>
+
+            <div class="input-group mt-3">
+              <label class="visually-hidden" for="senderOtp">Mã OTP</label>
+              <input
+                id="senderOtp"
+                type="text"
+                class="form-control"
+                [(ngModel)]="otpCode"
+                [ngModelOptions]="{ standalone: true }"
+                placeholder="Nhập mã OTP 6 số"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+              />
+              <button
+                class="btn btn-outline-primary"
+                type="button"
+                (click)="requestOtp()"
+                [disabled]="requestingOtp"
+              >
+                {{ requestingOtp ? 'Đang gửi...' : 'Gửi OTP' }}
+              </button>
+              <button
+                class="btn btn-primary"
+                type="button"
+                (click)="verifyOtp()"
+                [disabled]="verifyingOtp || !publicOtpToken"
+              >
+                {{ verifyingOtp ? 'Đang xác thực...' : 'Xác thực' }}
+              </button>
+            </div>
+            @if (otpVerified) {
+              <div class="ap-verified-message" role="status">
+                <iconify-icon icon="mdi:check-decagram"></iconify-icon>
+                Email liên hệ đã được xác thực.
+              </div>
+            }
+          </div>
+        }
+
+        <label class="form-label fw-semibold mb-2" for="pickupProvince">Địa chỉ lấy hàng</label>
         <div class="row g-3 mb-1">
           <div class="col-md-6 mb-2">
             <select
+              id="pickupProvince"
               class="form-control"
               formControlName="pickupProvinceId"
               (change)="onPickupProvinceChange()"
@@ -62,7 +151,12 @@
             </select>
           </div>
           <div class="col-md-6">
-            <select class="form-control" formControlName="pickupCommuneId">
+            <select
+              id="pickupCommune"
+              class="form-control"
+              formControlName="pickupCommuneId"
+              aria-label="Phường xã lấy hàng"
+            >
               <option value="">-- Chọn phường/xã --</option>
               <option *ngFor="let c of pickupCommunes" [value]="c._id">{{ c.name }}</option>
             </select>
@@ -70,24 +164,28 @@
         </div>
         <div class="col-md-12 mb-3">
           <input
+            id="pickupDetailAddress"
             type="text"
             class="form-control"
             formControlName="pickupDetailAddress"
             placeholder="Số nhà, tên đường..."
+            aria-label="Địa chỉ lấy hàng chi tiết"
+            autocomplete="street-address"
           />
         </div>
 
         <div class="row g-3">
           <div class="col-md-4">
-            <label class="form-label fw-semibold mb-2">Dịch vụ</label>
-            <select class="form-control" formControlName="serviceCode">
+            <label class="form-label fw-semibold mb-2" for="serviceCode">Dịch vụ</label>
+            <select id="serviceCode" class="form-control" formControlName="serviceCode">
               <option value="STD">Tiêu chuẩn</option>
               <option value="EXP">Nhanh</option>
             </select>
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold mb-2">Khối lượng (kg)</label>
+            <label class="form-label fw-semibold mb-2" for="weightKg">Khối lượng (kg)</label>
             <input
+              id="weightKg"
               type="number"
               step="0.1"
               min="0.01"
@@ -96,19 +194,28 @@
             />
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold mb-2">Giá trị hàng (VNĐ)</label>
-            <input type="number" class="form-control" formControlName="codValue" placeholder="0" />
+            <label class="form-label fw-semibold mb-2" for="codValue">Giá trị hàng (VNĐ)</label>
+            <input
+              id="codValue"
+              type="number"
+              class="form-control"
+              formControlName="codValue"
+              placeholder="0"
+            />
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold mb-2">Ai trả phí vận chuyển?</label>
-            <select class="form-control" formControlName="shippingFeePayer">
+            <label class="form-label fw-semibold mb-2" for="shippingFeePayer"
+              >Ai trả phí vận chuyển?</label
+            >
+            <select id="shippingFeePayer" class="form-control" formControlName="shippingFeePayer">
               <option value="SENDER">Người gửi</option>
               <option value="RECEIVER">Người nhận</option>
             </select>
           </div>
           <div class="col-md-8">
-            <label class="form-label fw-semibold mb-2">Ghi chú</label>
+            <label class="form-label fw-semibold mb-2" for="orderDetails">Ghi chú</label>
             <textarea
+              id="orderDetails"
               class="form-control"
               rows="1"
               formControlName="details"
@@ -116,22 +223,25 @@
             ></textarea>
           </div>
           <div class="col-md-4" *ngIf="isPublicFlow">
-            <label class="form-label fw-semibold mb-2">Hình thức gửi</label>
-            <select class="form-control" formControlName="pickupMethod">
+            <label class="form-label fw-semibold mb-2" for="pickupMethod">Hình thức gửi</label>
+            <select id="pickupMethod" class="form-control" formControlName="pickupMethod">
               <option value="DROPOFF">Mang ra bưu cục</option>
               <option value="PICKUP">Lấy hàng tận nơi</option>
             </select>
           </div>
           <div class="col-md-8" *ngIf="isPublicFlow && orderForm.value.pickupMethod === 'PICKUP'">
-            <label class="form-label fw-semibold mb-2">Khung giờ lấy hàng</label>
-            <input type="datetime-local" class="form-control" formControlName="pickupSlot" />
+            <label class="form-label fw-semibold mb-2" for="pickupSlot">Khung giờ lấy hàng</label>
+            <input
+              id="pickupSlot"
+              type="datetime-local"
+              class="form-control"
+              formControlName="pickupSlot"
+            />
           </div>
         </div>
         <!-- ==================== BẢN ĐỒ DUY NHẤT - LUÔN HIỂN THỊ ==================== -->
         <div class="mt-4">
-          <label class="form-label fw-semibold mb-2"
-            >Vị trí trên bản đồ (Lấy hàng & Giao hàng)</label
-          >
+          <h2 class="form-section-title">Vị trí trên bản đồ (Lấy hàng & Giao hàng)</h2>
           <app-dual-map
             [pickup]="
               orderForm.value.pickupLat && orderForm.value.pickupLng
@@ -154,19 +264,22 @@
       <!-- CỘT PHẢI - Người nhận & Giao hàng -->
       <div class="col-lg-6">
         <div class="mb-3">
-          <label class="form-label fw-semibold mb-2">Người nhận</label>
+          <label class="form-label fw-semibold mb-2" for="receiverName">Người nhận</label>
           <input
+            id="receiverName"
             type="text"
             class="form-control"
             formControlName="receiverName"
             placeholder="Nhập tên người nhận"
+            autocomplete="name"
           />
         </div>
 
-        <label class="form-label fw-semibold mb-2">Địa chỉ giao hàng</label>
+        <label class="form-label fw-semibold mb-2" for="deliveryProvince">Địa chỉ giao hàng</label>
         <div class="row g-3 mb-1">
           <div class="col-md-6 mb-2">
             <select
+              id="deliveryProvince"
               class="form-control"
               formControlName="deliveryProvinceId"
               (change)="onDeliveryProvinceChange()"
@@ -176,7 +289,12 @@
             </select>
           </div>
           <div class="col-md-6">
-            <select class="form-control" formControlName="deliveryCommuneId">
+            <select
+              id="deliveryCommune"
+              class="form-control"
+              formControlName="deliveryCommuneId"
+              aria-label="Phường xã giao hàng"
+            >
               <option value="">-- Chọn phường/xã --</option>
               <option *ngFor="let c of deliveryCommunes" [value]="c._id">{{ c.name }}</option>
             </select>
@@ -184,40 +302,50 @@
         </div>
         <div class="col-md-12 mb-3">
           <input
+            id="deliveryDetailAddress"
             type="text"
             class="form-control"
             formControlName="deliveryDetailAddress"
             placeholder="Số nhà, tên đường..."
+            aria-label="Địa chỉ giao hàng chi tiết"
+            autocomplete="street-address"
           />
         </div>
 
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold mb-2">SĐT người nhận</label>
+            <label class="form-label fw-semibold mb-2" for="receiverPhone">SĐT người nhận</label>
             <input
+              id="receiverPhone"
               type="text"
               class="form-control"
               formControlName="receiverPhone"
               placeholder="0901234567"
+              autocomplete="tel"
+              inputmode="tel"
             />
           </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold mb-2"
-              >Email người nhận <small class="text-muted">(không bắt buộc)</small></label
+          <div class="col-md-6" *ngIf="!isPublicFlow">
+            <label class="form-label fw-semibold mb-2" for="receiverEmail"
+              >Email liên hệ <small class="text-muted">(không bắt buộc)</small></label
             >
             <input
+              id="receiverEmail"
               type="email"
               class="form-control"
               formControlName="email"
               placeholder="khach@gmail.com"
+              autocomplete="email"
             />
           </div>
         </div>
 
         <!-- Phương thức thanh toán -->
         <div class="col-md-12">
-          <label class="form-label fw-semibold mb-2">Phương thức thanh toán</label>
-          <select class="form-control" formControlName="paymentMethod">
+          <label class="form-label fw-semibold mb-2" for="paymentMethod"
+            >Phương thức thanh toán</label
+          >
+          <select id="paymentMethod" class="form-control" formControlName="paymentMethod">
             <option value="CASH">Trả tiền tại quầy (người gửi)</option>
             <option value="COD">Thu hộ COD (người nhận)</option>
             <option value="MOMO" class="text-primary fw-bold">Thanh toán MOMO</option>
@@ -244,7 +372,11 @@
     </div>
 
     <div class="text-center mt-3">
-      <button class="btn btn-danger btn-lg px-5" [disabled]="loading || orderForm.invalid">
+      <button
+        type="submit"
+        class="btn btn-primary btn-lg px-5"
+        [disabled]="loading || orderForm.invalid || (isPublicFlow && !otpVerified)"
+      >
         <span *ngIf="!loading">{{ submitLabel }}</span>
         <span *ngIf="loading">Đang tạo...</span>
       </button>

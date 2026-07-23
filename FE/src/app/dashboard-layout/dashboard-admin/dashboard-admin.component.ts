@@ -202,7 +202,7 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
             },
           },
         },
-      })
+      }),
     );
 
     const statusData = data.charts.statusDistribution || {};
@@ -230,7 +230,7 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
           cutout: '62%',
           plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } },
         },
-      })
+      }),
     );
 
     const topEmp = data.charts?.topEmployees || [];
@@ -242,7 +242,7 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
           0,
           0,
           this.topEmployeesChart.nativeElement.width,
-          this.topEmployeesChart.nativeElement.height
+          this.topEmployeesChart.nativeElement.height,
         );
         ctx.font = '14px Inter';
         ctx.fillStyle = '#868685';
@@ -251,7 +251,7 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
         ctx.fillText(
           'Chưa có dữ liệu nhân viên',
           this.topEmployeesChart.nativeElement.width / 2,
-          this.topEmployeesChart.nativeElement.height / 2
+          this.topEmployeesChart.nativeElement.height / 2,
         );
       }
     } else {
@@ -293,7 +293,7 @@ export class DashboardAdmin implements AfterViewInit, OnDestroy {
               y: { grid: { display: false } },
             },
           },
-        })
+        }),
       );
     }
   }

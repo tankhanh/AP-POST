@@ -1,13 +1,18 @@
-<div class="container mt-4">
-  <h2 class="mb-4 fw-bold">🏢 Danh sách chi nhánh / bưu cục</h2>
+<div class="container-fluid">
+  <header class="ap-dashboard-header">
+    <div>
+      <div class="ap-dashboard-kicker">Mạng lưới AP Post</div>
+      <h1 class="ap-dashboard-title">Danh sách chi nhánh.</h1>
+    </div>
+  </header>
 
   <!-- Filter Card -->
-  <div class="card mb-4 p-3 shadow-sm">
+  <div class="ap-form-panel mb-4">
     <form class="row g-3 align-items-end">
-      <!-- Tìm kiếm -->
       <div class="col-md-4">
-        <label class="form-label">Tìm kiếm</label>
+        <label class="form-label" for="branchSearch">Tìm kiếm</label>
         <input
+          id="branchSearch"
           type="text"
           class="form-control"
           placeholder="Mã chi nhánh / Tên / Địa chỉ"
@@ -17,10 +22,10 @@
         />
       </div>
 
-      <!-- Trạng thái -->
       <div class="col-md-3">
-        <label class="form-label">Trạng thái</label>
+        <label class="form-label" for="branchStatus">Trạng thái</label>
         <select
+          id="branchStatus"
           class="form-select"
           [(ngModel)]="filters.isActive"
           name="isActive"
@@ -35,89 +40,101 @@
   </div>
 
   <!-- Branch Table -->
-  <table class="table table-bordered table-hover align-middle text-center">
-    <thead class="table-light">
-      <tr>
-        <th>Mã</th>
-        <th>Tên chi nhánh</th>
-        <th>Địa chỉ</th>
-        <th>Điện thoại</th>
-        <th>Trạng thái</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <ng-container *ngFor="let b of pagedBranches()">
-        <tr (click)="toggleExpand(b._id)" style="cursor: pointer">
-          <td>{{ b.code }}</td>
-          <td>{{ b.name }}</td>
-          <td>{{ b.address }}</td>
-          <td>{{ b.phone }}</td>
-          <td>
-            <span class="badge" [ngClass]="b.isActive ? 'bg-success' : 'bg-secondary'">
-              {{ b.isActive ? 'Hoạt động' : 'Tạm dừng' }}
-            </span>
-          </td>
+  <div class="table-responsive">
+    <table class="table ap-table align-middle text-center">
+      <thead>
+        <tr>
+          <th>Mã</th>
+          <th>Tên chi nhánh</th>
+          <th>Địa chỉ</th>
+          <th>Điện thoại</th>
+          <th>Trạng thái</th>
         </tr>
+      </thead>
 
-        <!-- Expand Detail -->
-        <tr *ngIf="expandedId === b._id">
-          <td colspan="5">
-            <div class="bg-dark text-white p-3 rounded-3">
-              <h6 class="fw-bold text-warning mb-3">Chi tiết chi nhánh</h6>
+      <tbody>
+        <ng-container *ngFor="let b of pagedBranches()">
+          <tr (click)="toggleExpand(b._id)" (keydown.enter)="toggleExpand(b._id)" tabindex="0">
+            <td data-label="Mã">{{ b.code }}</td>
+            <td data-label="Tên">{{ b.name }}</td>
+            <td data-label="Địa chỉ">{{ b.address }}</td>
+            <td data-label="Điện thoại">{{ b.phone }}</td>
+            <td data-label="Trạng thái">
+              <span [ngClass]="statusClass(b.isActive)">{{ statusText(b.isActive) }}</span>
+            </td>
+          </tr>
 
-              <p><strong class="text-warning">ID:</strong> {{ b._id }}</p>
-              <p><strong class="text-warning">Mã:</strong> {{ b.code }}</p>
-              <p><strong class="text-warning">Tên:</strong> {{ b.name }}</p>
-              <p><strong class="text-warning">Địa chỉ:</strong> {{ b.address }}</p>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong class="text-warning">Tỉnh:</strong> {{ b.provinceName || '---' }}</p>
-                  <p>
-                    <strong class="text-warning">Xã/Phường:</strong> {{ b.communeName || '---' }}
-                  </p>
-                </div>
-
-                <div class="col-md-6">
-                  <p><strong class="text-warning">Điện thoại:</strong> {{ b.phone }}</p>
-                  <p>
-                    <strong class="text-warning">Ngày tạo:</strong>
-                    {{ b.createdAt | date : 'dd/MM/yyyy' }}
-                  </p>
+          <!-- Expand Detail -->
+          <tr *ngIf="expandedId === b._id">
+            <td colspan="5">
+              <div class="ap-detail-card">
+                <h6>Chi tiết chi nhánh</h6>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">ID</span>
+                    <span class="info-value">{{ b._id }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Mã</span>
+                    <span class="info-value">{{ b.code }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Tên</span>
+                    <span class="info-value">{{ b.name }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Địa chỉ</span>
+                    <span class="info-value">{{ b.address }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Tỉnh</span>
+                    <span class="info-value">{{ b.provinceName || '---' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Xã/Phường</span>
+                    <span class="info-value">{{ b.communeName || '---' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Điện thoại</span>
+                    <span class="info-value">{{ b.phone }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Ngày tạo</span>
+                    <span class="info-value">{{ b.createdAt | date: 'dd/MM/yyyy' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Trạng thái</span>
+                    <span class="info-value">
+                      <span [ngClass]="statusClass(b.isActive)">{{ statusText(b.isActive) }}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
 
-              <div class="mt-2">
-                <strong class="text-warning">Trạng thái:</strong>
-                <span class="badge" [ngClass]="b.isActive ? 'bg-success' : 'bg-secondary'">
-                  {{ b.isActive ? 'Hoạt động' : 'Tạm dừng' }}
-                </span>
-              </div>
-            </div>
-          </td>
-        </tr>
-      </ng-container>
-    </tbody>
-  </table>
-
-  <div *ngIf="filteredBranches.length === 0" class="alert alert-info text-center mt-3">
-    Không có chi nhánh nào.
+  <div *ngIf="filteredBranches.length === 0" class="ap-empty-state">
+    <iconify-icon icon="mdi:office-building-marker-outline"></iconify-icon>
+    <p>Không có chi nhánh nào.</p>
   </div>
 
   <!-- Pagination -->
   <nav *ngIf="filteredBranches.length >= pageSize">
-    <ul class="pagination justify-content-center mt-3">
+    <ul class="ap-pagination">
       <li class="page-item" [class.disabled]="currentPage === 1">
-        <button class="page-link" (click)="changePage(currentPage - 1)">Trước</button>
+        <button type="button" class="page-link" (click)="changePage(currentPage - 1)">Trước</button>
       </li>
 
       <li class="page-item" *ngFor="let p of totalPages()" [class.active]="p === currentPage">
-        <button class="page-link" (click)="changePage(p)">{{ p }}</button>
+        <button type="button" class="page-link" (click)="changePage(p)">{{ p }}</button>
       </li>
 
       <li class="page-item" [class.disabled]="currentPage === totalPages().length">
-        <button class="page-link" (click)="changePage(currentPage + 1)">Sau</button>
+        <button type="button" class="page-link" (click)="changePage(currentPage + 1)">Sau</button>
       </li>
     </ul>
   </nav>

@@ -1,8 +1,7 @@
-import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationsService } from '../../services/notifications.service';
 import { AuthService } from '../../services/auth.service';
-import { HttpClientModule } from '@angular/common/http';
 import { SocketService } from '../../services/socket.service';
 import { SoundService } from '../../services/sound.service';
 import { Subscription } from 'rxjs';
@@ -12,7 +11,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-notification-center',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule],
   templateUrl: './notification-center.html',
   styleUrls: ['./notification-center.css'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
@@ -23,6 +22,7 @@ export class NotificationCenter implements OnInit {
   loading = false;
   open = false;
   private socketSub?: Subscription;
+  private assignmentSub?: Subscription;
   muted = false;
 
   constructor(
@@ -37,20 +37,23 @@ export class NotificationCenter implements OnInit {
   ngOnInit(): void {
     if (this.auth.isLoggedIn()) {
       // read mute pref
-      try { this.muted = this.sound.isMuted(); } catch (e) { this.muted = false; }
+      try {
+        this.muted = this.sound.isMuted();
+      } catch (e) {
+        this.muted = false;
+      }
       // seed with existing notifications
       this.load();
 
       // connect socket and listen for real-time notifications
       this.socket.connect();
       this.socketSub = this.socket.on('notification').subscribe((n: any) => {
+        if (!this.canReceive(n)) return;
         // avoid duplicates (same _id) when server emits multiple events
         if (n && n._id && this.notifications.some((s) => s._id === n._id)) return;
         // prepend new notification
         this.notifications.unshift(n);
         this.refreshUnreadCount();
-        // open the panel for visibility
-        this.open = true;
         // play a short sound to draw attention (silently ignore failures)
         try {
           this.sound.play();
@@ -65,11 +68,15 @@ export class NotificationCenter implements OnInit {
           // ignore toastr errors
         }
       });
+      if (this.auth.isShipper()) {
+        this.assignmentSub = this.socket.on('assignment:changed').subscribe(() => this.load());
+      }
     }
   }
 
   ngOnDestroy(): void {
     this.socketSub?.unsubscribe();
+    this.assignmentSub?.unsubscribe();
     this.socket.disconnect();
   }
 
@@ -78,10 +85,17 @@ export class NotificationCenter implements OnInit {
     this.open = !this.open;
   }
 
+  @HostListener('document:keydown.escape')
+  closeOnEscape() {
+    this.open = false;
+  }
+
   toggleMute(event?: Event) {
     if (event) event.stopPropagation();
     this.muted = !this.muted;
-    try { this.sound.setMuted(this.muted); } catch (e) {}
+    try {
+      this.sound.setMuted(this.muted);
+    } catch (e) {}
   }
 
   openNotification(n: any) {
@@ -89,6 +103,12 @@ export class NotificationCenter implements OnInit {
     try {
       this.markRead(n);
     } catch (err) {}
+
+    if (this.auth.isShipper() && n.relatedOrderId) {
+      this.router.navigate(['/shipper/jobs', n.relatedOrderId]).catch(() => {});
+      this.open = false;
+      return;
+    }
 
     const target = n.relatedOrderId || n.relatedShipmentId || n.waybill || n.recipient;
     // navigate to tracking with query param for best compatibility
@@ -104,6 +124,9 @@ export class NotificationCenter implements OnInit {
     const parts: string[] = [];
     if (user._id) parts.push(String(user._id));
     if (user.email) parts.push(String(user.email).trim().toLowerCase());
+    if (user.role && !this.auth.isShipper(user)) {
+      parts.push(`role:${String(user.role).trim().toUpperCase()}`);
+    }
     if (parts.length) recipientFilter = `recipient=${parts.map(encodeURIComponent).join(',')}`;
     this.svc.list(1, 20, recipientFilter).subscribe(
       (res: any) => {
@@ -121,7 +144,9 @@ export class NotificationCenter implements OnInit {
     this.svc.update(n._id, { status: 'SENT', readAt }).subscribe((res: any) => {
       const updated = res?.data || res || {};
       this.notifications = this.notifications.map((item) =>
-        item._id === n._id ? { ...item, ...updated, status: 'SENT', readAt: updated.readAt || readAt } : item,
+        item._id === n._id
+          ? { ...item, ...updated, status: 'SENT', readAt: updated.readAt || readAt }
+          : item,
       );
       this.refreshUnreadCount();
     });
@@ -130,7 +155,11 @@ export class NotificationCenter implements OnInit {
   markAllRead() {
     this.svc.markAllRead().subscribe(() => {
       // update client-side state quickly
-      this.notifications = this.notifications.map((n) => ({ ...n, status: 'SENT', readAt: new Date() }));
+      this.notifications = this.notifications.map((n) => ({
+        ...n,
+        status: 'SENT',
+        readAt: new Date(),
+      }));
       this.refreshUnreadCount();
     });
   }
@@ -153,6 +182,18 @@ export class NotificationCenter implements OnInit {
 
   private refreshUnreadCount() {
     this.unreadCount = this.notifications.filter((n) => n.status === 'PENDING' && !n.readAt).length;
+  }
+
+  private canReceive(notification: any): boolean {
+    if (!this.auth.isShipper()) return true;
+    const user = this.auth.getUser();
+    const recipient = String(notification?.recipient || '').trim().toLowerCase();
+    return Boolean(
+      recipient &&
+        [String(user._id || '').toLowerCase(), String(user.email || '').trim().toLowerCase()].includes(
+          recipient,
+        ),
+    );
   }
 
   // Play a short notification sound. Prefer bundled audio file, fallback to WebAudio beep.

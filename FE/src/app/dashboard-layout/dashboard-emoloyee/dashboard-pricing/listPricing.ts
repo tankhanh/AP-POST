@@ -34,8 +34,6 @@ export class ListPricing implements OnInit {
   loadPricing() {
     this.pricingService.getAll().subscribe({
       next: (res) => {
-        console.log('FULL RESPONSE:', res);
-
         this.prices = res?.data?.results || [];
 
         this.applyFilters();
@@ -67,7 +65,7 @@ export class ListPricing implements OnInit {
       results = results.filter(
         (p) =>
           (p.serviceId?.name || '').toLowerCase().includes(s) ||
-          (p._id || '').toLowerCase().includes(s)
+          (p._id || '').toLowerCase().includes(s),
       );
     }
 
@@ -92,26 +90,5 @@ export class ListPricing implements OnInit {
 
   toggleExpand(id: string) {
     this.expandedId = this.expandedId === id ? null : id;
-  }
-
-  editPricing(id: string) {
-    alert('Đi tới trang sửa: ' + id);
-  }
-
-  deletePricing(id: string, event: Event) {
-    event.stopPropagation();
-
-    if (!confirm('Bạn có chắc muốn xóa bảng giá này?')) return;
-
-    this.pricingService.delete(id).subscribe({
-      next: () => {
-        alert('Đã xóa thành công');
-        this.loadPricing();
-      },
-      error: (err) => {
-        console.error('Delete error:', err);
-        alert('Không thể xóa.');
-      },
-    });
   }
 }

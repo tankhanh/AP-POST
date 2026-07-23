@@ -7,14 +7,12 @@
             <span class="ap-brand-mark">AP</span>
             <span class="ap-brand-text text-white">AP Post</span>
           </a>
-          |
           <div class="ap-eyebrow">
             <iconify-icon icon="mdi:account-plus"></iconify-icon>
             Bắt đầu miễn phí
           </div>
 
           <h1>Tạo tài khoản của bạn.</h1>
-          <br />
           <p>Sau khi đăng ký, bạn sẽ xác minh email để mở dashboard và bắt đầu tạo đơn.</p>
         </div>
 
@@ -31,6 +29,10 @@
       </aside>
 
       <div class="auth-card">
+        <a [routerLink]="['/']" class="auth-back-link">
+          <span class="auth-back-arrow" aria-hidden="true">←</span>
+          <span>Quay lại</span>
+        </a>
         <a [routerLink]="['/']" class="auth-brand">
           <span class="ap-brand-mark">AP</span>
           <span class="ap-brand-text">AP Post</span>
@@ -39,7 +41,7 @@
         <h2>Bắt đầu ngay.</h2>
         <p class="mb-4">Điền thông tin để tạo tài khoản AP Post.</p>
 
-        <form class="auth-form">
+        <form class="auth-form" (ngSubmit)="register()">
           <div>
             <label class="form-label" for="registerName">Họ và tên</label>
             <input
@@ -49,6 +51,7 @@
               [(ngModel)]="name"
               name="name"
               placeholder="Nguyễn Văn A"
+              autocomplete="name"
               required
             />
           </div>
@@ -62,6 +65,7 @@
               [(ngModel)]="phone"
               name="phone"
               placeholder="0900 000 000"
+              autocomplete="tel"
               required
             />
           </div>
@@ -75,6 +79,7 @@
               [(ngModel)]="email"
               name="email"
               placeholder="you@example.com"
+              autocomplete="email"
               required
             />
           </div>
@@ -88,42 +93,50 @@
               [(ngModel)]="password"
               name="password"
               placeholder="Tối thiểu 6 ký tự"
+              autocomplete="new-password"
+              minlength="6"
               required
             />
           </div>
 
           @if (errorMessage) {
-            <div class="alert alert-danger mb-0">
+            <div class="alert alert-danger mb-0" role="alert" aria-live="polite">
               <iconify-icon icon="mdi:alert-circle" class="me-2"></iconify-icon>
               {{ errorMessage }}
             </div>
           }
 
           @if (successMessage) {
-            <div class="alert alert-success mb-0">
+            <div class="alert alert-success mb-0" role="status" aria-live="polite">
               <iconify-icon icon="mdi:check-circle" class="me-2"></iconify-icon>
               {{ successMessage }}
             </div>
           }
 
           <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="terms" required />
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="terms"
+              name="terms"
+              [(ngModel)]="acceptedTerms"
+              required
+            />
             <label class="form-check-label text-muted" for="terms">
               Tôi đồng ý với điều khoản dịch vụ và chính sách bảo mật.
             </label>
           </div>
 
-          <button
-            type="button"
-            (click)="register()"
-            class="btn btn-primary btn-lg w-100"
-            [disabled]="isLoading"
-          >
+          <button type="submit" class="btn btn-primary btn-lg w-100" [disabled]="isLoading">
             @if (!isLoading) {
               <iconify-icon icon="mdi:account-plus"></iconify-icon>
               Đăng ký
             } @else {
-              <iconify-icon icon="mdi:loading" class="animate-pulse"></iconify-icon>
+              <iconify-icon
+                icon="mdi:loading"
+                class="animate-spin"
+                aria-hidden="true"
+              ></iconify-icon>
               Đang xử lý
             }
           </button>

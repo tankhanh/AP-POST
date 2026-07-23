@@ -1,22 +1,24 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { Public, ResponseMessage, Users } from 'src/health/decorator/customize';
-import { IUser } from 'src/types/user.interface';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { ResponseMessage, Users } from 'src/health/decorator/customize';
+import { Roles } from 'src/health/decorator/roles.decorator';
+import { IUser } from 'src/types/user.interface';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersService } from './users.service';
 
 @ApiTags('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,74 +27,87 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @ResponseMessage('Create New User')
-  async create(@Body() createUserDto: CreateUserDto, @Users() user: IUser) {
-    const NewUser = await this.usersService.create(createUserDto, user);
+  @Roles('ADMIN')
+  @ResponseMessage('Create new user')
+  async create(@Body() dto: CreateUserDto, @Users() user: IUser) {
+    const createdUser = await this.usersService.create(dto, user);
     return {
-      _id: NewUser?._id,
-      createdAt: NewUser?.createdAt,
-      createdBy: NewUser?.createdBy,
+      _id: createdUser?._id,
+      createdAt: createdUser?.createdAt,
+      createdBy: createdUser?.createdBy,
     };
   }
 
   @Get()
-  @ResponseMessage('Fetch user with paginate')
+  @Roles('ADMIN')
+  @ResponseMessage('Fetch users with pagination')
   findAll(
     @Query('current') currentPage: string,
     @Query('pageSize') limit: string,
-    @Query() qs: string,
+    @Query() query: string,
   ) {
-    return this.usersService.findAll(+currentPage, +limit, qs);
+    return this.usersService.findAll(+currentPage, +limit, query);
   }
 
-  // Danh sách đã xoá mềm
   @Get('trash')
+  @Roles('ADMIN')
   @ResponseMessage('Fetch deleted users')
-  findAllDeleted(@Query() qs: any) {
-    return this.usersService.findAllDeleted(qs);
+  findAllDeleted(@Query() query: Record<string, unknown>) {
+    return this.usersService.findAllDeleted(query);
   }
 
-  @Public() // bỏ qua JwtAuthGuard
-  @ResponseMessage('fetch user by id')
+  @Get('shippers/active')
+  @Roles('ADMIN', 'STAFF')
+  @ResponseMessage('Fetch active shippers')
+  findActiveShippers(@Users() user: IUser) {
+    return this.usersService.findActiveShippers(user);
+  }
+
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  @ResponseMessage('Fetch user by id')
+  findOne(@Param('id') id: string, @Users() user: IUser) {
+    const mayReadUser =
+      ['ADMIN', 'STAFF'].includes(user.role) || String(user._id) === id;
+    if (!mayReadUser) {
+      throw new ForbiddenException('You can only view your own profile');
+    }
     return this.usersService.findOne(id);
   }
 
-  @Public() // bỏ qua JwtAuthGuard
-  @ResponseMessage('Fetch user by role')
   @Post(':role')
-  async findUserByRole(@Param('role') role: string) {
+  @Roles('ADMIN')
+  @ResponseMessage('Fetch users by role')
+  findUserByRole(@Param('role') role: string) {
     return this.usersService.findUserByRole(role);
   }
 
   @Patch(':id')
-  @ResponseMessage('Update a User')
-  async update(
-    @Body() updateUserDto: UpdateUserDto,
-    @Users() users: IUser,
+  @ResponseMessage('Update a user')
+  update(
+    @Body() dto: UpdateUserDto,
+    @Users() user: IUser,
     @Param('id') id: string,
   ) {
-    return this.usersService.update(updateUserDto, users, id);
+    return this.usersService.update(dto, user, id);
   }
 
-  // Xoá mềm
   @Delete(':id')
-  @ResponseMessage('Delete a User')
-  remove(@Param('id') id: string, @Users() users: IUser) {
-    return this.usersService.remove(id, users);
+  @Roles('ADMIN')
+  @ResponseMessage('Delete a user')
+  remove(@Param('id') id: string, @Users() user: IUser) {
+    return this.usersService.remove(id, user);
   }
 
-  // Restore a User
   @Patch(':id/restore')
-  @ResponseMessage('Restore a User')
-  restore(@Param('id') id: string, @Users() users: IUser) {
-    return this.usersService.restore(id, users);
+  @Roles('ADMIN')
+  @ResponseMessage('Restore a user')
+  restore(@Param('id') id: string, @Users() user: IUser) {
+    return this.usersService.restore(id, user);
   }
 
-  // Xoá vĩnh viễn
   @Delete(':id/hard')
-  @ResponseMessage('Hard delete a User')
+  @Roles('ADMIN')
+  @ResponseMessage('Permanently delete a user')
   hardDelete(@Param('id') id: string) {
     return this.usersService.hardDelete(id);
   }

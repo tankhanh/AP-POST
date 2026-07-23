@@ -29,7 +29,6 @@ export class SocketService {
     this.socket = io(`${url}/notifications`, {
       path: '/socket.io',
       transports: ['websocket'],
-      query: { token },
       auth: { token },
       autoConnect: true,
     });

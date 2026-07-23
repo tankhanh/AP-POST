@@ -1,95 +1,66 @@
-import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
+import { Logger, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule } from '@nestjs/throttler';
+import googleOauthConfig from './config/google_oauth_config';
+import { validateEnvironment } from './config/validate-environment';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { HealthModule } from './health/health.module';
-import google_oauth_config from './config/google_oauth_config';
-import { MailerModule } from '@nestjs-modules/mailer';
-// import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
-import { UsersModule } from './modules/users/users.module';
-import { FilesModule } from './modules/files/files.module';
-import { DatabasesModule } from './modules/databases/databases.module';
-import { ShipmentsModule } from './modules/shipments/shipments.module';
 import { BranchesModule } from './modules/branches/branches.module';
-import { ServicesModule } from './modules/services/services.module';
-import { PaymentsModule } from './modules/payments/payments.module';
-import { PricingModule } from './modules/pricing/pricing.module';
-import { TrackingModule } from './modules/tracking/tracking.module';
+import { DatabasesModule } from './modules/databases/databases.module';
+import { FilesModule } from './modules/files/files.module';
+import { LocationModule } from './modules/location/location.module';
+import { MomoModule } from './modules/momo/momo.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrdersModule } from './modules/orders/orders.module';
-import { LocationModule } from './modules/location/location.module';
-import { DashboardModule } from './dashboard/dashboard.module';
-import { PayfakeModule } from './modules/payfake/payfake.module';
-import { HttpModule } from '@nestjs/axios';
-import { VietQrModule } from './modules/vietqr/vietqr.module';
-import { VnpayModule } from './modules/vnpay/vnpay.module';
-import { join } from 'path';
-import { MomoModule } from './modules/momo/momo.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { PricingModule } from './modules/pricing/pricing.module';
+import { ServicesModule } from './modules/services/services.module';
+import { TrackingModule } from './modules/tracking/tracking.module';
+import { UsersModule } from './modules/users/users.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot({
-      ///limit api call
-      ttl: 60,
-      limit: 10,
-    }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URL'),
-        connectionFactory: (connection) => {
-          connection.plugin(softDeletePlugin);
-          return connection;
-        },
-      }),
-    }),
-
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [google_oauth_config],
+      cache: true,
+      expandVariables: true,
+      load: [googleOauthConfig],
+      validate: validateEnvironment,
     }),
-    /// mailer
-    // MailerModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: async (configService: ConfigService) => ({
-    //     transport: {
-    //       host: 'smtp.gmail.com',
-    //       port: 465,
-    //       secure: true,
-    //       auth: {
-    //         user: configService.get<string>('EMAIL_AUTH_USER'),
-    //         pass: configService.get<string>('EMAIL_AUTH_PASS'),
-    //       },
-    //     },
-
-    //     defaults: {
-    //       from: 'dinhtankhanh14@gmail.com',
-    //     },
-    //     template: {
-    //       dir: process.cwd() + '/src/mail/templates/',
-    //       adapter: new HandlebarsAdapter(), // or new PugAdapter() or new EjsAdapter()
-    //       options: {
-    //         strict: true,
-    //       },
-    //     },
-    //   }),
-    //   inject: [ConfigService],
-    // }),
-    ///
+    ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 120,
+      },
+    ]),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGO_URL'),
+        autoIndex: configService.get<string>('NODE_ENV') !== 'production',
+        maxPoolSize: 20,
+        serverSelectionTimeoutMS: 10_000,
+      }),
+    }),
+    HttpModule.register({
+      timeout: 30_000,
+      maxRedirects: 3,
+    }),
+    MailModule,
     UsersModule,
     AuthModule,
     FilesModule,
     DatabasesModule,
     HealthModule,
-    ShipmentsModule,
     BranchesModule,
     ServicesModule,
     OrdersModule,
@@ -99,46 +70,16 @@ import { MomoModule } from './modules/momo/momo.module';
     NotificationsModule,
     LocationModule,
     DashboardModule,
-    PayfakeModule,
-    HttpModule,
-    VietQrModule,
-    VnpayModule,
     MomoModule,
-      MailerModule.forRootAsync({
-  imports: [ConfigModule],
-  inject: [ConfigService],
-  useFactory: (configService: ConfigService) => ({
-    transport: {
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-
-      auth: {
-        user: configService.get<string>('mail_username'),
-        pass: configService.get<string>('mail_password'),
-      },
-
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-
-      tls: {
-        ciphers: 'SSLv3',
-      },
-    },
-
-    template: {
-      dir: join(process.cwd(), 'src/modules/mail/templates'),
-      adapter: new HandlebarsAdapter(),
-      options: {
-        strict: true,
-      },
-    },
-  }),
-}),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    Logger,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

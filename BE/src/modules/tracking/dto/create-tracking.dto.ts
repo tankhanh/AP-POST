@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { TrackingStatus } from '../schemas/tracking.schemas';
+import { OrderStatus } from '../../orders/schemas/order.schemas';
 
 export class CreateTrackingDto {
   @ApiProperty({ example: '652f03bc6db3430b5c1f26a2' })
@@ -14,9 +14,9 @@ export class CreateTrackingDto {
   @IsMongoId()
   orderId: string;
 
-  @ApiProperty({ example: TrackingStatus.IN_TRANSIT })
-  @IsEnum(TrackingStatus)
-  status: TrackingStatus;
+  @ApiProperty({ example: OrderStatus.SHIPPING })
+  @IsEnum(OrderStatus)
+  status: OrderStatus;
 
   @ApiProperty({ example: 'Kho Hà Nội', required: false })
   @IsOptional()

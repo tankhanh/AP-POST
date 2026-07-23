@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { LocationService } from '../../../services/location.service';
@@ -11,6 +11,7 @@ import { GeocodingService } from '../../../services/geocoding.service';
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators';
 import { firstValueFrom, merge } from 'rxjs';
 import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
+import { PaymentRecoveryService } from '../../../services/payment-recovery.service';
 
 @Component({
   selector: 'app-create-order',
@@ -28,6 +29,7 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
   senderPay = 0;
   receiverPay = 0;
   paymentNote = '';
+  private clientRequestId = this.newClientRequestId();
 
   constructor(
     private fb: FormBuilder,
@@ -35,6 +37,7 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
     private locationService: LocationService,
     private router: Router,
     private geocoding: GeocodingService,
+    private paymentRecovery: PaymentRecoveryService,
   ) {}
 
   ngOnInit(): void {
@@ -229,8 +232,13 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
 
   private updatePayments() {
     const cod = Number(this.orderForm.value.codValue || 0);
-    const payer = this.orderForm.value.shippingFeePayer || 'SENDER';
+    let payer = this.orderForm.value.shippingFeePayer || 'SENDER';
     const method = this.orderForm.value.paymentMethod || 'CASH';
+
+    if (method === 'MOMO' && payer !== 'SENDER') {
+      payer = 'SENDER';
+      this.orderForm.get('shippingFeePayer')?.setValue('SENDER', { emitEvent: false });
+    }
 
     if (method === 'CASH') {
       this.senderPay = payer === 'SENDER' ? this.shippingFee : 0;
@@ -241,9 +249,9 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
       this.receiverPay = cod + this.shippingFee;
       this.paymentNote = 'Người nhận trả COD + phí (nếu có)';
     } else if (method === 'MOMO') {
-      this.senderPay = this.shippingFee + (payer === 'SENDER' ? cod : 0);
-      this.receiverPay = payer === 'RECEIVER' ? cod : 0;
-      this.paymentNote = 'Thanh toán trực tuyến qua MOMO';
+      this.senderPay = this.shippingFee + cod;
+      this.receiverPay = 0;
+      this.paymentNote = `Thanh toán trực tuyến qua ${method}`;
     }
   }
 
@@ -340,6 +348,7 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
     this.loading = true;
 
     const data = {
+      clientRequestId: this.clientRequestId,
       senderName: this.orderForm.value.senderName,
       receiverName: this.orderForm.value.receiverName,
       receiverPhone: this.orderForm.value.receiverPhone,
@@ -370,13 +379,32 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
       next: (apiResponse: any) => {
         this.loading = false;
         const res = apiResponse?.data || apiResponse;
+        this.clientRequestId = this.newClientRequestId();
 
-        if (this.orderForm.value.paymentMethod === 'MOMO' && res.redirectUrl) {
+        if (res.paymentAttempt) {
+          this.paymentRecovery.remember(res.paymentAttempt);
+          if (res.paymentAttempt.payUrl) {
+            window.location.assign(res.paymentAttempt.payUrl);
+            return;
+          }
+        }
+
+        if (res.redirectUrl) {
           window.location.href = res.redirectUrl;
           return;
         }
 
-        // CASH / COD
+        if (res.paymentError && res.paymentAttempt) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Đơn đã tạo, thanh toán chưa bắt đầu',
+            text: res.paymentError,
+            confirmButtonText: 'Về danh sách',
+          }).then(() => this.router.navigate(['/admin/orders/list']));
+          return;
+        }
+
+        // Thanh toán thủ công
         Swal.fire({
           icon: 'success',
           title: 'Tạo đơn thành công!',
@@ -388,6 +416,17 @@ export class AdmninCreateOrder implements OnInit, AfterViewInit {
         this.loading = false;
         Swal.fire('Lỗi!', err.error?.message || 'Tạo đơn thất bại', 'error');
       },
+    });
+  }
+
+  private newClientRequestId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+      const random = Math.floor(Math.random() * 16);
+      const value = character === 'x' ? random : (random & 0x3) | 0x8;
+      return value.toString(16);
     });
   }
 }

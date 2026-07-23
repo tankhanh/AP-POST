@@ -1,113 +1,101 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, catchError, of } from 'rxjs'; // Thêm catchError, of
+import { Observable, catchError, map, of, tap } from 'rxjs';
+
+interface GeocodingResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
+
+interface ReverseGeocodingResult {
+  road: string;
+  house_number: string;
+  suburb: string;
+  city_district: string;
+  city: string;
+  state: string;
+  postcode: string;
+  display_name: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class GeocodingService {
-  private cache = new Map<string, any[]>();
+  private readonly endpoint = 'https://nominatim.openstreetmap.org';
+  private readonly cache = new Map<string, unknown>();
+  private readonly cacheLifetimeMs = 10 * 60 * 1000;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
-  search(address: string) {
-    const url = `https://nominatim.openstreetmap.org/search`;
+  search(address: string): Observable<GeocodingResult[]> {
+    const normalizedAddress = address.trim();
+    const cacheKey = `search:${normalizedAddress.toLocaleLowerCase('vi')}`;
+    const cached = this.cache.get(cacheKey) as GeocodingResult[] | undefined;
+    if (cached) return of(cached);
+
     return this.http
-      .get<any[]>(url, {
+      .get<GeocodingResult[]>(`${this.endpoint}/search`, {
         params: {
           format: 'json',
-          q: address,
+          q: normalizedAddress,
           countrycodes: 'vn',
           limit: '1',
           addressdetails: '1',
         },
-        headers: {
-          'User-Agent': 'MyDeliveryApp/1.0 (your-email@gmail.com)', // BẮT BUỘC PHẢI CÓ
-        },
       })
       .pipe(
-        map((res) =>
-          res && res.length > 0
-            ? [
-                {
-                  lat: res[0].lat,
-                  lon: res[0].lon,
-                  display_name: res[0].display_name,
-                },
-              ]
-            : []
+        map((results) =>
+          (results ?? []).slice(0, 1).map(({ lat, lon, display_name }) => ({
+            lat,
+            lon,
+            display_name,
+          })),
         ),
-        catchError((err) => {
-          console.warn('Geocoding error:', err);
-          return of([]);
-        })
+        tap((results) => this.storeTemporarily(cacheKey, results)),
+        catchError(() => of([])),
       );
   }
 
-  private fallbackNominatim(address: string, cacheKey: string) {
+  reverse(lat: number, lon: number): Observable<ReverseGeocodingResult | null> {
+    const cacheKey = `reverse:${lat.toFixed(5)}:${lon.toFixed(5)}`;
+    const cached = this.cache.get(cacheKey) as ReverseGeocodingResult | undefined;
+    if (cached) return of(cached);
+
     return this.http
-      .get<any[]>(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          address
-        )}&countrycodes=vn&limit=1`,
-        {
-          headers: {
-            'User-Agent': 'MyDeliveryApp/1.0 (your_email@example.com)',
-          },
-        }
-      )
-      .pipe(
-        map((res) => {
-          if (res && res.length > 0) {
-            // Cache success
-            this.cache.set(cacheKey, res);
-            setTimeout(() => this.cache.delete(cacheKey), 10 * 60 * 1000);
-            console.log('✅ Nominatim fallback success:', res[0]);
-          } else {
-            console.warn('❌ Nominatim also empty');
-          }
-          return res || [];
-        }),
-        catchError((err) => {
-          console.error('❌ Fallback failed:', err);
-          return of([]);
-        })
-      );
-  }
-  reverse(lat: number, lon: number) {
-    const url = 'https://nominatim.openstreetmap.org/reverse';
-    return this.http
-      .get<any>(url, {
+      .get<Record<string, any>>(`${this.endpoint}/reverse`, {
         params: {
           format: 'json',
           lat: lat.toString(),
           lon: lon.toString(),
-          zoom: '18', // càng cao càng chi tiết
+          zoom: '18',
           addressdetails: '1',
           countrycodes: 'vn',
         },
-        headers: {
-          'User-Agent': 'MyDeliveryApp/1.0 (your-email@gmail.com)',
-        },
       })
       .pipe(
-        map((res) => {
-          if (res && res.address) {
-            return {
-              road: res.address.road || res.address.street || '',
-              house_number: res.address.house_number || '',
-              suburb: res.address.suburb || res.address.hamlet || res.address.neighbourhood || '',
-              city_district: res.address.city_district || res.address.suburb || '',
-              city: res.address.city || res.address.town || '',
-              state: res.address.state || res.address.province || '',
-              postcode: res.address.postcode || '',
-              display_name: res.display_name,
-            };
-          }
-          return null;
+        map((result) => {
+          const address = result?.['address'];
+          if (!address) return null;
+          return {
+            road: address.road || address.street || '',
+            house_number: address.house_number || '',
+            suburb: address.suburb || address.hamlet || address.neighbourhood || '',
+            city_district: address.city_district || address.suburb || '',
+            city: address.city || address.town || '',
+            state: address.state || address.province || '',
+            postcode: address.postcode || '',
+            display_name: result['display_name'] || '',
+          };
         }),
-        catchError((err) => {
-          console.warn('Reverse geocoding error:', err);
-          return of(null);
-        })
+        tap((result) => {
+          if (result) this.storeTemporarily(cacheKey, result);
+        }),
+        catchError(() => of(null)),
       );
+  }
+
+  private storeTemporarily(key: string, value: unknown): void {
+    this.cache.set(key, value);
+    setTimeout(() => this.cache.delete(key), this.cacheLifetimeMs);
   }
 }

@@ -10,19 +10,24 @@
 
     <header class="tracking-header">
       <h1>Theo dõi hành trình giao hàng.</h1>
-      <p>Nhập mã vận đơn để xem trạng thái mới nhất, COD và các mốc xử lý.</p>
+      <p>Nhập mã vận đơn để xem trạng thái mới nhất và các mốc xử lý.</p>
     </header>
 
     <section class="tracking-search-card">
       <form (ngSubmit)="search()" class="tracking-search-form">
+        <label for="trackingWaybill" class="visually-hidden">Mã vận đơn</label>
         <input
+          id="trackingWaybill"
           type="text"
           class="form-control form-control-lg"
           placeholder="VD: VN123456789VN"
           [(ngModel)]="waybill"
           name="waybill"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          aria-describedby="trackingHelp"
           required
-          autofocus
           [disabled]="loading"
         />
         <button type="submit" class="btn btn-primary btn-lg" [disabled]="!waybill || loading">
@@ -31,27 +36,26 @@
             Tra cứu
           </span>
           <span *ngIf="loading">
-            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
             Đang tìm
           </span>
         </button>
       </form>
 
-      <div *ngIf="error" class="alert alert-danger mt-3 mb-0">
+      <div *ngIf="error" class="alert alert-danger mt-3 mb-0" role="alert" aria-live="polite">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         {{ error }}
       </div>
+      <p id="trackingHelp" class="tracking-help mb-0">
+        Mã vận đơn nằm trên phiếu gửi hoặc trong thông báo xác nhận đơn hàng.
+      </p>
     </section>
 
     <ng-container *ngIf="trackingEvents?.length">
-      <section class="tracking-summary">
+      <section class="tracking-summary" aria-label="Tóm tắt vận đơn" aria-live="polite">
         <div class="tracking-summary-item">
           <span>Mã vận đơn</span>
           <strong>{{ trackingData.waybill }}</strong>
-        </div>
-        <div class="tracking-summary-item" *ngIf="trackingData.codValue > 0">
-          <span>Thu hộ COD</span>
-          <strong>{{ trackingData.codValue | number : '1.0-0' }}đ</strong>
         </div>
         <div class="tracking-summary-item">
           <span>Trạng thái hiện tại</span>
@@ -59,7 +63,10 @@
         </div>
         <div class="tracking-summary-item">
           <span>Cập nhật lúc</span>
-          <strong>{{ latestUpdate | date : 'HH:mm' }}, ngày {{ latestUpdate | date : 'dd/MM/yyyy' }}</strong>
+          <strong
+            >{{ latestUpdate | date: 'HH:mm' }}, ngày
+            {{ latestUpdate | date: 'dd/MM/yyyy' }}</strong
+          >
         </div>
       </section>
 
@@ -87,7 +94,8 @@
               </h3>
               <p class="small mb-2">
                 <i class="bi bi-clock-history me-1"></i>
-                {{ event.timestamp | date : 'HH:mm' }}, ngày {{ event.timestamp | date : 'dd/MM/yyyy' }}
+                {{ event.timestamp | date: 'HH:mm' }}, ngày
+                {{ event.timestamp | date: 'dd/MM/yyyy' }}
               </p>
 
               <p class="mb-1" *ngIf="event.location">
@@ -98,10 +106,6 @@
               <p class="mb-1" *ngIf="event.branchId?.name">
                 <i class="bi bi-building-fill me-1"></i>
                 <strong>Chi nhánh:</strong> {{ event.branchId.name }}
-              </p>
-
-              <p class="mb-0 small" *ngIf="event.note">
-                <strong>Ghi chú:</strong> {{ event.note }}
               </p>
             </div>
           </div>
@@ -116,14 +120,18 @@
       </div>
     </ng-container>
 
-    <div *ngIf="!(trackingEvents?.length) && !loading && !error && waybill" class="tracking-empty">
-      <i class="bi bi-search"></i>
-      <p>Nhấn Tra cứu để xem hành trình.</p>
+    <div
+      *ngIf="!trackingEvents?.length && !loading && !error && hasSearched"
+      class="tracking-empty"
+      role="status"
+    >
+      <i class="bi bi-clock-history"></i>
+      <p>Vận đơn chưa có cập nhật hành trình.</p>
     </div>
 
-    <div *ngIf="!waybill && !loading && !error" class="tracking-empty">
+    <div *ngIf="!hasSearched && !loading && !error" class="tracking-empty" role="status">
       <i class="bi bi-box-seam"></i>
-      <p>Nhập mã vận đơn để bắt đầu.</p>
+      <p>Nhập mã vận đơn rồi nhấn Tra cứu để bắt đầu.</p>
     </div>
   </div>
 </div>

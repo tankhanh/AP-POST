@@ -1,16 +1,95 @@
-// src/modules/mail/mail.service.ts
-import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { readFile } from 'fs/promises';
+import Handlebars from 'handlebars';
+import nodemailer, { Transporter } from 'nodemailer';
+import { resolve, sep } from 'path';
+
+interface TemplateMailOptions {
+  to: string;
+  subject: string;
+  html?: string;
+  template?: string;
+  context?: Record<string, unknown>;
+}
 
 @Injectable()
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {}
+  private readonly logger = new Logger(MailService.name);
+  private readonly transporter?: Transporter;
+  private readonly templateRoot = resolve(__dirname, 'templates');
+  private readonly templateCache = new Map<
+    string,
+    Handlebars.TemplateDelegate
+  >();
 
-  private formatPrice(num: number): string {
-    return num.toLocaleString('vi-VN');
+  constructor(private readonly configService: ConfigService) {
+    const user = configService.get<string>('EMAIL_AUTH_USER')?.trim();
+    const pass = configService.get<string>('EMAIL_AUTH_PASS')?.trim();
+    if (!user || !pass) {
+      this.logger.warn(
+        'SMTP chưa được cấu hình; email thông báo sẽ được bỏ qua trong môi trường hiện tại.',
+      );
+      return;
+    }
+
+    this.transporter = nodemailer.createTransport({
+      host: configService.get<string>('EMAIL_HOST', 'smtp.gmail.com'),
+      port: Number(configService.get<string>('EMAIL_PORT', '587')),
+      secure: configService.get<string>('EMAIL_SECURE', 'false') === 'true',
+      requireTLS: true,
+      auth: {
+        user,
+        pass,
+      },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 10_000,
+      disableFileAccess: true,
+      disableUrlAccess: true,
+    });
   }
 
-  // ====================== GỬI EMAIL XÁC NHẬN ĐƠN HÀNG ======================
+  async sendMail(options: TemplateMailOptions) {
+    if (!this.transporter) {
+      throw new ServiceUnavailableException('SMTP is not configured');
+    }
+
+    const html = options.template
+      ? await this.renderTemplate(options.template, {
+          supportEmail: this.configService.get<string>(
+            'SUPPORT_EMAIL',
+            'support@ap-post.vn',
+          ),
+          supportPhone: this.configService.get<string>(
+            'SUPPORT_PHONE',
+            '0908779245',
+          ),
+          ...(options.context ?? {}),
+        })
+      : options.html;
+    if (!html) throw new Error('Email HTML or template is required');
+
+    return this.transporter.sendMail({
+      from:
+        this.configService.get<string>('EMAIL_FROM')?.trim() ||
+        this.configService.get<string>('EMAIL_AUTH_USER'),
+      to: options.to,
+      subject: options.subject,
+      html,
+      disableFileAccess: true,
+      disableUrlAccess: true,
+    });
+  }
+
+  isConfigured(): boolean {
+    return Boolean(this.transporter);
+  }
+
   async sendOrderConfirmation(params: {
     to: string;
     receiverName: string;
@@ -23,35 +102,26 @@ export class MailService {
     shippingFeePayer: 'SENDER' | 'RECEIVER';
   }): Promise<void> {
     if (!params.to) return;
-
-    const context = {
-      name: params.receiverName,
-      waybill: params.waybill,
-      totalOrderValue: this.formatPrice(params.totalOrderValue),
-      shippingFee: this.formatPrice(params.shippingFee),
-      codValue: this.formatPrice(params.codValue),
-      senderPayAmount: this.formatPrice(params.senderPayAmount),
-      receiverPayAmount: this.formatPrice(params.receiverPayAmount),
-      shippingFeePayerText:
-        params.shippingFeePayer === 'SENDER' ? 'Người gửi' : 'Người nhận',
-      isSenderPayFee: params.shippingFeePayer === 'SENDER',
-      isReceiverPayFee: params.shippingFeePayer === 'RECEIVER',
-    };
-
-    try {
-      await this.mailerService.sendMail({
-        to: params.to,
-        subject: `Đơn hàng ${params.waybill} đã được tạo thành công! | AP Post`,
-        template: 'status/pending', // ← Dùng dấu /
-        context,
-      });
-      console.log(`📧 EMAIL XÁC NHẬN ĐÃ GỬI → ${params.to}`);
-    } catch (error) {
-      console.error('❌ LỖI GỬI EMAIL XÁC NHẬN:', error);
-    }
+    await this.trySend({
+      to: params.to,
+      subject: `Đơn hàng ${params.waybill} đã được tạo thành công! | AP Post`,
+      template: 'status/pending',
+      context: {
+        name: params.receiverName,
+        waybill: params.waybill,
+        totalOrderValue: this.formatPrice(params.totalOrderValue),
+        shippingFee: this.formatPrice(params.shippingFee),
+        codValue: this.formatPrice(params.codValue),
+        senderPayAmount: this.formatPrice(params.senderPayAmount),
+        receiverPayAmount: this.formatPrice(params.receiverPayAmount),
+        shippingFeePayerText:
+          params.shippingFeePayer === 'SENDER' ? 'Người gửi' : 'Người nhận',
+        isSenderPayFee: params.shippingFeePayer === 'SENDER',
+        isReceiverPayFee: params.shippingFeePayer === 'RECEIVER',
+      },
+    });
   }
 
-  // ====================== GỬI EMAIL CẬP NHẬT TRẠNG THÁI ======================
   async sendStatusUpdate(params: {
     to: string;
     receiverName: string;
@@ -61,80 +131,90 @@ export class MailService {
     codValue?: number;
   }): Promise<void> {
     if (!params.to) return;
-
-    const statusMap: Record<string, { subject: string; templateKey: string }> =
-      {
-        PENDING: {
-          subject: 'Đơn hàng của bạn đã được tạo',
-          templateKey: 'status/pending',
-        },
-        CONFIRMED: {
-          subject: 'Đơn hàng đã được xác nhận',
-          templateKey: 'status/confirmed',
-        },
-        SHIPPING: {
-          subject: 'Đơn hàng đang trên đường giao đến bạn',
-          templateKey: 'status/shipping',
-        },
-        COMPLETED: {
-          subject: 'Giao hàng thành công! Cảm ơn bạn',
-          templateKey: 'status/completed',
-        },
-        CANCELED: {
-          subject: 'Đơn hàng đã bị hủy',
-          templateKey: 'status/canceled',
-        },
-      };
-
-    const config = statusMap[params.status];
-    if (!config) {
-      console.warn(`⚠️ Status không hỗ trợ gửi email: ${params.status}`);
-      return;
-    }
-
-    const context = {
-      name: params.receiverName || 'Khách hàng',
-      waybill: params.waybill,
-      status: params.status,
-      trackingUrl: params.trackingUrl,
-      codValue: params.codValue ? this.formatPrice(params.codValue) : null,
+    const statusMap: Record<string, { subject: string; template: string }> = {
+      PENDING: { subject: 'Đơn hàng của bạn đã được tạo', template: 'pending' },
+      CONFIRMED: {
+        subject: 'Đơn hàng đã được xác nhận',
+        template: 'confirmed',
+      },
+      SHIPPING: {
+        subject: 'Đơn hàng đang trên đường giao đến bạn',
+        template: 'shipping',
+      },
+      COMPLETED: {
+        subject: 'Giao hàng thành công! Cảm ơn bạn',
+        template: 'completed',
+      },
+      CANCELED: { subject: 'Đơn hàng đã bị hủy', template: 'canceled' },
     };
+    const selected = statusMap[params.status];
+    if (!selected) return;
 
-    try {
-      await this.mailerService.sendMail({
-        to: params.to,
-        subject: `${config.subject} | ${params.waybill}`,
-        template: config.templateKey, // ← Đã dùng đúng /
-        context,
-      });
-      console.log(`📧 EMAIL TRẠNG THÁI ${params.status} ĐÃ GỬI → ${params.to}`);
-    } catch (error) {
-      console.error(`❌ LỖI GỬI EMAIL TRẠNG THÁI ${params.status}:`, error);
-    }
+    await this.trySend({
+      to: params.to,
+      subject: `${selected.subject} | ${params.waybill}`,
+      template: `status/${selected.template}`,
+      context: {
+        name: params.receiverName || 'Khách hàng',
+        waybill: params.waybill,
+        status: params.status,
+        trackingUrl: params.trackingUrl,
+        codValue: params.codValue ? this.formatPrice(params.codValue) : null,
+      },
+    });
   }
 
-  // ====================== GỬI EMAIL GENERIC (nếu bạn còn dùng) ======================
   async send(
     to: string,
     subject: string,
     templateOrHtml: string,
-    context?: any,
+    context?: Record<string, unknown>,
   ): Promise<boolean> {
+    return this.trySend({
+      to,
+      subject,
+      ...(context
+        ? { template: templateOrHtml, context }
+        : { html: templateOrHtml }),
+    });
+  }
+
+  private async renderTemplate(
+    template: string,
+    context: Record<string, unknown>,
+  ): Promise<string> {
+    const name = template.replace(/\.hbs$/i, '').replace(/\\/g, '/');
+    if (!/^[a-zA-Z0-9/_-]+$/.test(name)) {
+      throw new Error('Invalid email template name');
+    }
+    const path = resolve(this.templateRoot, `${name}.hbs`);
+    if (!path.startsWith(`${this.templateRoot}${sep}`)) {
+      throw new Error('Invalid email template path');
+    }
+
+    let compiled = this.templateCache.get(path);
+    if (!compiled) {
+      compiled = Handlebars.compile(await readFile(path, 'utf8'), {
+        strict: true,
+      });
+      this.templateCache.set(path, compiled);
+    }
+    return compiled(context);
+  }
+
+  private async trySend(options: TemplateMailOptions): Promise<boolean> {
+    if (!this.transporter) return false;
+
     try {
-      const mailOptions: any = { to, subject };
-
-      if (context) {
-        mailOptions.template = templateOrHtml;
-        mailOptions.context = context;
-      } else {
-        mailOptions.html = templateOrHtml;
-      }
-
-      await this.mailerService.sendMail(mailOptions);
+      await this.sendMail(options);
       return true;
     } catch (error) {
-      console.error('❌ Lỗi gửi email generic:', error);
+      this.logger.error('Failed to send email', error);
       return false;
     }
+  }
+
+  private formatPrice(value: number): string {
+    return value.toLocaleString('vi-VN');
   }
 }

@@ -2,11 +2,10 @@
  * Payment-related types and interfaces for AP-POST
  */
 
-export type PaymentMethod = 'CASH' | 'COD' | 'QR' | 'VNPAY' | 'BANK_TRANSFER' | 'MOMO';
+export type PaymentMethod = 'CASH' | 'COD' | 'MOMO';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'DELIVERING' | 'COMPLETED' | 'CANCELED';
 export type ShippingFeePayer = 'SENDER' | 'RECEIVER';
-export type VNPayReturnStatus = 'success' | 'failed' | 'error' | 'loading';
 
 /**
  * Order Address Interface
@@ -56,54 +55,9 @@ export interface Payment {
   method: PaymentMethod;
   status: PaymentStatus;
   transactionId?: string;
-  vnpData?: VNPayData;
   extraData?: Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
-}
-
-/**
- * VNPAY Data Interface
- */
-export interface VNPayData {
-  vnp_Amount?: number;
-  vnp_BankCode?: string;
-  vnp_BankTranNo?: string;
-  vnp_CardType?: string;
-  vnp_OrderInfo?: string;
-  vnp_PayDate?: string;
-  vnp_ResponseCode?: string;
-  vnp_TmnCode?: string;
-  vnp_TransactionNo?: string;
-  vnp_TxnRef?: string;
-}
-
-/**
- * VNPAY Create Payment Response
- */
-export interface VNPayCreatePaymentResponse {
-  success: boolean;
-  message?: string;
-  data?: {
-    paymentUrl: string;
-    transactionCode: string;
-    amount: number;
-    orderId: string;
-  };
-}
-
-/**
- * VNPAY Return Response
- */
-export interface VNPayReturnResponse {
-  success: boolean;
-  status: VNPayReturnStatus;
-  transactionCode?: string;
-  amount?: number;
-  responseCode?: string;
-  orderId?: string;
-  message?: string;
-  paymentDetails?: Payment & { order?: Order };
 }
 
 /**
@@ -127,7 +81,6 @@ export interface OrderCreateResponse {
     order: Order;
     payment?: Payment;
   };
-  qrUrl?: string;
 }
 
 /**

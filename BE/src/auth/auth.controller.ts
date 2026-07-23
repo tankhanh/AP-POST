@@ -1,147 +1,132 @@
 import {
-  Controller,
-  Post,
-  UseGuards,
-  Req,
   Body,
-  Res,
+  Controller,
   Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { Public, ResponseMessage, Users } from 'src/health/decorator/customize';
-import { IUser } from 'src/types/user.interface';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { LocalAuthGuard } from './guards/local.auth.guard';
-import { ConfigService } from '@nestjs/config';
-import { MailerService } from '@nestjs-modules/mailer';
-import { UsersService } from 'src/modules/users/users.service';
 import {
   RegisterUserDto,
   UserLoginDto,
 } from 'src/modules/users/dto/create-user.dto';
 import { CodeAuthDto } from 'src/modules/users/dto/code-auth.dto';
-import { ChangePasswordDto } from 'src/modules/users/dto/change-password.dto';
+import {
+  ChangePasswordDto,
+  ResetPasswordDto,
+  VerifyResetCodeDto,
+} from 'src/modules/users/dto/change-password.dto';
+import { IUser } from 'src/types/user.interface';
+import { AuthService } from './auth.service';
+import { EmailDto } from './dto/email.dto';
+import { LocalAuthGuard } from './guards/local.auth.guard';
+import { JwtAuthGuard } from './guards/jwt.auth.guard';
 
 @ApiTags('auth')
+@UseGuards(JwtAuthGuard)
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
-    private mailerService: MailerService,
-    private usersService: UsersService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
   @UseGuards(LocalAuthGuard)
-  @UseGuards(ThrottlerGuard)
-  @ApiBody({ type: UserLoginDto }) // swagger get token
-  @Throttle(5, 60)
-  @Post('/login')
+  @ApiBody({ type: UserLoginDto })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('login')
   @ResponseMessage('User Login')
-  handleLogin(@Req() req, @Res({ passthrough: true }) response: Response) {
-    return this.authService.login(req.user, response);
+  handleLogin(@Req() request, @Res({ passthrough: true }) response: Response) {
+    return this.authService.login(request.user, response);
   }
 
-  //////////////jwt
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('register')
   @ResponseMessage('Register a new user')
-  @Post('/register')
   handleRegister(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.register(registerUserDto);
   }
 
-  /// verify mail code
   @Public()
-  @ResponseMessage('verify register code')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('check-code')
-  checkCode(@Body() registerUserDto: CodeAuthDto) {
-    return this.authService.checkCode(registerUserDto);
+  @ResponseMessage('Verify registration code')
+  checkCode(@Body() data: CodeAuthDto) {
+    return this.authService.checkCode(data);
   }
 
+  @Get('account')
   @ResponseMessage('Get user information')
-  @Get('/account')
-  async handleGetAccount(@Users() user: IUser) {
-    const temp = (await this.usersService.findOne(user.role)) as any;
-
+  handleGetAccount(@Users() user: IUser) {
     return { user };
   }
 
   @Public()
-  @ResponseMessage('Get User by refresh token')
-  @Get('/refresh')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('refresh')
+  @ResponseMessage('Refresh access token')
   handleRefreshToken(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const refreshToken = request.cookies['refresh_token'];
-    return this.authService.processNewToken(refreshToken, response);
+    return this.authService.processNewToken(
+      request.cookies?.refresh_token,
+      response,
+    );
   }
 
-  @ResponseMessage('Logout User')
-  @Post('/logout')
+  @Post('logout')
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ResponseMessage('Logout user')
   handleLogout(
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-    @Users() user: IUser,
   ) {
-    return this.authService.logout(response, user);
-  }
-
-  ///send mail
-
-  @Get('mail')
-  @Public()
-  testMail() {
-    this.mailerService.sendMail({
-      to: 'minhlapro01@gmail.com', // List of receivers
-      subject: 'Testing Nest MailerModule', // Subject line
-      text: 'welcome', // Plaintext body
-      template: 'register',
-      context: {
-        name: 'minh',
-        activationCode: 123,
-      },
-    });
-
-    return 'ok';
+    return this.authService.logout(response, request.cookies?.refresh_token);
   }
 
   @Public()
-  @ResponseMessage('verify reset password code')
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @Post('verify-reset')
-  verifyReset(@Body() data: CodeAuthDto) {
-    return this.authService.checkCode(data);
+  @ResponseMessage('Verify password reset code')
+  verifyReset(@Body() data: VerifyResetCodeDto) {
+    return this.authService.verifyResetCode(data);
   }
 
-  // re-send mail
   @Public()
-  @ResponseMessage('re-verify register code')
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Post('retry-active')
-  retryActive(@Body('email') email: string) {
-    return this.authService.retryActive(email);
+  @ResponseMessage('Resend registration code')
+  retryActive(@Body() data: EmailDto) {
+    return this.authService.retryActive(data.email);
   }
-  /// send forgot password mail
-  @Public()
-  @ResponseMessage('re-password register code')
-  @Post('retry-password')
-  retryPassword(@Body('email') email: string) {
-    return this.authService.retryPassword(email);
-  }
-  /// change-password
 
   @Public()
-  @ResponseMessage('change-password')
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Post('retry-password')
+  @ResponseMessage('Request password reset code')
+  retryPassword(@Body() data: EmailDto) {
+    return this.authService.retryPassword(data.email);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('change-password')
+  @ResponseMessage('Change password')
   changePassword(@Body() data: ChangePasswordDto) {
     return this.authService.changePassword(data);
   }
 
-  // Bổ sung đổi mật khẩu (FE)
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('reset-password')
-  async resetPassword(@Body() body: { _id: string; newPassword: string }) {
-    return this.authService.resetPassword(body);
+  @ResponseMessage('Reset password')
+  resetPassword(@Body() data: ResetPasswordDto) {
+    return this.authService.resetPassword(data);
   }
 }

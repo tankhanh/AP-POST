@@ -12,6 +12,7 @@ import {
   ElementRef,
   ViewChild,
   ChangeDetectorRef,
+  OnDestroy,
 } from '@angular/core';
 import * as L from 'leaflet';
 import { firstValueFrom } from 'rxjs';
@@ -23,14 +24,11 @@ import { firstValueFrom } from 'rxjs';
   template: `
     <div class="dual-map-wrapper">
       <h5 class="fw-bold text-secondary mb-3">Kéo thả để chỉnh vị trí chính xác</h5>
-      <div
-        #mapContainer
-        style="height: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.25);"
-      ></div>
+      <div #mapContainer class="dual-map-canvas" aria-label="Bản đồ điểm lấy và giao hàng"></div>
       <div class="text-center mt-3">
         <strong class="text-success">LẤY HÀNG</strong> ←→
         <strong class="text-danger">GIAO HÀNG</strong> <br /><small
-          >Khoảng cách: {{ distance | number : '1.1-1' }} km</small
+          >Khoảng cách: {{ distance | number: '1.1-1' }} km</small
         >
       </div>
     </div>
@@ -40,10 +38,47 @@ import { firstValueFrom } from 'rxjs';
       .dual-map-wrapper {
         margin: 20px 0;
       }
+
+      .dual-map-canvas {
+        height: 500px;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: var(--wise-ring);
+      }
+
+      @media (max-width: 767.98px) {
+        .dual-map-canvas {
+          height: 360px;
+        }
+      }
+
+      :host ::ng-deep .dual-map-marker {
+        border: 0;
+        background: transparent;
+      }
+
+      :host ::ng-deep .dual-map-marker span {
+        min-width: 104px;
+        border: 3px solid #fff;
+        border-radius: 999px;
+        padding: 8px 14px;
+        display: inline-flex;
+        justify-content: center;
+        color: var(--wise-green);
+        background: var(--wise-lime);
+        box-shadow: 0 5px 14px rgba(14, 15, 12, 0.24);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      :host ::ng-deep .dual-map-marker.is-delivery span {
+        color: #fff;
+        background: var(--wise-green);
+      }
     `,
   ],
 })
-export class DualMapComponent implements AfterViewInit, OnChanges {
+export class DualMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() pickup!: { lat: number; lng: number };
   @Input() delivery!: { lat: number; lng: number };
 
@@ -74,7 +109,14 @@ export class DualMapComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  constructor(private cdr: ChangeDetectorRef, private http: HttpClient) {}
+  ngOnDestroy(): void {
+    this.map?.remove();
+  }
+
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient,
+  ) {}
 
   private initMap(): void {
     this.map = L.map(this.mapElement.nativeElement).setView([16.0, 108.0], 5);
@@ -95,12 +137,14 @@ export class DualMapComponent implements AfterViewInit, OnChanges {
 
     // Icon đẹp
     const pickupIcon = L.divIcon({
-      html: '<div style="background:#27ae60;color:white;padding:8px 16px;border-radius:25px;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-size:14px;">LẤY HÀNG</div>',
+      className: 'dual-map-marker',
+      html: '<span>LẤY HÀNG</span>',
       iconSize: [120, 40],
       iconAnchor: [60, 40],
     });
     const deliveryIcon = L.divIcon({
-      html: '<div style="background:#e74c3c;color:white;padding:8px 16px;border-radius:25px;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.4);font-size:14px;">GIAO HÀNG</div>',
+      className: 'dual-map-marker is-delivery',
+      html: '<span>GIAO HÀNG</span>',
       iconSize: [120, 40],
       iconAnchor: [60, 40],
     });
@@ -109,16 +153,12 @@ export class DualMapComponent implements AfterViewInit, OnChanges {
     this.pickupMarker = L.marker([this.pickup.lat, this.pickup.lng], {
       icon: pickupIcon,
       draggable: true,
-    })
-      .addTo(this.map)
-      .bindTooltip('LẤY HÀNG', { permanent: true, direction: 'top', offset: [0, -10] });
+    }).addTo(this.map);
 
     this.deliveryMarker = L.marker([this.delivery.lat, this.delivery.lng], {
       icon: deliveryIcon,
       draggable: true,
-    })
-      .addTo(this.map)
-      .bindTooltip('GIAO HÀNG', { permanent: true, direction: 'top', offset: [0, -10] });
+    }).addTo(this.map);
 
     // Trong dragend của pickup
     this.pickupMarker.on('dragend', async (e: any) => {
@@ -143,7 +183,7 @@ export class DualMapComponent implements AfterViewInit, OnChanges {
         [this.pickup.lat, this.pickup.lng],
         [this.delivery.lat, this.delivery.lng],
       ],
-      { color: '#3498db', weight: 7, opacity: 0.9 }
+      { color: '#3498db', weight: 7, opacity: 0.9 },
     ).addTo(this.map);
 
     // Tính khoảng cách
@@ -169,7 +209,7 @@ export class DualMapComponent implements AfterViewInit, OnChanges {
       const res = await firstValueFrom(
         this.http.get<any>(`https://nominatim.openstreetmap.org/reverse`, {
           params: { format: 'json', lat, lon: lng, zoom: 18, addressdetails: 1 },
-        })
+        }),
       );
       return res.display_name || '';
     } catch {

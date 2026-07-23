@@ -20,11 +20,12 @@ export class Register implements OnInit {
   errorMessage = '';
   successMessage = '';
   isLoading = false;
+  acceptedTerms = false;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit() {}
@@ -33,6 +34,12 @@ export class Register implements OnInit {
     if (!this.name || !this.phone || !this.email || !this.password) {
       this.errorMessage = 'Vui lòng nhập đầy đủ thông tin.';
       this.toastr.error(this.errorMessage);
+      return;
+    }
+
+    if (!this.acceptedTerms) {
+      this.errorMessage = 'Vui lòng đồng ý với điều khoản dịch vụ và chính sách bảo mật.';
+      this.toastr.warning(this.errorMessage);
       return;
     }
 

@@ -1,0 +1,14 @@
+<aside class="payment-recovery" *ngIf="visible && payment" role="status">
+  <div class="payment-recovery__icon" aria-hidden="true">!</div>
+  <div class="payment-recovery__copy">
+    <strong>Bạn có một thanh toán {{ payment.method }} chưa hoàn tất</strong>
+    <span>Đơn vẫn Chờ xác nhận và chưa thể giao cho tới khi cổng báo thành công.</span>
+    <small *ngIf="message">{{ message }}</small>
+  </div>
+  <div class="payment-recovery__actions">
+    <button type="button" class="continue" (click)="continuePayment()" [disabled]="busy">
+      {{ busy ? 'Đang kiểm tra…' : 'Tiếp tục thanh toán' }}
+    </button>
+    <button type="button" class="later" (click)="hide()">Để sau</button>
+  </div>
+</aside>

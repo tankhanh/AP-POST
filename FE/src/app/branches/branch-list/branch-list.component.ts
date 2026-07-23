@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { BranchService } from '../../services/branch.service';
 import { CommonModule } from '@angular/common';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-branch-list',
@@ -55,10 +56,10 @@ export class BranchListComponent implements OnInit {
         this.isLoading = false;
       },
       (err) => {
-        console.log('Lỗi khi gọi API:', err);
+        console.error('Lỗi khi gọi API:', err);
         this.msg = 'Không tải được danh sách chi nhánh';
         this.isLoading = false;
-      }
+      },
     );
   }
 
@@ -85,18 +86,27 @@ export class BranchListComponent implements OnInit {
   }
 
   // DELETE
-  delete(id: string) {
-    if (window.confirm('Bạn có chắc chắn muốn xoá chi nhánh này?')) {
-      this.branchService.delete(id).then(
-        () => {
-          this.msg = 'Xoá thành công';
-          this.loadData();
-        },
-        (err) => {
-          console.log(err);
-          this.msg = 'Xoá thất bại';
-        }
-      );
+  async delete(id: string) {
+    const result = await Swal.fire({
+      title: 'Chuyển chi nhánh vào thùng rác?',
+      text: 'Bạn có thể khôi phục chi nhánh sau thao tác này.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Chuyển vào thùng rác',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#d03238',
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await this.branchService.delete(id);
+      this.msg = 'Xoá thành công';
+      await Swal.fire('Đã xóa', 'Chi nhánh đã được chuyển vào thùng rác.', 'success');
+      this.loadData();
+    } catch (error) {
+      console.error(error);
+      this.msg = 'Xoá thất bại';
+      await Swal.fire('Không thể xóa', 'Vui lòng thử lại.', 'error');
     }
   }
 

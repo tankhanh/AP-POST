@@ -23,7 +23,7 @@ export class Login implements OnInit {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit(): void {
@@ -50,32 +50,32 @@ export class Login implements OnInit {
           this.toastr.warning(
             'Tài khoản của bạn chưa được xác minh. Đang chuyển đến trang xác minh...',
             'Chú ý',
-            { timeOut: 3000 }
+            { timeOut: 3000 },
           );
           this.router.navigate(['/verify']);
           return;
         }
 
         localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userId', data.user._id);
         this.authService.setUser(data.user);
+        localStorage.setItem('userId', data.user._id);
 
         this.toastr.success('Đăng nhập thành công!');
 
         if (this.authService.isAdmin(data.user)) {
           this.router.navigateByUrl('/admin/dashboard');
+        } else if (this.authService.isShipper(data.user)) {
+          this.router.navigateByUrl('/shipper');
         } else if (this.authService.isEmployee(data.user)) {
           this.router.navigateByUrl('/employee/dashboard');
         } else if (this.authService.isCustomer(data.user)) {
           // Customers: prefer returnUrl when present, otherwise send to customer dashboard
-          if (this.returnUrl && this.returnUrl !== '/login') {
+          if (this.isSafeReturnUrl(this.returnUrl)) {
             this.router.navigateByUrl(this.returnUrl);
           } else {
             this.router.navigateByUrl('/customer/dashboard');
           }
-        } else if (this.returnUrl && this.returnUrl !== '/login') {
+        } else if (this.isSafeReturnUrl(this.returnUrl)) {
           this.router.navigateByUrl(this.returnUrl);
         } else {
           this.router.navigateByUrl('/');
@@ -87,5 +87,9 @@ export class Login implements OnInit {
         this.toastr.error(this.errorMessage, 'Lỗi');
       },
     });
+  }
+
+  private isSafeReturnUrl(url: string | null): url is string {
+    return Boolean(url && url.startsWith('/') && !url.startsWith('//') && url !== '/login');
   }
 }

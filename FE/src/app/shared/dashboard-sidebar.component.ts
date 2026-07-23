@@ -45,4 +45,3 @@ export class DashboardSidebarComponent {
     { label: 'Hồ sơ', icon: 'mdi:account-outline', route: '/employee/profile' },
   ];
 }
-

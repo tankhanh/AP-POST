@@ -1,47 +1,52 @@
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { env } from '../environments/environment';
 import { isPlatformBrowser } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { BehaviorSubject, map, Observable, tap } from 'rxjs';
+import { env } from '../environments/environment';
 
-@Injectable({
-  providedIn: 'root',
-})
+interface StoredUser {
+  _id?: string;
+  email?: string;
+  name?: string;
+  role?: string;
+  roles?: string[];
+  [key: string]: unknown;
+}
+
+interface AuthPayload {
+  access_token: string;
+  user: StoredUser;
+}
+
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiUrl = `${env.baseUrl}/auth/login`;
-  private registerUrl = `${env.baseUrl}/auth/register`;
-  private verifyCode = `${env.baseUrl}/auth/check-code`;
-  private apiAccount = `${env.baseUrl}/auth`;
-  private apiUser = `${env.baseUrl}/users`;
+  private readonly authUrl = `${env.baseUrl}/auth`;
+  private readonly usersUrl = `${env.baseUrl}/users`;
+  private readonly isBrowser: boolean;
+  private readonly userSubject: BehaviorSubject<StoredUser | null>;
 
-  private userSubject: BehaviorSubject<any>;
-  public currentUser$: Observable<any>;
-  private isBrowser: boolean;
+  readonly currentUser$: Observable<StoredUser | null>;
 
-  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
-    this.isBrowser = isPlatformBrowser(this.platformId);
-    let initialUser = null;
-
-    if (this.isBrowser) {
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        initialUser = JSON.parse(userData);
-      }
-    }
-
-    this.userSubject = new BehaviorSubject<any>(initialUser);
+  constructor(
+    private readonly http: HttpClient,
+    @Inject(PLATFORM_ID) platformId: object,
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+    this.userSubject = new BehaviorSubject<StoredUser | null>(this.readJson<StoredUser>('user'));
     this.currentUser$ = this.userSubject.asObservable();
   }
 
-  setUser(user: any) {
-    if (this.isBrowser) {
-      localStorage.setItem('user', JSON.stringify(user));
-      this.userSubject.next(user);
-    }
+  setUser(user: StoredUser): void {
+    if (!this.isBrowser) return;
+    localStorage.setItem('user', JSON.stringify(user));
+    this.userSubject.next(user);
   }
 
-  login(email: string, password: string): Observable<any> {
-    return this.http.post(this.apiUrl, { username: email, password });
+  login(email: string, password: string): Observable<unknown> {
+    return this.http.post(`${this.authUrl}/login`, {
+      username: email,
+      password,
+    });
   }
 
   register(userData: {
@@ -49,84 +54,132 @@ export class AuthService {
     phone: string;
     email: string;
     password: string;
-  }): Observable<any> {
-    return this.http.post(this.registerUrl, userData);
+  }): Observable<{ data?: { _id?: string }; _id?: string }> {
+    return this.http.post(`${this.authUrl}/register`, userData);
   }
 
-  logout() {
-    if (this.isBrowser) {
-      localStorage.removeItem('user');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('userId');
+  logout(): void {
+    if (!this.isBrowser) return;
+    this.http.post(`${this.authUrl}/logout`, {}, { withCredentials: true }).subscribe({
+      error: () => undefined,
+    });
+    this.clearSession();
+  }
 
-      this.userSubject.next(null);
+  clearSession(): void {
+    if (!this.isBrowser) return;
+    for (const key of ['user', 'access_token', 'refresh_token', 'userId']) {
+      localStorage.removeItem(key);
     }
+    this.userSubject.next(null);
   }
 
   isLoggedIn(): boolean {
-    if (this.isBrowser) {
-      return !!localStorage.getItem('access_token');
-    }
-    return false;
+    if (!this.isBrowser) return false;
+    return Boolean(localStorage.getItem('access_token'));
   }
 
-  verify(data: { _id: string; code: string }): Observable<any> {
-    return this.http.post(this.verifyCode, data);
+  getAccessToken(): string {
+    return this.isBrowser ? localStorage.getItem('access_token') || '' : '';
   }
 
-  requestPasswordReset(email: string) {
-    return this.http.post(`${this.apiAccount}/retry-password`, { email });
+  refreshSession(): Observable<AuthPayload> {
+    return this.http
+      .post<{ data?: AuthPayload } & Partial<AuthPayload>>(
+        `${this.authUrl}/refresh`,
+        {},
+        { withCredentials: true },
+      )
+      .pipe(
+        map((response) => (response.data ?? response) as AuthPayload),
+        tap((payload) => {
+          if (!payload.access_token || !payload.user) {
+            throw new Error('Invalid refresh response');
+          }
+          localStorage.setItem('access_token', payload.access_token);
+          localStorage.setItem('userId', String(payload.user._id ?? ''));
+          this.setUser(payload.user);
+        }),
+      );
   }
 
-  verifyReset(data: { _id: string; code: string }) {
-    return this.http.post(`${this.apiAccount}/verify-reset`, data);
+  verify(data: { _id: string; code: string }): Observable<unknown> {
+    return this.http.post(`${this.authUrl}/check-code`, data);
   }
 
-  resetPassword(data: { _id: string; newPassword: string }) {
-    return this.http.post(`${this.apiAccount}/reset-password`, data);
+  requestPasswordReset(email: string): Observable<unknown> {
+    return this.http.post(`${this.authUrl}/retry-password`, { email });
   }
 
-  updateAccount(id: string, data: any) {
-    const token = localStorage.getItem('access_token');
-    return this.http.patch<any>(`${this.apiUser}/${id}`, data, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  verifyReset(data: { email: string; code: string }): Observable<unknown> {
+    return this.http.post(`${this.authUrl}/verify-reset`, data);
   }
 
-  getUser() {
-    return JSON.parse(localStorage.getItem('user') || '{}');
+  resetPassword(data: {
+    email: string;
+    code: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Observable<unknown> {
+    return this.http.post(`${this.authUrl}/reset-password`, data);
   }
 
-  // --- Chuẩn hoá vai trò về dạng lowercase, bỏ ký tự thừa ---
-  private normalizeRoles(user: any): string[] {
-    if (!user) return [];
-    const raw: string[] = [
+  updateAccount(id: string, data: unknown): Observable<unknown> {
+    return this.http.patch(`${this.usersUrl}/${id}`, data);
+  }
+
+  getUser(): StoredUser {
+    return this.readJson<StoredUser>('user') ?? {};
+  }
+
+  hasRole(role: string, user: StoredUser = this.getUser()): boolean {
+    const roles = [
       ...(Array.isArray(user.roles) ? user.roles : []),
       ...(user.role ? [user.role] : []),
-    ];
-    return raw.filter(Boolean).map((r) =>
-      String(r)
-        .trim()
-        .replace(/[,\s;]+/g, '') // ✅ chỉ 1 dấu \ trong \s, gộp , ; và khoảng trắng
-        .toLowerCase()
-    );
+    ]
+      .filter(Boolean)
+      .map((value) =>
+        String(value)
+          .trim()
+          .replace(/[,\s;]+/g, '')
+          .toLowerCase(),
+      );
+    return roles.includes(role.trim().toLowerCase());
   }
 
-  hasRole(role: string, user?: any): boolean {
-    const list = this.normalizeRoles(user ?? this.getUser());
-    return list.includes(String(role).toLowerCase());
-  }
-
-  isAdmin(user?: any): boolean {
+  isAdmin(user?: StoredUser): boolean {
     return this.hasRole('admin', user);
   }
 
-  isEmployee(user?: any): boolean {
+  isEmployee(user?: StoredUser): boolean {
     return this.hasRole('staff', user);
   }
 
-  isCustomer(user?: any): boolean {
+  isCustomer(user?: StoredUser): boolean {
     return this.hasRole('user', user);
+  }
+
+  isShipper(user?: StoredUser): boolean {
+    return this.hasRole('shipper', user);
+  }
+
+  dashboardUrl(user: StoredUser = this.getUser()): string {
+    if (this.isAdmin(user)) return '/admin/dashboard';
+    if (this.isShipper(user)) return '/shipper';
+    if (this.isEmployee(user)) return '/employee/dashboard';
+    if (this.isCustomer(user)) return '/customer/dashboard';
+    return '/';
+  }
+
+  private readJson<T>(key: string): T | null {
+    if (!this.isBrowser) return null;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      localStorage.removeItem(key);
+      return null;
+    }
   }
 }

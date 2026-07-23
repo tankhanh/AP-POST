@@ -23,45 +23,6 @@ interface FaqCategory {
 export class SupportComponent {
   searchText = '';
 
-  contactChannels = [
-    {
-      label: 'Hotline',
-      value: '1900 9999',
-      desc: 'Hỗ trợ từ 8:00 - 17:30 (T2 - T7)',
-      type: 'phone',
-    },
-    {
-      label: 'Email hỗ trợ',
-      value: 'support@apppost.vn',
-      desc: 'Xử lý yêu cầu trong vòng 24h',
-      type: 'email',
-    },
-    {
-      label: 'Zalo / Chat',
-      value: 'ApPost Care',
-      desc: 'Ưu tiên chi nhánh, cửa hàng',
-      type: 'chat',
-    },
-  ];
-
-  docs = [
-    {
-      title: 'Hướng dẫn tạo & quản lý đơn hàng',
-      desc: 'Các bước tạo đơn mới, sửa đơn, huỷ đơn, xử lý đơn hoàn.',
-      link: '#',
-    },
-    {
-      title: 'Quản lý chi nhánh & bảng giá',
-      desc: 'Thêm chi nhánh, cấu hình địa chỉ, phí vận chuyển, COD.',
-      link: '#',
-    },
-    {
-      title: 'Tài khoản & phân quyền nhân viên',
-      desc: 'Tạo tài khoản, khoá/mở, quyền truy cập từng màn.',
-      link: '#',
-    },
-  ];
-
   faqCategories: FaqCategory[] = [
     {
       title: 'Đơn hàng',
@@ -88,8 +49,7 @@ export class SupportComponent {
         },
         {
           question: 'Chi nhánh có thể xem đơn của chi nhánh khác không?',
-          answer:
-            'Tuỳ quyền được cấp. Mặc định chỉ xem được đơn thuộc chi nhánh của mình.',
+          answer: 'Tuỳ quyền được cấp. Mặc định chỉ xem được đơn thuộc chi nhánh của mình.',
         },
       ],
     },
@@ -119,15 +79,9 @@ export class SupportComponent {
         ...cat,
         items: cat.items.filter(
           (i) =>
-            i.question.toLowerCase().includes(keyword) ||
-            i.answer.toLowerCase().includes(keyword)
+            i.question.toLowerCase().includes(keyword) || i.answer.toLowerCase().includes(keyword),
         ),
       }))
       .filter((cat) => cat.items.length > 0);
-  }
-
-  sendFeedback() {
-    // Phase 1 có thể chỉ show alert hoặc console.log
-    alert('Cảm ơn góp ý của bạn! Bộ phận hỗ trợ sẽ ghi nhận.');
   }
 }

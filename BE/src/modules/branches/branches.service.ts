@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import aqp from 'api-query-params';
-import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import { Model } from 'mongoose';
 import { Branch, BranchDocument } from './schemas/branch.schemas';
 
 @Injectable()
 export class BranchesService {
   constructor(
     @InjectModel(Branch.name)
-    private branchModel: SoftDeleteModel<BranchDocument>,
+    private branchModel: Model<BranchDocument>,
   ) {}
 
   async create(dto: any) {
@@ -24,7 +24,7 @@ export class BranchesService {
     if (filter.isDeleted === undefined) (filter as any).isDeleted = false;
 
     const page = Number(currentPage) > 0 ? Number(currentPage) : 1;
-    const size = Number(limit) > 0 ? Number(limit) : 10;
+    const size = Math.min(Number(limit) > 0 ? Number(limit) : 10, 100);
     const offset = (page - 1) * size;
 
     const totalItems = await this.branchModel.countDocuments(filter);
@@ -57,25 +57,32 @@ export class BranchesService {
   }
 
   async update(id: string, dto: any) {
-    const branch = await this.branchModel.findByIdAndUpdate(id, dto, {
-      new: true,
-    });
-    if (!branch || branch.isDeleted)
-      throw new NotFoundException('Không tìm thấy chi nhánh');
+    const branch = await this.branchModel.findOneAndUpdate(
+      { _id: id, isDeleted: { $ne: true } },
+      dto,
+      { new: true, runValidators: true },
+    );
+    if (!branch) throw new NotFoundException('Không tìm thấy chi nhánh');
     return branch;
   }
 
   // XÓA MỀM — dùng plugin
   async remove(id: string, actor?: { _id: string; email: string }) {
-    const res = await this.branchModel.softDelete({
-      _id: id,
-      deletedBy: actor
-        ? { _id: actor._id as any, email: actor.email }
-        : undefined,
-    } as any);
+    const res = await this.branchModel.updateOne(
+      { _id: id, isDeleted: { $ne: true } },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: actor
+            ? { _id: actor._id as any, email: actor.email }
+            : undefined,
+        },
+      },
+    );
 
     // res?.modifiedCount với plugin >=1 khi xoá thành công
-    if (!res || (res as any).modifiedCount === 0) {
+    if (res.modifiedCount === 0) {
       throw new NotFoundException('Không tìm thấy chi nhánh');
     }
     return { message: 'Đã xóa (soft delete) chi nhánh' };
@@ -83,8 +90,14 @@ export class BranchesService {
 
   // PHỤC HỒI — dùng plugin
   async restore(id: string) {
-    const res = await this.branchModel.restore({ _id: id } as any);
-    if (!res || (res as any).modifiedCount === 0) {
+    const res = await this.branchModel.updateOne(
+      { _id: id, isDeleted: true },
+      {
+        $set: { isDeleted: false },
+        $unset: { deletedAt: 1, deletedBy: 1 },
+      },
+    );
+    if (res.modifiedCount === 0) {
       throw new NotFoundException('Không tìm thấy chi nhánh đã xoá');
     }
     return { message: 'Đã khôi phục chi nhánh' };
@@ -101,6 +114,6 @@ export class BranchesService {
 
   async findTrash() {
     // Lấy toàn bộ chi nhánh đã xóa mềm
-    return this.branchModel.findDeleted();
+    return this.branchModel.find({ isDeleted: true });
   }
 }

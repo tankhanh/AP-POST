@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TrackingEvent, TrackingPublicService } from '../../services/dashboard/tracking.service';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-tracking-public',
@@ -11,12 +11,13 @@ import { RouterLink } from '@angular/router';
   templateUrl: './dashboard-tracking.html',
   styleUrls: ['./dashboard-tracking.scss'],
 })
-export class TrackingComponent {
+export class TrackingComponent implements OnInit {
   waybill = '';
   trackingData: any = null;
   trackingEvents: TrackingEvent[] = [];
   loading = false;
   error = '';
+  hasSearched = false;
 
   private statusOrder = ['PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED', 'CANCELED'] as const;
 
@@ -44,7 +45,18 @@ export class TrackingComponent {
     CANCELED: 'bi bi-slash-circle',
   };
 
-  constructor(private trackingService: TrackingPublicService) {}
+  constructor(
+    private trackingService: TrackingPublicService,
+    private route: ActivatedRoute,
+  ) {}
+
+  ngOnInit() {
+    const queryWaybill = this.route.snapshot.queryParamMap.get('q')?.trim();
+    if (queryWaybill) {
+      this.waybill = queryWaybill;
+      this.search();
+    }
+  }
 
   search() {
     if (!this.waybill.trim()) {
@@ -53,10 +65,12 @@ export class TrackingComponent {
     }
 
     this.loading = true;
+    this.hasSearched = true;
     this.error = '';
     this.trackingData = null;
     this.trackingEvents = [];
 
+    this.waybill = this.waybill.trim().toUpperCase();
     this.trackingService.getTrackingByWaybill(this.waybill).subscribe({
       next: (res: any) => {
         this.trackingData = res.data || null;

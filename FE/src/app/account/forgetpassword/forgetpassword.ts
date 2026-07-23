@@ -20,7 +20,7 @@ export class ForgetPassword implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit() {}
@@ -40,11 +40,7 @@ export class ForgetPassword implements OnInit {
         this.successMessage = 'Mã đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra email.';
         this.toastr.success(this.successMessage, 'Thành công');
 
-        const data = res.data || res;
-
-        if (data._id) {
-          localStorage.setItem('reset_user_id', data._id);
-        }
+        sessionStorage.setItem('reset_email', this.email.trim().toLowerCase());
 
         this.router.navigate(['/verify-reset']);
       },

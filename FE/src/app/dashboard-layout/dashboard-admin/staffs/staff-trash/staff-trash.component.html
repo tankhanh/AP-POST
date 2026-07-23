@@ -1,78 +1,76 @@
 <div class="container-fluid">
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="ap-dashboard-header">
     <div>
-      <h4 class="fw-bold mb-1">Thùng rác nhân viên</h4>
-      <small class="text-muted">Các tài khoản nhân viên đã xoá mềm.</small>
+      <div class="ap-dashboard-kicker">Quản trị nhân sự</div>
+      <h1 class="ap-dashboard-title">Thùng rác.</h1>
     </div>
-
-    <a class="btn btn-outline-secondary" [routerLink]="['/admin/staff']"> ← Quay lại danh sách </a>
+    <a class="btn btn-secondary" [routerLink]="['/admin/staff']">
+      <iconify-icon icon="mdi:arrow-left"></iconify-icon>
+      Quay lại danh sách
+    </a>
   </div>
 
-  <!-- Loading -->
   @if (isLoading) {
-  <div class="text-center text-muted py-4">Đang tải dữ liệu...</div>
+    <div class="ap-loading-state">
+      <span class="spinner-border" aria-hidden="true"></span>
+      <span>Đang tải dữ liệu...</span>
+    </div>
   } @else if (error) {
-  <!-- Error -->
-  <div class="alert alert-danger py-3">{{ error }}</div>
-  } @else if (!isLoading && ((staffs?.length ?? 0) === 0)) {
-  <!-- Empty -->
-  <div class="text-center text-muted py-4">Thùng rác trống.</div>
+    <div class="alert alert-danger py-3">{{ error }}</div>
+  } @else if (!isLoading && (staffs?.length ?? 0) === 0) {
+    <div class="ap-empty-state">
+      <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+      <p>Thùng rác trống.</p>
+    </div>
   } @else {
-  <!-- Table -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0 app-table">
-          <thead class="table-light text-center">
-            <tr>
-              <th style="width: 200px">Họ tên</th>
-              <th style="width: 220px">Email</th>
-              <th style="width: 200px">Chi nhánh</th>
-              <th style="width: 220px" class="text-center">Thao tác</th>
-            </tr>
-          </thead>
+    <div class="table-responsive">
+      <table class="table ap-table align-middle app-table">
+        <thead>
+          <tr>
+            <th class="table-col-md">Họ tên</th>
+            <th class="table-col-lg">Email</th>
+            <th class="table-col-md">Chi nhánh</th>
+            <th class="text-center table-col-actions">Thao tác</th>
+          </tr>
+        </thead>
 
-          <tbody>
-            @for (s of staffs ?? []; track s._id; let i = $index) {
+        <tbody>
+          @for (s of staffs ?? []; track s._id; let i = $index) {
             <tr>
-              <!-- Họ tên -->
-              <td>
+              <td data-label="Họ tên">
                 <div class="fw-semibold">{{ s.name }}</div>
                 <small class="text-muted text-uppercase">
                   {{ s.role || 'STAFF' }}
                 </small>
               </td>
 
-              <!-- Email -->
-              <td>
+              <td data-label="Email">
                 {{ s.email }}
               </td>
 
-              <!-- Chi nhánh -->
-              <td>
+              <td data-label="Chi nhánh">
                 <div>{{ s.branchId?.name || 'Chưa gán chi nhánh' }}</div>
                 @if (s.branchId?.code) {
-                <small class="text-muted"> Mã: {{ s.branchId.code }} </small>
+                  <small class="text-muted"> Mã: {{ s.branchId.code }} </small>
                 }
               </td>
 
-              <!-- Actions -->
-              <td class="text-end">
-                <button type="button" class="btn btn-sm btn-info me-2" (click)="restore(s._id)">
-                  Khôi phục
-                </button>
-
-                <button type="button" class="btn btn-sm btn-delete" (click)="hardDelete(s._id)">
-                  Xoá vĩnh viễn
-                </button>
+              <td data-label="Thao tác" class="col-actions">
+                <div class="ap-actions-cell">
+                  <button type="button" class="btn btn-info btn-sm" (click)="restore(s._id)">
+                    <iconify-icon icon="mdi:restore"></iconify-icon>
+                    Khôi phục
+                  </button>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="hardDelete(s._id)">
+                    <iconify-icon icon="mdi:delete-forever"></iconify-icon>
+                    Xoá vĩnh viễn
+                  </button>
+                </div>
               </td>
             </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+          }
+        </tbody>
+      </table>
     </div>
-  </div>
   }
 </div>

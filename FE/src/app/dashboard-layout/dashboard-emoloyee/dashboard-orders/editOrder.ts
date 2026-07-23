@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OrdersService } from '../../../services/dashboard/orders.service';
@@ -14,6 +14,7 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './editOrder.html',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class EditOrder implements OnInit {
   orderForm!: FormGroup;
@@ -47,13 +48,21 @@ export class EditOrder implements OnInit {
     this.orderId = this.route.snapshot.params['id'];
     if (!this.orderId) {
       Swal.fire('Lỗi', 'Không tìm thấy ID đơn hàng', 'error');
-          const base = this.authService.isCustomer() ? '/customer' : this.authService.isEmployee() ? '/employee' : '/admin';
-          this.router.navigate([`${base}/orders/list`]);
+      this.backToList();
       return;
     }
 
     this.loadProvinces();
     this.loadOrderDetail();
+  }
+
+  backToList(): void {
+    const base = this.authService.isCustomer()
+      ? '/customer'
+      : this.authService.isEmployee()
+        ? '/employee'
+        : '/admin';
+    this.router.navigate([`${base}/orders/list`]);
   }
 
   createForm() {
@@ -83,8 +92,6 @@ export class EditOrder implements OnInit {
   orderStatusOptions = [
     { value: 'PENDING', label: 'Chờ xác nhận' },
     { value: 'CONFIRMED', label: 'Đã xác nhận' },
-    { value: 'SHIPPING', label: 'Đang giao' },
-    { value: 'COMPLETED', label: 'Hoàn tất' },
     { value: 'CANCELED', label: 'Đã hủy' },
   ];
 
@@ -137,25 +144,28 @@ export class EditOrder implements OnInit {
     return this.order?.status === 'PENDING';
   }
   canEditReceiver() {
-    return ['PENDING', 'CONFIRMED'].includes(this.order?.status);
+    return this.order?.status === 'PENDING';
   }
   canEditPhone() {
-    return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status);
+    return this.order?.status === 'PENDING';
   }
   canEditPickupAddress() {
     return this.order?.status === 'PENDING';
   }
   canEditDeliveryAddress() {
-    return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status);
+    return this.order?.status === 'PENDING';
   }
   canSubmit() {
-    return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status);
+    return (
+      this.order?.status === 'PENDING' ||
+      this.orderForm?.get('status')?.value === 'CANCELED'
+    );
   }
   canEditStatus() {
-    return ['PENDING', 'CONFIRMED', 'SHIPPING'].includes(this.order?.status);
+    return ['PENDING', 'CONFIRMED'].includes(this.order?.status);
   }
   canEditService() {
-    return ['PENDING', 'CONFIRMED'].includes(this.order?.status);
+    return this.order?.status === 'PENDING';
   }
 
   statusText(status: string): string {
@@ -240,29 +250,6 @@ export class EditOrder implements OnInit {
     );
   }
 
-  // ================== GỬI LẠI EMAIL ==================
-  resendWelcomeEmail() {
-    if (!this.orderId || !this.orderForm.value.email) {
-      Swal.fire('Lỗi', 'Không có email để gửi thông báo.', 'warning');
-      return;
-    }
-
-    Swal.fire({
-      title: 'Gửi lại email?',
-      text: `Gửi thông báo đến ${this.orderForm.value.email}?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Gửi',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.ordersService.resendWelcomeEmail(this.orderId).subscribe({
-          next: () => Swal.fire('Thành công!', 'Email đã được gửi.', 'success'),
-          error: () => Swal.fire('Lỗi', 'Không thể gửi email.', 'error'),
-        });
-      }
-    });
-  }
-
   // ================== SUBMIT ==================
   submit() {
     if (this.orderForm.invalid || !this.canSubmit()) {
@@ -273,6 +260,25 @@ export class EditOrder implements OnInit {
     this.loading = true;
     const f = this.orderForm.value;
 
+    if (f.status && f.status !== this.order.status) {
+      this.ordersService.updateStatus(this.orderId, f.status).subscribe({
+        next: () => {
+          this.loading = false;
+          void Swal.fire('Đã cập nhật trạng thái', 'Luồng nghiệp vụ đã được ghi nhận.', 'success').then(
+            () => {
+              const base = this.authService.isEmployee() ? '/employee' : '/customer';
+              this.router.navigate([`${base}/orders/list`]);
+            },
+          );
+        },
+        error: (err) => {
+          this.loading = false;
+          void Swal.fire('Không thể chuyển trạng thái', err?.error?.message || 'Vui lòng thử lại.', 'error');
+        },
+      });
+      return;
+    }
+
     const payload: any = {
       senderName: f.senderName,
       receiverName: f.receiverName,
@@ -280,7 +286,6 @@ export class EditOrder implements OnInit {
       email: f.email?.trim() || null, // ← Lưu email
       serviceCode: f.serviceCode,
       weightKg: Number(f.weightKg),
-      status: f.status,
       details: f.details?.trim() || null,
     };
 
@@ -310,14 +315,11 @@ export class EditOrder implements OnInit {
           text: 'Đơn hàng đã được lưu.',
           timer: 1500,
         }).then(() => {
-          // Gửi email nếu có địa chỉ email
-          if (f.email) {
-            this.ordersService.resendWelcomeEmail(this.orderId).subscribe({
-              next: () => console.log('Email thông báo đã gửi'),
-              error: (err) => console.warn('Gửi email thất bại:', err),
-            });
-          }
-          const base = this.authService.isCustomer() ? '/customer' : this.authService.isEmployee() ? '/employee' : '/admin';
+          const base = this.authService.isCustomer()
+            ? '/customer'
+            : this.authService.isEmployee()
+              ? '/employee'
+              : '/admin';
           this.router.navigate([`${base}/orders/list`]);
         });
       },

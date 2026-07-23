@@ -1,30 +1,29 @@
 <div class="container-fluid">
   <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="ap-dashboard-header">
     <div>
-      <h4 class="fw-bold mb-1">Quản lý nhân viên</h4>
-      <small class="text-muted">Danh sách nhân viên trên toàn hệ thống.</small>
+      <div class="ap-dashboard-kicker">Quản trị nhân sự</div>
+      <h1 class="ap-dashboard-title">Quản lý nhân viên.</h1>
     </div>
-
-    <div class="d-flex gap-2">
-      <a class="btn btn-outline-secondary" [routerLink]="['/admin/staff/create']">
-        + Thêm nhân viên
+    <div class="ap-actions">
+      <a class="btn btn-primary" [routerLink]="['/admin/staff/create']">
+        <iconify-icon icon="mdi:account-plus"></iconify-icon>
+        Thêm nhân viên
       </a>
-
-      <a class="btn btn-outline-secondary" [routerLink]="['/admin/staff/trash']">
-        <i class="bi bi-trash"></i> Thùng rác
+      <a class="btn btn-secondary" [routerLink]="['/admin/staff/trash']">
+        <iconify-icon icon="mdi:delete-outline"></iconify-icon>
+        Thùng rác
       </a>
     </div>
   </div>
 
-  <!-- Message -->
   @if (msg) {
-  <div class="alert alert-info py-2">{{ msg }}</div>
+    <div class="alert alert-info py-2">{{ msg }}</div>
   }
 
   <!-- Search -->
-  <div class="card border-0 shadow-sm mb-3">
-    <div class="card-body d-flex flex-column flex-md-row gap-3 align-items-md-center">
+  <div class="ap-form-panel mb-3">
+    <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center">
       <div class="flex-grow-1">
         <input
           type="text"
@@ -34,124 +33,115 @@
           (keyup.enter)="search()"
         />
       </div>
-      <button class="btn btn-outline-secondary" (click)="search()">Tìm kiếm</button>
+      <button type="button" class="btn btn-secondary" (click)="search()">
+        <iconify-icon icon="mdi:magnify"></iconify-icon>
+        Tìm kiếm
+      </button>
     </div>
   </div>
 
   <!-- Loading -->
   @if (isLoading) {
-  <div class="text-center text-muted py-4">Đang tải dữ liệu...</div>
+    <div class="ap-loading-state">
+      <span class="spinner-border" aria-hidden="true"></span>
+      <span>Đang tải dữ liệu...</span>
+    </div>
   }
 
   <!-- Empty -->
   @if (!isLoading && filteredStaffs.length === 0) {
-  <div class="text-center text-muted py-4">Không có nhân viên nào.</div>
+    <div class="ap-empty-state">
+      <iconify-icon icon="mdi:account-group-outline"></iconify-icon>
+      <p>Không có nhân viên nào.</p>
+    </div>
   }
 
   <!-- Table -->
   @if (!isLoading && filteredStaffs.length > 0) {
-  <div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table id="staffTable" class="table table-hover align-middle mb-0 app-table">
-          <thead class="table-light text-center">
+    <div class="table-responsive">
+      <table class="table ap-table align-middle app-table">
+        <thead>
+          <tr>
+            <th class="sortable table-col-md" (click)="sortData('name')">
+              Tên nhân viên
+              <iconify-icon
+                *ngIf="sortField === 'name'"
+                [icon]="sortDirection === 'asc' ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+              ></iconify-icon>
+            </th>
+            <th class="sortable table-col-lg" (click)="sortData('email')">
+              Email đăng nhập
+              <iconify-icon
+                *ngIf="sortField === 'email'"
+                [icon]="sortDirection === 'asc' ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+              ></iconify-icon>
+            </th>
+            <th class="table-col-md">Chi nhánh</th>
+            <th class="sortable table-col-md" (click)="sortData('isActive')">
+              Trạng thái
+              <iconify-icon
+                *ngIf="sortField === 'isActive'"
+                [icon]="sortDirection === 'asc' ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+              ></iconify-icon>
+            </th>
+            <th class="text-center col-actions table-col-actions">Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (s of pagedStaffs; track s._id) {
             <tr>
-              <!-- Tên nhân viên -->
-              <th style="width: 200px" class="sortable" (click)="sortData('name')">
-                Tên nhân viên
-                <i
-                  *ngIf="sortField === 'name'"
-                  [ngClass]="{
-                    'bi bi-caret-up-fill': sortDirection === 'asc',
-                    'bi bi-caret-down-fill': sortDirection === 'desc'
-                  }"
-                ></i>
-              </th>
-
-              <!-- Email -->
-              <th style="width: 230px" class="sortable" (click)="sortData('email')">
-                Email đăng nhập
-                <i
-                  *ngIf="sortField === 'email'"
-                  [ngClass]="{
-                    'bi bi-caret-up-fill': sortDirection === 'asc',
-                    'bi bi-caret-down-fill': sortDirection === 'desc'
-                  }"
-                ></i>
-              </th>
-
-              <!-- Chi nhánh -->
-              <th style="width: 200px">Chi nhánh</th>
-
-              <!-- Trạng thái -->
-              <th style="width: 140px" class="sortable" (click)="sortData('isActive')">
-                Trạng thái
-                <i
-                  *ngIf="sortField === 'isActive'"
-                  [ngClass]="{
-                    'bi bi-caret-up-fill': sortDirection === 'asc',
-                    'bi bi-caret-down-fill': sortDirection === 'desc'
-                  }"
-                ></i>
-              </th>
-
-              <th style="width: 220px" class="text-center col-actions">Thao tác</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            @for (s of pagedStaffs; track s._id) {
-            <tr>
-              <td class="fw-semibold">{{ s.name }}</td>
-              <td>{{ s.email }}</td>
-
-              <td>
-                {{ s.branchId?.name || '—' }}
-              </td>
-
-              <td>
+              <td data-label="Tên" class="fw-semibold">{{ s.name }}</td>
+              <td data-label="Email">{{ s.email }}</td>
+              <td data-label="Chi nhánh">{{ s.branchId?.name || '—' }}</td>
+              <td data-label="Trạng thái">
                 @if (s.isActive) {
-                <span class="badge-status bg-success-subtle text-success">Đang làm việc</span>
+                  <span class="badge-status status-completed">Đang làm việc</span>
                 } @else {
-                <span class="badge-status bg-secondary-subtle text-secondary">Tạm nghỉ</span>
+                  <span class="badge-status status-pending">Tạm nghỉ</span>
                 }
               </td>
-
-              <td class="text-end col-actions">
-                <div class="table-actions">
-                  <a class="btn-sm btn-info" [routerLink]="['/admin/staff/detail', s._id]"> Xem </a>
-                  <a class="btn-sm btn-edit" [routerLink]="['/admin/staff/update', s._id]"> Sửa </a>
-                  <button class="btn-sm btn-delete" (click)="delete(s._id)">Xoá</button>
+              <td data-label="Thao tác" class="col-actions">
+                <div class="ap-actions-cell">
+                  <a class="btn btn-info btn-sm" [routerLink]="['/admin/staff/detail', s._id]">
+                    Xem
+                  </a>
+                  <a class="btn btn-warning btn-sm" [routerLink]="['/admin/staff/update', s._id]">
+                    Sửa
+                  </a>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="delete(s._id)">
+                    Xoá
+                  </button>
                 </div>
               </td>
             </tr>
-            }
-          </tbody>
-        </table>
+          }
+        </tbody>
+      </table>
 
-        <div class="d-flex justify-content-between align-items-center p-3">
-          <div class="text-muted">Trang {{ page }} / {{ totalPages }}</div>
-
-          <div>
-            <button
-              class="btn btn-sm btn-primary-soft me-2"
-              [disabled]="page === 1"
-              (click)="prevPage()"
-            >
-              « Trước
-            </button>
-
-            <button
-              class="btn btn-sm btn-primary-soft"
-              [disabled]="page === totalPages"
-              (click)="nextPage()"
-            >
-              Sau »
-            </button>
-          </div>
+      <div class="d-flex justify-content-between align-items-center p-3">
+        <div class="text-muted">Trang {{ page }} / {{ totalPages }}</div>
+        <div class="ap-actions">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            [disabled]="page === 1"
+            (click)="prevPage()"
+          >
+            <iconify-icon icon="mdi:chevron-left"></iconify-icon>
+            Trước
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            [disabled]="page === totalPages"
+            (click)="nextPage()"
+          >
+            Sau
+            <iconify-icon icon="mdi:chevron-right"></iconify-icon>
+          </button>
         </div>
       </div>
     </div>
-  </div>
   }
 </div>

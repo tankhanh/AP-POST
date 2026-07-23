@@ -11,14 +11,8 @@ export class PricingService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(
-    current: number = 1,
-    pageSize: number = 20,
-    filters?: any
-  ): Observable<any> {
-    let params = new HttpParams()
-      .set('current', current)
-      .set('pageSize', pageSize);
+  getAll(current: number = 1, pageSize: number = 20, filters?: any): Observable<any> {
+    let params = new HttpParams().set('current', current).set('pageSize', pageSize);
 
     if (filters) {
       Object.keys(filters).forEach((key) => {

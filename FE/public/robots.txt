@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /employee/
+Disallow: /customer/
+Sitemap: https://ap-post.vercel.app/sitemap.xml

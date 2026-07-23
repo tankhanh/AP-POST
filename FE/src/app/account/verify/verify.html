@@ -1,7 +1,11 @@
 <section class="auth-page">
   <div class="container">
     <div class="auth-card auth-card-narrow">
-      <a href="/" class="auth-brand">
+      <a [routerLink]="['/register']" class="auth-back-link">
+        <span class="auth-back-arrow" aria-hidden="true">←</span>
+        <span>Quay lại</span>
+      </a>
+      <a [routerLink]="['/']" class="auth-brand">
         <span class="ap-brand-mark">AP</span>
         <span class="ap-brand-text">AP Post</span>
       </a>
@@ -9,7 +13,7 @@
       <h2>Xác nhận tài khoản.</h2>
       <p class="mb-4">Nhập mã xác nhận đã được gửi tới email đăng ký.</p>
 
-      <form class="auth-form">
+      <form class="auth-form" (ngSubmit)="verifyCode()">
         <div>
           <label class="form-label" for="verifyCode">Mã xác nhận</label>
           <input
@@ -19,20 +23,25 @@
             [(ngModel)]="code"
             name="code"
             placeholder="Nhập mã"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            required
           />
         </div>
 
         @if (errorMessage) {
-          <div class="alert alert-danger mb-0">{{ errorMessage }}</div>
+          <div class="alert alert-danger mb-0" role="alert" aria-live="polite">
+            {{ errorMessage }}
+          </div>
         }
 
         @if (successMessage) {
-          <div class="alert alert-success mb-0">{{ successMessage }}</div>
+          <div class="alert alert-success mb-0" role="status" aria-live="polite">
+            {{ successMessage }}
+          </div>
         }
 
-        <button type="button" class="btn btn-primary btn-lg w-100" (click)="verifyCode()">
-          Xác nhận
-        </button>
+        <button type="submit" class="btn btn-primary btn-lg w-100">Xác nhận</button>
       </form>
     </div>
   </div>

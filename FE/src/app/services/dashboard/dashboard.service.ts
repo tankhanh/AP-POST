@@ -7,9 +7,9 @@ import { env } from '../../environments/environment';
 export class DashboardService {
   private readonly API_URL = `${env.baseUrl}/orders/statistics`;
 
-  private readonly API_URL_ADMIN = `${env.baseUrl}/dashboard/system`
+  private readonly API_URL_ADMIN = `${env.baseUrl}/dashboard/system`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   // dành cho nhân viên, muốn tách admin ra
   getStatistics(month?: number, year?: number): Observable<any> {

@@ -2,7 +2,9 @@
   <img
     class="ap-hero__media"
     src="assets/images/backgrounds/vecteezy_people-visit-post-office-customers-stand-in-queue_13717371.jpg"
-    alt="AP Post digital delivery operations"
+    alt=""
+    fetchpriority="high"
+    decoding="async"
   />
 
   <div class="ap-hero__content">
@@ -88,8 +90,8 @@
       </div>
       <h2 class="ap-section-title">Một bảng điều khiển cho mọi hành trình.</h2>
       <p>
-        Thiết kế mới ưu tiên thao tác nhanh, bề mặt rõ, trạng thái dễ quét và màu nhấn chỉ xuất hiện
-        ở nơi cần quyết định.
+        Theo dõi hành trình, tính trước chi phí và quản lý đơn hàng trong cùng một luồng rõ ràng, dễ
+        sử dụng.
       </p>
     </div>
 
@@ -118,13 +120,20 @@
         <p>Tạo, sửa, xem chi tiết và xuất hóa đơn ngay trong khu vực nhân viên.</p>
       </a>
 
-
-      <a [routerLink]="['/register']" class="ap-feature-card">
+      <a [routerLink]="isLoggedIn ? workspaceLink : ['/register']" class="ap-feature-card">
         <span class="ap-icon-bubble">
-          <iconify-icon icon="mdi:account-check"></iconify-icon>
+          <iconify-icon
+            [icon]="isLoggedIn ? 'mdi:view-dashboard-outline' : 'mdi:account-check'"
+          ></iconify-icon>
         </span>
-        <h3>Tài khoản mới</h3>
-        <p>Bắt đầu miễn phí và xác minh email để truy cập các công cụ vận hành.</p>
+        <h3>{{ isLoggedIn ? 'Khu vực làm việc' : 'Tạo tài khoản' }}</h3>
+        <p>
+          {{
+            isLoggedIn
+              ? 'Tiếp tục quản lý đơn hàng và theo dõi hoạt động trong dashboard.'
+              : 'Bắt đầu miễn phí và xác minh email để truy cập các công cụ vận hành.'
+          }}
+        </p>
       </a>
     </div>
   </div>
@@ -140,8 +149,7 @@
         </div>
         <h2 class="ap-section-title">Từ đơn hàng tới giao thành công.</h2>
         <p>
-          UI mới giữ mọi bước ở cùng nhịp: rõ trạng thái, ít nhiễu thị giác và hành động luôn nổi
-          bật bằng màu lime.
+          Mỗi bước đều hiển thị đúng thông tin cần thiết để bạn xử lý nhanh và hạn chế nhầm lẫn.
         </p>
       </div>
 
@@ -178,18 +186,33 @@
   <div class="container">
     <div class="ap-cta-band">
       <div>
-        <h2 class="ap-section-title mb-3">Sẵn sàng gửi đơn đầu tiên?</h2>
-        <p>Tạo tài khoản hoặc đăng nhập để quản lý đơn, chi nhánh và bảng giá.</p>
+        <h2 class="ap-section-title mb-3">
+          {{ isLoggedIn ? 'Tiếp tục công việc của bạn.' : 'Sẵn sàng gửi đơn đầu tiên?' }}
+        </h2>
+        <p>
+          {{
+            isLoggedIn
+              ? 'Mở khu vực làm việc để tạo đơn và theo dõi hoạt động mới nhất.'
+              : 'Tạo tài khoản hoặc đăng nhập để quản lý đơn hàng của bạn.'
+          }}
+        </p>
       </div>
       <div class="ap-actions">
-        <a [routerLink]="['/register']" class="btn btn-lg">
-          <iconify-icon icon="mdi:account-plus"></iconify-icon>
-          Đăng ký
-        </a>
-        <a [routerLink]="['/login']" class="btn btn-secondary btn-lg">
-          <iconify-icon icon="mdi:login"></iconify-icon>
-          Đăng nhập
-        </a>
+        @if (isLoggedIn) {
+          <a [routerLink]="workspaceLink" class="btn btn-lg">
+            <iconify-icon icon="mdi:view-dashboard-outline"></iconify-icon>
+            Mở khu vực làm việc
+          </a>
+        } @else {
+          <a [routerLink]="['/register']" class="btn btn-lg">
+            <iconify-icon icon="mdi:account-plus"></iconify-icon>
+            Đăng ký
+          </a>
+          <a [routerLink]="['/login']" class="btn btn-secondary btn-lg">
+            <iconify-icon icon="mdi:login"></iconify-icon>
+            Đăng nhập
+          </a>
+        }
       </div>
     </div>
   </div>

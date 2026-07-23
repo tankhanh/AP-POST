@@ -2,6 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
+import { env } from '../../environments/environment';
 
 interface ShippingRequest {
   originProvinceCode: string;
@@ -40,11 +42,11 @@ type ShippingForm = ShippingRequest & {
   standalone: true,
   templateUrl: './user-calculator.html',
   styleUrls: ['./user-calculator.scss'],
-  imports: [CommonModule, FormsModule, DecimalPipe],
+  imports: [CommonModule, FormsModule, DecimalPipe, RouterLink],
 })
 export class CalculateShippingComponent implements OnInit {
   private http = inject(HttpClient);
-  private readonly API_URL = 'https://ap-post-api.onrender.com/api/v1';
+  private readonly API_URL = env.baseUrl;
 
   provinceOptions: { value: string; label: string }[] = [];
 
@@ -58,6 +60,7 @@ export class CalculateShippingComponent implements OnInit {
   };
 
   loading = false;
+  provincesLoading = false;
   errorMessage = '';
   result: ShippingResponse | null = null;
 
@@ -71,16 +74,20 @@ export class CalculateShippingComponent implements OnInit {
   }
 
   loadProvinces() {
+    this.provincesLoading = true;
+    this.errorMessage = '';
     this.http.get<{ data: any[] }>(`${this.API_URL}/locations/provinces`).subscribe({
       next: (res) => {
         this.provinceOptions = res.data.map((p) => ({
           value: p.code,
           label: p.name,
         }));
+        this.provincesLoading = false;
       },
       error: (err) => {
         console.error('Lỗi tải danh sách tỉnh:', err);
         this.errorMessage = 'Không tải được danh sách tỉnh. Vui lòng thử lại sau.';
+        this.provincesLoading = false;
       },
     });
   }
@@ -107,18 +114,20 @@ export class CalculateShippingComponent implements OnInit {
     };
 
     this.loading = true;
-    this.http.post<{ data: ShippingResponse }>(`${this.API_URL}/pricing/calculate`, payload).subscribe({
-      next: (res) => {
-        this.result = res.data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error(err);
-        this.errorMessage =
-          err?.error?.message || 'Không tính được phí vận chuyển. Vui lòng thử lại.';
-        this.loading = false;
-      },
-    });
+    this.http
+      .post<{ data: ShippingResponse }>(`${this.API_URL}/pricing/calculate`, payload)
+      .subscribe({
+        next: (res) => {
+          this.result = res.data;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.errorMessage =
+            err?.error?.message || 'Không tính được phí vận chuyển. Vui lòng thử lại.';
+          this.loading = false;
+        },
+      });
   }
 
   resetForm() {
@@ -137,5 +146,13 @@ export class CalculateShippingComponent implements OnInit {
   get totalCollect(): number {
     if (!this.result) return 0;
     return this.result.totalPrice + (this.formData.codValue || 0);
+  }
+
+  provinceLabel(code?: string): string {
+    return this.provinceOptions.find((province) => province.value === code)?.label || code || '-';
+  }
+
+  serviceLabel(code?: string): string {
+    return this.serviceOptions.find((service) => service.value === code)?.label || code || '-';
   }
 }

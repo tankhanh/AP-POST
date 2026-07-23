@@ -6,23 +6,22 @@
         <span class="ap-brand-text">AP Post</span>
       </a>
 
-      <!-- Use Bootstrap collapse toggler for desktop/navbar behavior to preserve original UX -->
       <button
         class="navbar-toggler border-0 btn btn-secondary btn-sm"
         type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#publicNavbar"
+        (click)="togglePublicMenu()"
         aria-controls="publicNavbar"
-        aria-expanded="false"
-        aria-label="Mở menu"
+        [attr.aria-expanded]="publicMenuOpen"
+        aria-label="Mở menu điều hướng"
       >
         <iconify-icon icon="mdi:menu"></iconify-icon>
       </button>
 
-      <div class="collapse navbar-collapse" id="publicNavbar">
-          <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
-          
+      <div class="collapse navbar-collapse" [class.show]="publicMenuOpen" id="publicNavbar">
+        <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
+          @if (authService.isLoggedIn()) {
             <app-notification-center></app-notification-center>
+          }
 
           <a [routerLink]="['/tracking']" class="nav-link">
             <iconify-icon icon="mdi:magnify-scan"></iconify-icon>
@@ -32,14 +31,17 @@
             <iconify-icon icon="mdi:calculator-variant"></iconify-icon>
             Tính cước
           </a>
+          <a [routerLink]="['/ship']" class="nav-link">
+            <iconify-icon icon="mdi:package-variant-closed-plus"></iconify-icon>
+            Gửi hàng
+          </a>
 
-          <!-- Desktop: original bootstrap dropdown (keeps previous design) -->
           <div class="dropdown d-none d-lg-block">
             <button
               class="btn ap-account-button"
               type="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
+              (click)="toggleAccount($event)"
+              [attr.aria-expanded]="accountOpen"
             >
               <iconify-icon icon="mdi:account-circle"></iconify-icon>
               <span>{{
@@ -48,7 +50,7 @@
               <iconify-icon icon="mdi:chevron-down"></iconify-icon>
             </button>
 
-            <ul class="dropdown-menu dropdown-menu-end mt-2">
+            <ul class="dropdown-menu dropdown-menu-end mt-2" [class.show]="accountOpen">
               @if (authService.isLoggedIn()) {
                 <li>
                   <span class="dropdown-item">
@@ -88,18 +90,45 @@
                   </li>
                 }
 
+                @if (authService.isShipper(user)) {
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/shipper']">
+                      <iconify-icon icon="mdi:truck-delivery-outline"></iconify-icon>
+                      Khu vực giao hàng
+                    </a>
+                  </li>
+                }
+
                 @if (authService.isCustomer(user)) {
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/customer/dashboard']">
+                      <iconify-icon icon="mdi:view-dashboard-outline"></iconify-icon>
+                      Dashboard
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/customer/order/create']">
+                      <iconify-icon icon="mdi:package-plus"></iconify-icon>
+                      Tạo đơn
+                    </a>
+                  </li>
                   <li>
                     <a class="dropdown-item" [routerLink]="['/customer/orders/list']">
                       <iconify-icon icon="mdi:package-variant-closed"></iconify-icon>
                       Đơn hàng của tôi
                     </a>
                   </li>
+                  <li>
+                    <a class="dropdown-item" [routerLink]="['/customer/profile']">
+                      <iconify-icon icon="mdi:account-outline"></iconify-icon>
+                      Hồ sơ
+                    </a>
+                  </li>
                 }
 
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <button (click)="logout()" class="dropdown-item text-danger">
+                  <button type="button" (click)="logout()" class="dropdown-item text-danger">
                     <iconify-icon icon="mdi:logout"></iconify-icon>
                     Đăng xuất
                   </button>
@@ -121,56 +150,133 @@
             </ul>
           </div>
 
-          <!-- Mobile: controlled dropdown with backdrop/animation -->
-          <div class="dropdown position-relative d-lg-none">
+          <div class="mobile-account d-lg-none">
             <button
+              id="mobileAccountButton"
               class="btn ap-account-button d-flex align-items-center gap-2"
               type="button"
               (click)="toggleAccount($event)"
-              aria-expanded="false"
+              [attr.aria-expanded]="accountOpen"
+              aria-controls="mobileAccountMenu"
+              aria-haspopup="true"
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" class="icon-account" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="8" r="3" fill="var(--wise-green)" />
-                <path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="currentColor" opacity="0.85" />
-              </svg>
-              <span class="text-truncate">{{ user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Tài khoản' }}</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" class="icon-chev" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 10l5 5 5-5H7z" fill="var(--wise-green)" />
-              </svg>
+              <iconify-icon icon="mdi:account-circle"></iconify-icon>
+              <span class="text-truncate">{{
+                user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Tài khoản'
+              }}</span>
+              <iconify-icon
+                [icon]="accountOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+              ></iconify-icon>
             </button>
 
-            <div class="dropdown-menu dropdown-menu-end mt-2" *ngIf="accountOpen">
+            <div
+              id="mobileAccountMenu"
+              class="mobile-account-panel mt-2"
+              *ngIf="accountOpen"
+              aria-labelledby="mobileAccountButton"
+            >
               @if (authService.isLoggedIn()) {
                 <div class="px-3 py-2">
                   <div class="dropdown-item mb-2 d-flex align-items-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 4h16v2H4zM4 11h10v2H4zM4 18h16v2H4z" fill="var(--wise-green)"/></svg>
+                    <iconify-icon icon="mdi:email-outline"></iconify-icon>
                     <span class="text-truncate">{{ user?.email }}</span>
                   </div>
                 </div>
                 <div class="dropdown-divider"></div>
 
                 @if (user?.role === 'STAFF') {
-                  <a class="dropdown-item" [routerLink]="['/employee/dashboard']" (click)="closeAccount(); $event.stopPropagation()">Dashboard</a>
-                  <a class="dropdown-item" [routerLink]="['/employee/orders/list']" (click)="closeAccount(); $event.stopPropagation()">Đơn hàng</a>
-                  <a class="dropdown-item" [routerLink]="['/employee/profile']" (click)="closeAccount(); $event.stopPropagation()">Hồ sơ</a>
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/employee/dashboard']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Dashboard</a
+                  >
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/employee/orders/list']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Đơn hàng</a
+                  >
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/employee/profile']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Hồ sơ</a
+                  >
                 }
 
                 @if (user?.role === 'ADMIN') {
-                  <a class="dropdown-item" [routerLink]="['/admin/dashboard']" (click)="closeAccount(); $event.stopPropagation()">Quản trị</a>
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/admin/dashboard']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Quản trị</a
+                  >
+                }
+
+                @if (authService.isShipper(user)) {
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/shipper']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Khu vực giao hàng</a
+                  >
                 }
 
                 @if (authService.isCustomer(user)) {
-                  <a class="dropdown-item" [routerLink]="['/customer/orders/list']" (click)="closeAccount(); $event.stopPropagation()">Đơn hàng của tôi</a>
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/customer/dashboard']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Dashboard</a
+                  >
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/customer/order/create']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Tạo đơn</a
+                  >
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/customer/orders/list']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Đơn hàng của tôi</a
+                  >
+                  <a
+                    class="dropdown-item"
+                    [routerLink]="['/customer/profile']"
+                    (click)="closeAccount(); $event.stopPropagation()"
+                    >Hồ sơ</a
+                  >
                 }
 
                 <div class="dropdown-divider"></div>
-                <button (click)="logout(); $event.stopPropagation()" class="dropdown-item text-danger">Đăng xuất</button>
+                <button
+                  type="button"
+                  (click)="logout(); $event.stopPropagation()"
+                  class="dropdown-item text-danger"
+                >
+                  Đăng xuất
+                </button>
               } @else {
-                <a class="dropdown-item" [routerLink]="['/login']" (click)="closeAccount(); $event.stopPropagation()">Đăng nhập</a>
-                <a class="dropdown-item" [routerLink]="['/register']" (click)="closeAccount(); $event.stopPropagation()">Đăng ký</a>
+                <a
+                  class="dropdown-item"
+                  [routerLink]="['/login']"
+                  (click)="closeAccount(); $event.stopPropagation()"
+                >
+                  <iconify-icon icon="mdi:login"></iconify-icon>
+                  Đăng nhập</a
+                >
+                <a
+                  class="dropdown-item"
+                  [routerLink]="['/register']"
+                  (click)="closeAccount(); $event.stopPropagation()"
+                >
+                  <iconify-icon icon="mdi:account-plus-outline"></iconify-icon>
+                  Đăng ký</a
+                >
               }
             </div>
-            <div *ngIf="accountOpen" class="account-backdrop" (click)="closeAccount()"></div>
           </div>
         </div>
       </div>
@@ -203,6 +309,7 @@
             <li><a [routerLink]="['/']">Trang chủ</a></li>
             <li><a [routerLink]="['/tracking']">Tra cứu đơn</a></li>
             <li><a [routerLink]="['/calculator']">Tính cước</a></li>
+            <li><a [routerLink]="['/ship']">Tạo đơn gửi hàng</a></li>
           </ul>
         </div>
 
@@ -218,22 +325,26 @@
         <div>
           <h6>Hỗ trợ</h6>
           <ul class="list-unstyled d-grid gap-2 mt-3">
-            <li><a href="mailto:dinhtankhanh14@gmail.com">dinhtankhanh14@gmail.com</a></li>
-            <li><a href="tel:+84908779245">+84 908 779 245</a></li>
-            <li><a href="#">Điều khoản dịch vụ</a></li>
+            <li><a [routerLink]="['/tracking']">Kiểm tra hành trình</a></li>
+            <li><a [routerLink]="['/calculator']">Ước tính chi phí</a></li>
+            <li><a [routerLink]="orderSupportLink">Tạo và quản lý đơn</a></li>
           </ul>
         </div>
       </div>
 
       <div class="ap-footer-bottom">
         <span>© 2026 AP Post. Tất cả các quyền được bảo vệ.</span>
-        <span>Thiết kế bởi Dinh Tan Khanh.</span>
+        <span>Vận chuyển rõ ràng, thao tác gọn nhẹ.</span>
       </div>
     </div>
   </footer>
 
   <button
+    *ngIf="showScrollToTop"
+    type="button"
+    (click)="scrollToTop()"
     title="Lên đầu trang"
+    aria-label="Lên đầu trang"
     class="btn btn-primary ap-scroll-top position-fixed"
     id="scrollToTopBtn"
   >

@@ -2,33 +2,31 @@ import { Injectable } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class SoundService {
-  // Play a short notification sound. Respect user mute preference (localStorage) and prefer bundled audio file.
   play(): void {
     try {
       const muted = localStorage.getItem('notifications_muted') === '1';
       if (muted) return;
-      const audio = new Audio('/assets/sounds/notification.wav');
-      audio.play().catch(() => this.fallbackBeep());
-    } catch (e) {
-      this.fallbackBeep();
+      this.playTone();
+    } catch {
+      // Browsers may block sound until the user interacts with the page.
     }
   }
 
   setMuted(value: boolean) {
     try {
       localStorage.setItem('notifications_muted', value ? '1' : '0');
-    } catch (e) {}
+    } catch {}
   }
 
   isMuted(): boolean {
     try {
       return localStorage.getItem('notifications_muted') === '1';
-    } catch (e) {
+    } catch {
       return false;
     }
   }
 
-  private fallbackBeep() {
+  private playTone() {
     try {
       const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (!Ctx) return;
@@ -45,9 +43,9 @@ export class SoundService {
         try {
           o.stop();
           ctx.close();
-        } catch (e) {}
+        } catch {}
       }, 250);
-    } catch (e) {
+    } catch {
       // ignore audio failures
     }
   }

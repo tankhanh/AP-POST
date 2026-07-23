@@ -12,13 +12,14 @@ import { RESPONSE_MESSAGE } from 'src/health/decorator/customize';
 export interface Response<T> {
   statusCode: number;
   message?: string;
-  data: any;
+  data: T;
 }
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, Response<T>>
-{
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  Response<T>
+> {
   constructor(private reflector: Reflector) {}
 
   intercept(

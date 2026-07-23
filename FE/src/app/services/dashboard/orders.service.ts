@@ -6,7 +6,6 @@ import { env } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class OrdersService {
   private readonly API_URL = `${env.baseUrl}/orders`;
-  private readonly PAYMENT_URL = `${env.baseUrl}/payment/card`;
   private readonly PRICING_URL = `${env.baseUrl}/pricing/calculate`;
 
   constructor(private http: HttpClient) {}
@@ -46,12 +45,12 @@ export class OrdersService {
       );
   }
 
-  requestPublicOtp(phone: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/public/request-otp`, { phone });
+  requestPublicOtp(phone: string, email: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/public/request-otp`, { phone, email });
   }
 
-  verifyPublicOtp(phone: string, code: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/public/verify-otp`, { phone, code });
+  verifyPublicOtp(phone: string, email: string, code: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/public/verify-otp`, { phone, email, code });
   }
 
   getOrders(filters: any = {}): Observable<any> {
@@ -100,52 +99,35 @@ export class OrdersService {
     return this.http.post(this.PRICING_URL, payload, { headers: this.getHeaders() });
   }
 
-  resendWelcomeEmail(orderId: string) {
-    return this.http.post(
-      `${this.API_URL}/${orderId}/resend-email`,
+  confirmPayment(orderId: string): Observable<any> {
+    return this.http.patch(
+      `${this.API_URL}/${orderId}/confirm-payment`,
       {},
       { headers: this.getHeaders() },
     );
   }
 
-  createFakePayment(orderId: string, cardData: any) {
-    return this.http
-      .post(
-        `${this.PAYMENT_URL}`,
-        { orderId, cardData },
-        { headers: this.getHeaders(), observe: 'response' },
-      ) // Fix: Dùng PAYMENT_URL, thêm headers
-      .pipe(
-        map((res: any) => res.body), // Extract body JSON
-        catchError((err) => {
-          console.error('HTTP error in service:', err);
-          return throwError(() => err);
-        }),
-      );
+  getActiveShippers(): Observable<any> {
+    return this.http.get(`${env.baseUrl}/users/shippers/active`, { headers: this.getHeaders() });
   }
 
-  getPendingOrders(): Observable<any> {
-    // Lấy đơn hàng có paymentMethod = 'FAKE' và status = 'PENDING' (chờ thanh toán)
-    const params = new HttpParams()
-      .set('paymentMethod', 'FAKE')
-      .set('status', 'PENDING')
-      .set('pageSize', '1') // Chỉ cần 1 đơn mới nhất
-      .set('current', '1')
-      .set('sort', '-createdAt'); // Sắp xếp mới nhất trước
+  assignShipper(orderId: string, shipperId: string): Observable<any> {
+    return this.http.patch(
+      `${this.API_URL}/${orderId}/assign-shipper`,
+      { shipperId },
+      { headers: this.getHeaders() },
+    );
+  }
 
-    return this.http.get<any>(this.API_URL, {
+  unassignShipper(orderId: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/${orderId}/shipper`, {
       headers: this.getHeaders(),
-      params,
     });
   }
 
-  getQr(orderId: string): Observable<any> {
-    return this.http.get(`${this.API_URL}/${orderId}/qr`, { headers: this.getHeaders() });
-  }
-
-  confirmPayment(orderId: string): Observable<any> {
-    return this.http.patch(
-      `${this.API_URL}/${orderId}/confirm-payment`,
+  initiateMomoPayment(orderId: string): Observable<any> {
+    return this.http.post(
+      `${this.API_URL}/${orderId}/momo-payment`,
       {},
       { headers: this.getHeaders() },
     );

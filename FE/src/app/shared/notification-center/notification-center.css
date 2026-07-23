@@ -1,63 +1,130 @@
 .notification-list {
   right: 0;
-  top: 36px;
-  width: 360px;
+  top: calc(100% + 10px);
+  width: min(380px, calc(100vw - 24px));
+  max-height: min(620px, calc(100vh - 100px));
   z-index: 1050;
-  border-radius: 12px;
+  border-radius: 22px !important;
   overflow: hidden;
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(18, 18, 18, 0.12);
 }
-.notification-list .notification-item .text-truncate { max-width: 260px; }
-.notification-center .btn { padding: 6px 10px; }
+.notification-list .notification-item .text-truncate {
+  max-width: 260px;
+}
+.notification-center .btn {
+  padding: 6px 10px;
+}
+.notification-trigger {
+  min-width: 42px;
+}
 
-.notif-msg { max-width: 260px; color: #4b4b4b; }
+.notif-msg {
+  max-width: 260px;
+  color: #4b4b4b;
+}
 
 /* Backdrop shown when panel is open (covers rest of UI) */
 .notification-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.28);
+  background: rgba(0, 0, 0, 0.28);
   z-index: 1040;
 }
 
 .notification-list .card-header {
-  background: linear-gradient(180deg,#fff,#fbfbfb);
-  padding: 0.6rem 0.8rem;
+  background: var(--wise-canvas);
+  padding: 12px;
 }
-.notification-list .card-body { background: #fff; }
-.notification-item { transition: background .12s ease; }
-.notification-item:hover { background: #fbfbfb; }
+.notification-list .card-body {
+  overflow-y: auto;
+  background: #fff;
+}
+.notification-item {
+  transition: background 0.12s ease;
+}
+.notification-item:hover {
+  background: var(--wise-canvas);
+}
+
+.notification-link {
+  margin: 0 0 4px;
+  border: 0;
+  padding: 0;
+  color: var(--wise-black);
+  background: transparent;
+  text-align: left;
+}
+
+.notification-link:hover {
+  color: var(--wise-green);
+}
+
+.notification-state {
+  min-height: 150px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--wise-muted);
+  text-align: center;
+}
+
+.notification-state iconify-icon {
+  font-size: 36px;
+}
+.mark-all {
+  white-space: nowrap;
+}
 
 /* Close button small adjustment */
-.close-btn { padding: 0.25rem 0.4rem; border-radius: 6px; }
+.close-btn {
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+}
 
 /* Mobile adjustments */
 @media (max-width: 576px) {
   .notification-list {
     position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
+    left: 12px !important;
+    right: 12px !important;
     top: 72px !important;
-    width: 100vw !important;
-    height: calc(100vh - 56px);
-    overflow: auto;
-    border-radius: 0.5rem 0.5rem 0 0;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+    width: auto !important;
+    max-height: calc(100dvh - 84px);
+    border-radius: 22px !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
   }
-  .notification-list .card-header { position: sticky; top: 0; background: #fff; z-index: 10; }
-  .notification-list .notification-item .text-truncate { max-width: calc(100% - 110px); }
+  .notification-list .card-header {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+  }
+  .notification-list .notification-item .text-truncate {
+    max-width: calc(100% - 110px);
+  }
 }
 
 /* Slide-in animation for open */
 .notification-list {
-  animation: ap-notify-slide .18s cubic-bezier(.2,.9,.2,1);
+  animation: ap-notify-slide 0.18s cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 @keyframes ap-notify-slide {
-  from { transform: translateY(-8px) translateX(6px); opacity: 0; }
-  to { transform: translateY(0) translateX(0); opacity: 1; }
+  from {
+    transform: translateY(-8px) translateX(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) translateX(0);
+    opacity: 1;
+  }
 }
 
-/* Icon sizing */
-.notification-center .icon-bell { display: inline-block; vertical-align: middle; color: var(--wise-green); }
-.notification-center .icon-volume, .notification-center .icon-volume-off, .notification-center .icon-close { display:inline-block; vertical-align: middle; color: var(--wise-green); }
+.notification-center iconify-icon {
+  display: inline-block;
+  color: var(--wise-green);
+  vertical-align: middle;
+}

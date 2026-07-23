@@ -1,0 +1,244 @@
+<section class="detail-page">
+  <header class="detail-header">
+    <a routerLink="/shipper/jobs" class="back-button" aria-label="Quay lại danh sách">
+      <iconify-icon icon="mdi:arrow-left"></iconify-icon>
+    </a>
+    <div>
+      <span>Chi tiết chuyến giao</span>
+      <strong>{{ job?.waybill || 'Đơn giao' }}</strong>
+    </div>
+    <button type="button" class="refresh-button" (click)="load()" aria-label="Làm mới">
+      <iconify-icon icon="mdi:refresh"></iconify-icon>
+    </button>
+  </header>
+
+  <div class="state-panel" *ngIf="loading" role="status">
+    <span class="spinner-border"></span>
+    <span>Đang tải chi tiết...</span>
+  </div>
+
+  <div class="state-panel error" *ngIf="!loading && error">
+    <iconify-icon icon="mdi:alert-circle-outline"></iconify-icon>
+    <strong>{{ error }}</strong>
+    <button type="button" (click)="load()">Thử lại</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && job as current">
+    <section class="status-hero" [attr.data-state]="current.deliveryState">
+      <div>
+        <span>Trạng thái hiện tại</span>
+        <h1>{{ stateLabel(current.deliveryState) }}</h1>
+        <p *ngIf="current.deliveryAttempts">Lần giao thứ {{ current.deliveryAttempts }}</p>
+      </div>
+      <iconify-icon icon="mdi:truck-fast-outline"></iconify-icon>
+    </section>
+
+    <div class="failure-alert" *ngIf="current.deliveryState === 'FAILED'">
+      <iconify-icon icon="mdi:alert-outline"></iconify-icon>
+      <div>
+        <strong>Lý do lần giao gần nhất</strong>
+        <span>{{ current.deliveryFailureReason || 'Chưa có mô tả.' }}</span>
+      </div>
+    </div>
+
+    <div class="assignment-offer" *ngIf="current.deliveryState === 'ASSIGNED'">
+      <iconify-icon icon="mdi:timer-sand"></iconify-icon>
+      <div>
+        <strong>Đơn đang chờ bạn xác nhận</strong>
+        <span *ngIf="current.assignmentExpiresAt">
+          Vui lòng nhận hoặc từ chối trước
+          {{ current.assignmentExpiresAt | date: 'HH:mm, dd/MM/yyyy' }}.
+        </span>
+        <span *ngIf="!current.assignmentExpiresAt">Vui lòng phản hồi sớm để điều phối chính xác.</span>
+      </div>
+    </div>
+
+    <section class="info-card recipient-card">
+      <div class="section-heading">
+        <div>
+          <span>Người nhận</span>
+          <h2>{{ current.receiverName }}</h2>
+        </div>
+        <a [href]="'tel:' + current.receiverPhone" class="call-button" aria-label="Gọi người nhận">
+          <iconify-icon icon="mdi:phone-outline"></iconify-icon>
+        </a>
+      </div>
+      <a class="phone-link" [href]="'tel:' + current.receiverPhone">{{ current.receiverPhone }}</a>
+      <div class="address-box">
+        <iconify-icon icon="mdi:map-marker-outline"></iconify-icon>
+        <div>
+          <span>Điểm giao</span><strong>{{ formatAddress(current.deliveryAddressId) }}</strong>
+        </div>
+      </div>
+      <a
+        class="map-button"
+        [href]="mapUrl(current.deliveryAddressId)"
+        target="_blank"
+        rel="noopener"
+      >
+        <iconify-icon icon="mdi:navigation-variant-outline"></iconify-icon>
+        Mở chỉ đường
+      </a>
+    </section>
+
+    <section class="info-card">
+      <div class="section-heading compact">
+        <div>
+          <span>Điểm lấy hàng</span>
+          <h2>{{ current.senderName }}</h2>
+        </div>
+      </div>
+      <a class="phone-link" *ngIf="current.senderPhone" [href]="'tel:' + current.senderPhone">{{
+        current.senderPhone
+      }}</a>
+      <div class="address-box muted">
+        <iconify-icon icon="mdi:package-variant-closed"></iconify-icon>
+        <div>
+          <span>Địa chỉ lấy</span><strong>{{ formatAddress(current.pickupAddressId) }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-card financial-card">
+      <div class="section-heading compact">
+        <div>
+          <span>Đối soát chuyến giao</span>
+          <h2>Thông tin thu hộ</h2>
+        </div>
+      </div>
+      <dl>
+        <div>
+          <dt>COD hàng hóa</dt>
+          <dd>{{ current.codValue || 0 | number }} đ</dd>
+        </div>
+        <div>
+          <dt>Phí vận chuyển</dt>
+          <dd>{{ current.shippingFee || 0 | number }} đ</dd>
+        </div>
+        <div class="total">
+          <dt>Cần thu người nhận</dt>
+          <dd>{{ current.receiverPayAmount || 0 | number }} đ</dd>
+        </div>
+      </dl>
+      <p *ngIf="current.details"><strong>Ghi chú hàng:</strong> {{ current.details }}</p>
+    </section>
+
+    <section class="info-card" *ngIf="current.deliveryState === 'DELIVERING'">
+      <div class="section-heading compact">
+        <div>
+          <span>Bằng chứng giao hàng</span>
+          <h2>Ảnh xác nhận</h2>
+        </div>
+      </div>
+      <label class="proof-picker">
+        <iconify-icon icon="mdi:camera-outline"></iconify-icon>
+        <span>{{ proofFile?.name || 'Chụp hoặc chọn ảnh giao hàng' }}</span>
+        <input
+          type="file"
+          accept="image/jpeg,image/png"
+          capture="environment"
+          (change)="selectProof($event)"
+        />
+      </label>
+      <small>JPG/PNG, tối đa 1 MB. Ảnh là bắt buộc để hoàn tất và đối soát giao hàng.</small>
+      <div class="proof-preview" *ngIf="current.proofOfDeliveryUrl">
+        <h3>Ảnh giao hàng đã được lưu</h3>
+        <img
+          [src]="proofImageUrl(current.proofOfDeliveryUrl)"
+          (error)="onProofImageError()"
+          alt="Ảnh bằng chứng giao hàng"
+        />
+        <div class="proof-load-error" *ngIf="proofImageFailed">
+          <iconify-icon icon="mdi:image-off-outline"></iconify-icon>
+          <span>Ảnh chưa tải được. Kiểm tra kết nối rồi tải lại trang.</span>
+          <button type="button" (click)="load()">Tải lại ảnh</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-card delivered-card" *ngIf="current.deliveryState === 'DELIVERED'">
+      <div class="section-heading compact">
+        <div>
+          <span>Hoàn tất</span>
+          <h2>Thông tin bàn giao</h2>
+        </div>
+      </div>
+      <p><strong>Người nhận thực tế:</strong> {{ current.recipientConfirmedName || '—' }}</p>
+      <p *ngIf="current.deliveryNote"><strong>Ghi chú:</strong> {{ current.deliveryNote }}</p>
+      <img
+        *ngIf="current.proofOfDeliveryUrl && !proofImageFailed"
+        [src]="proofImageUrl(current.proofOfDeliveryUrl)"
+        (error)="onProofImageError()"
+        alt="Bằng chứng giao hàng"
+      />
+      <div class="proof-load-error" *ngIf="current.proofOfDeliveryUrl && proofImageFailed">
+        <iconify-icon icon="mdi:image-off-outline"></iconify-icon>
+        <span>Ảnh chưa tải được. Kiểm tra kết nối rồi tải lại trang.</span>
+        <button type="button" (click)="load()">Tải lại ảnh</button>
+      </div>
+    </section>
+
+    <div class="detail-actions" *ngIf="current.deliveryState !== 'DELIVERED'">
+      <button
+        type="button"
+        *ngIf="current.deliveryState === 'ASSIGNED'"
+        (click)="accept()"
+        [disabled]="busy"
+      >
+        Nhận đơn
+      </button>
+      <button
+        type="button"
+        class="fail"
+        *ngIf="current.deliveryState === 'ASSIGNED'"
+        (click)="reject()"
+        [disabled]="busy"
+      >
+        Từ chối đơn
+      </button>
+      <button
+        type="button"
+        *ngIf="current.deliveryState === 'ACCEPTED'"
+        (click)="start()"
+        [disabled]="busy"
+      >
+        Bắt đầu giao
+      </button>
+      <button
+        type="button"
+        *ngIf="current.deliveryState === 'FAILED'"
+        (click)="retry()"
+        [disabled]="busy"
+      >
+        Tiếp tục giao lại
+      </button>
+      <button
+        type="button"
+        class="location"
+        *ngIf="current.deliveryState === 'ACCEPTED' || current.deliveryState === 'DELIVERING'"
+        (click)="updateLocation()"
+        [disabled]="busy"
+      >
+        <iconify-icon icon="mdi:crosshairs-gps"></iconify-icon> Cập nhật vị trí
+      </button>
+      <button
+        type="button"
+        class="complete"
+        *ngIf="current.deliveryState === 'DELIVERING'"
+        (click)="complete()"
+        [disabled]="busy"
+      >
+        Đã giao thành công
+      </button>
+      <button
+        type="button"
+        class="fail"
+        *ngIf="current.deliveryState === 'DELIVERING'"
+        (click)="fail()"
+        [disabled]="busy"
+      >
+        Giao chưa thành công
+      </button>
+    </div>
+  </ng-container>
+</section>

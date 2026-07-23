@@ -11,8 +11,6 @@ import { AuthController } from './auth.controller';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    AuthModule,
     UsersModule,
     ConfigModule,
     PassportModule,

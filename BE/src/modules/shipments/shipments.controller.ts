@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  ParseEnumPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
@@ -18,9 +19,11 @@ import { ShipmentsService } from './shipments.service';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { UpdateShipmentDto } from './dto/update-shipment.dto';
 import { ShipmentStatus } from './schemas/shipment.schema';
+import { Roles } from 'src/health/decorator/roles.decorator';
 
 @ApiTags('shipments')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'STAFF')
 @Controller('shipments')
 export class ShipmentsController {
   constructor(private readonly shipmentsService: ShipmentsService) {}
@@ -63,7 +66,7 @@ export class ShipmentsController {
   @ResponseMessage('Cập nhật trạng thái vận đơn')
   updateStatus(
     @Param('id') id: string,
-    @Param('status') status: ShipmentStatus,
+    @Param('status', new ParseEnumPipe(ShipmentStatus)) status: ShipmentStatus,
   ) {
     return this.shipmentsService.updateStatus(id, status);
   }
@@ -71,7 +74,7 @@ export class ShipmentsController {
   @Delete(':id')
   @ResponseMessage('Xóa vận đơn (soft)')
   remove(@Param('id') id: string, @Users() user: IUser) {
-    return this.shipmentsService.remove(id, user._id);
+    return this.shipmentsService.remove(id, user);
   }
 
   @Patch(':id/restore')

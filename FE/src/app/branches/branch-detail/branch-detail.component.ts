@@ -18,7 +18,7 @@ export class BranchDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private branchService: BranchService
+    private branchService: BranchService,
   ) {}
 
   async ngOnInit() {

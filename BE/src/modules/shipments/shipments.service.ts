@@ -4,8 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Types } from 'mongoose';
-import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import { Connection, Model, Types } from 'mongoose';
 import aqp from 'api-query-params';
 import {
   Shipment,
@@ -14,7 +13,7 @@ import {
 } from './schemas/shipment.schema';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { UpdateShipmentDto } from './dto/update-shipment.dto';
-import { customAlphabet } from 'nanoid';
+import { randomInt } from 'crypto';
 
 // Các model để populate
 import { Address } from '../location/schemas/address.schema';
@@ -22,6 +21,7 @@ import { Branch } from '../branches/schemas/branch.schemas';
 import { Service } from '../services/schemas/service.schemas';
 import { Province } from '../location/schemas/province.schema';
 import { Commune } from '../location/schemas/commune.schema';
+import { IUser } from 'src/types/user.interface';
 
 import { ProvinceCode, Region } from 'src/types/location.type';
 import { getRegionByProvinceCode } from '../location/dto/locations';
@@ -47,14 +47,18 @@ interface ProvinceLean {
 export class ShipmentsService {
   constructor(
     @InjectModel(Shipment.name)
-    private readonly shipmentModel: SoftDeleteModel<ShipmentDocument>,
+    private readonly shipmentModel: Model<ShipmentDocument>,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
   /* ===== Utils ===== */
   private generateTrackingNumber(): string {
-    const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 10);
-    return `VN${nanoid()}`;
+    const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const randomPart = Array.from(
+      { length: 10 },
+      () => alphabet[randomInt(0, alphabet.length)],
+    ).join('');
+    return `VN${randomPart}`;
   }
 
   private distanceKm(lat1 = 0, lon1 = 0, lat2 = 0, lon2 = 0) {
@@ -196,7 +200,7 @@ export class ShipmentsService {
     if (filter.isDeleted === undefined) (filter as any).isDeleted = false;
 
     const page = Number(currentPage) > 0 ? Number(currentPage) : 1;
-    const size = Number(limit) > 0 ? Number(limit) : 10;
+    const size = Math.min(Number(limit) > 0 ? Number(limit) : 10, 100);
     const skip = (page - 1) * size;
 
     const total = await this.shipmentModel.countDocuments(filter);
@@ -263,12 +267,13 @@ export class ShipmentsService {
   }
 
   /* ===== Update ===== */
-  async update(id: string, dto: UpdateShipmentDto, userId: string) {
+  async update(id: string, dto: UpdateShipmentDto, _userId: string) {
     const shipment = await this.shipmentModel.findById(id);
     if (!shipment || shipment.isDeleted)
       throw new NotFoundException('Không tìm thấy vận đơn');
 
     if (dto.status && dto.status !== shipment.status) {
+      this.assertStatusTransition(shipment.status, dto.status);
       shipment.timeline.push({
         status: dto.status,
         timestamp: new Date(),
@@ -289,6 +294,9 @@ export class ShipmentsService {
     if (!shipment || shipment.isDeleted)
       throw new NotFoundException('Không tìm thấy vận đơn');
 
+    if (shipment.status === status) return shipment;
+    this.assertStatusTransition(shipment.status, status);
+
     shipment.status = status;
     shipment.timeline.push({
       status,
@@ -301,20 +309,69 @@ export class ShipmentsService {
     return shipment;
   }
 
+  private assertStatusTransition(
+    current: ShipmentStatus,
+    next: ShipmentStatus,
+  ): void {
+    const allowedTransitions: Record<ShipmentStatus, ShipmentStatus[]> = {
+      [ShipmentStatus.PENDING]: [
+        ShipmentStatus.IN_TRANSIT,
+        ShipmentStatus.CANCELED,
+      ],
+      [ShipmentStatus.IN_TRANSIT]: [
+        ShipmentStatus.OUT_FOR_DELIVERY,
+        ShipmentStatus.FAILED,
+        ShipmentStatus.RETURNED,
+      ],
+      [ShipmentStatus.OUT_FOR_DELIVERY]: [
+        ShipmentStatus.DELIVERED,
+        ShipmentStatus.FAILED,
+        ShipmentStatus.RETURNED,
+      ],
+      [ShipmentStatus.FAILED]: [
+        ShipmentStatus.IN_TRANSIT,
+        ShipmentStatus.RETURNED,
+      ],
+      [ShipmentStatus.DELIVERED]: [],
+      [ShipmentStatus.RETURNED]: [],
+      [ShipmentStatus.CANCELED]: [],
+    };
+    if (!allowedTransitions[current].includes(next)) {
+      throw new BadRequestException(
+        `Không thể chuyển vận đơn từ ${current} sang ${next}`,
+      );
+    }
+  }
+
   /* ===== Soft delete / Restore ===== */
-  async remove(id: string, userId: string) {
-    const res = await this.shipmentModel.softDelete({
-      _id: id,
-      deletedBy: { _id: new Types.ObjectId(userId), email: 'system@local' },
-    } as any);
-    if (!res || (res as any).modifiedCount === 0)
+  async remove(id: string, user: IUser) {
+    const res = await this.shipmentModel.updateOne(
+      { _id: id, isDeleted: { $ne: true } },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: {
+            _id: new Types.ObjectId(user._id),
+            email: user.email,
+          },
+        },
+      },
+    );
+    if (res.modifiedCount === 0)
       throw new NotFoundException('Không tìm thấy vận đơn');
     return { message: 'Đã xóa (soft) vận đơn' };
   }
 
   async restore(id: string) {
-    const res = await this.shipmentModel.restore({ _id: id } as any);
-    if (!res || (res as any).modifiedCount === 0)
+    const res = await this.shipmentModel.updateOne(
+      { _id: id, isDeleted: true },
+      {
+        $set: { isDeleted: false },
+        $unset: { deletedAt: 1, deletedBy: 1 },
+      },
+    );
+    if (res.modifiedCount === 0)
       throw new NotFoundException('Không tìm thấy vận đơn đã xóa');
     return { message: 'Đã khôi phục vận đơn' };
   }

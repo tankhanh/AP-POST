@@ -1,40 +1,122 @@
 .support-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding-top: 0.5rem;
+  padding-top: 8px;
+}
 
-  .card {
-    border-radius: 16px;
+.support-intro {
+  margin: 12px 0 0;
+  font-size: 16px;
+}
+
+.support-search {
+  position: relative;
+  width: min(100%, 340px);
+
+  i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    z-index: 1;
+    color: var(--wise-soft);
+    transform: translateY(-50%);
   }
 
-  .card-body {
-    padding: 1.5rem 1.75rem;
+  .form-control {
+    padding-left: 42px !important;
+  }
+}
+
+.support-card {
+  border: 1px solid var(--wise-line);
+  border-radius: 30px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--wise-ring);
+}
+
+.support-category {
+  padding: 24px;
+  border-bottom: 1px solid var(--wise-line);
+
+  &:last-child {
+    border-bottom: 0;
   }
 
-  .card-title {
-    font-weight: 600;
+  h2 {
+    margin: 0 0 16px;
+    font-size: 24px;
+  }
+}
+
+.support-answer {
+  border-left: 3px solid var(--wise-lime);
+  padding: 4px 0 4px 16px;
+
+  & + & {
+    margin-top: 18px;
   }
 
-  /* Card liên hệ */
-  .card .p-3.border.rounded-3 {
-    border-color: #eef1f6 !important;
-    background: #fafbff;
-    transition: all 0.2s ease;
+  h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    line-height: 1.3;
   }
 
-  .card .p-3.border.rounded-3:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+.support-empty {
+  min-height: 280px;
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--wise-muted);
+  text-align: center;
+
+  i {
+    margin-bottom: 6px;
+    color: var(--wise-soft);
+    font-size: 40px;
   }
 
-  /* Input tìm kiếm gọn hơn */
-  input.form-control-sm {
-    font-size: 0.875rem;
+  strong {
+    color: var(--wise-black);
+    font-size: 18px;
+  }
+}
+
+.support-tip {
+  margin-top: 18px;
+  border-radius: 22px;
+  padding: 18px;
+  display: flex;
+  gap: 14px;
+  background: var(--wise-mint);
+
+  > i {
+    color: var(--wise-green);
+    font-size: 24px;
   }
 
-  @media (max-width: 767.98px) {
-    .card-body {
-      padding: 1.25rem;
-    }
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .support-search {
+    width: 100%;
+  }
+
+  .support-category {
+    padding: 20px;
   }
 }

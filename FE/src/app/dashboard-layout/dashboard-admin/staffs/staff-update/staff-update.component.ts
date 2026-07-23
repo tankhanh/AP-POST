@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -18,6 +18,7 @@ import { BranchService } from '../../../../services/branch.service';
   standalone: true,
   templateUrl: './staff-update.component.html',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class StaffUpdateComponent implements OnInit {
   editForm: FormGroup;
@@ -33,7 +34,7 @@ export class StaffUpdateComponent implements OnInit {
     private branchService: BranchService,
     private route: ActivatedRoute,
     private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {
     this.editForm = this.fb.group({
       name: ['', Validators.required],
@@ -97,7 +98,6 @@ export class StaffUpdateComponent implements OnInit {
 
     try {
       const payload = this.editForm.value;
-      console.log('payload gửi lên', payload); // để bạn check nhanh
 
       await this.staffService.update(this.staffId, payload);
 

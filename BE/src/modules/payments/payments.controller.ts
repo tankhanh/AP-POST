@@ -1,41 +1,56 @@
-import { Controller, Post, Get, Param, Body, Patch, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/health/decorator/roles.decorator';
 import { PaymentsService } from './payments.service';
-import { Public } from 'src/health/decorator/customize';
+import { IsEnum, IsIn } from 'class-validator';
+import { PaymentStatus } from './schemas/payment.schema';
+import { MANUAL_PAYMENT_METHODS, PaymentMethod } from './payment.constants';
+
+class ManualPaymentDto {
+  @IsIn(MANUAL_PAYMENT_METHODS)
+  method: PaymentMethod;
+}
+
+class PaymentStatusDto {
+  @IsEnum(PaymentStatus)
+  status: PaymentStatus;
+}
 
 @Controller('payments')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post(':orderId')
-  create(@Param('orderId') orderId: string, @Body('method') method: string) {
-    return this.paymentsService.create(orderId, method);
+  @Roles('ADMIN', 'STAFF')
+  create(@Param('orderId') orderId: string, @Body() dto: ManualPaymentDto) {
+    return this.paymentsService.create(orderId, dto.method);
   }
 
   @Get()
+  @Roles('ADMIN', 'STAFF')
   findAll() {
     return this.paymentsService.findAll();
   }
 
   @Get(':id')
+  @Roles('ADMIN', 'STAFF')
   findOne(@Param('id') id: string) {
     return this.paymentsService.findOne(id);
   }
 
   @Patch(':id')
-  updateStatus(@Param('id') id: string, @Body('status') status: string) {
-    return this.paymentsService.updateStatus(id, status);
-  }
-}
-
-@Controller('payments/gateway')
-export class PaymentsGatewayController {
-  constructor(private paymentsService: PaymentsService) {}
-
-  @Post('callback')
-  @Public()
-  async handleCallback(@Body() body: any, @Query() query: any) {
-    const txnRef = body.txnRef || query.txnRef || body.order_id;  // Tùy gateway
-    const status = body.status === 'success' ? 'paid' : 'failed';
-    return this.paymentsService.handleGatewayCallback(txnRef, status, body);
+  @Roles('ADMIN', 'STAFF')
+  updateStatus(@Param('id') id: string, @Body() dto: PaymentStatusDto) {
+    return this.paymentsService.updateStatus(id, dto.status);
   }
 }

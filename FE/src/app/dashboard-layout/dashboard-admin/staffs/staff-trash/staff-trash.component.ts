@@ -1,15 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 
 import { StaffService } from '../../../../services/staff.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-staff-trash',
   standalone: true,
   templateUrl: './staff-trash.component.html',
   imports: [CommonModule, RouterLink],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class StaffTrashComponent implements OnInit {
   staffs: any[] = [];
@@ -18,7 +20,7 @@ export class StaffTrashComponent implements OnInit {
 
   constructor(
     private staffService: StaffService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit(): void {
@@ -26,26 +28,31 @@ export class StaffTrashComponent implements OnInit {
   }
 
   async loadTrash(): Promise<void> {
-  this.isLoading = true;
-  this.error = '';
+    this.isLoading = true;
+    this.error = '';
 
-  try {
-    const data = await this.staffService.getTrash(); // data là mảng
-    this.staffs = data ?? [];
-  } catch (err) {
-    console.error(err);
-    this.error = 'Không thể tải dữ liệu thùng rác. Vui lòng thử lại sau.';
-  } finally {
-    this.isLoading = false;
+    try {
+      const data = await this.staffService.getTrash(); // data là mảng
+      this.staffs = data ?? [];
+    } catch (err) {
+      console.error(err);
+      this.error = 'Không thể tải dữ liệu thùng rác. Vui lòng thử lại sau.';
+    } finally {
+      this.isLoading = false;
+    }
   }
-}
-
 
   async restore(id: string): Promise<void> {
     if (!id) return;
 
-    const ok = confirm('Bạn có chắc muốn khôi phục nhân viên này?');
-    if (!ok) return;
+    const result = await Swal.fire({
+      title: 'Khôi phục nhân viên?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Khôi phục',
+      cancelButtonText: 'Hủy',
+    });
+    if (!result.isConfirmed) return;
 
     try {
       await this.staffService.restore(id);
@@ -60,10 +67,16 @@ export class StaffTrashComponent implements OnInit {
   async hardDelete(id: string): Promise<void> {
     if (!id) return;
 
-    const ok = confirm(
-      'Xoá vĩnh viễn nhân viên này? Hành động này không thể hoàn tác.'
-    );
-    if (!ok) return;
+    const result = await Swal.fire({
+      title: 'Xóa vĩnh viễn nhân viên?',
+      text: 'Hành động này không thể hoàn tác.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xóa vĩnh viễn',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#d03238',
+    });
+    if (!result.isConfirmed) return;
 
     try {
       await this.staffService.hardDelete(id);

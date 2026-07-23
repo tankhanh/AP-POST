@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { OrdersService } from '../../../services/dashboard/orders.service';
+import { PaymentRecoveryService } from '../../../services/payment-recovery.service';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 
@@ -10,6 +11,7 @@ import Swal from 'sweetalert2';
   templateUrl: './adminlistOrder.html',
   standalone: true,
   imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, RouterLink],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AdminListOrder implements OnInit {
   orders: any[] = [];
@@ -18,6 +20,10 @@ export class AdminListOrder implements OnInit {
   copiedWaybill: string | null = null;
   pageSize = 10;
   currentPage = 1;
+  statusFilterOpen = false;
+  loading = false;
+  loadError = '';
+  shippers: any[] = [];
 
   filters: any = {
     status: [],
@@ -38,18 +44,40 @@ export class AdminListOrder implements OnInit {
     { value: 'CANCELED', label: 'Đã hủy' },
   ];
 
-  constructor(private ordersService: OrdersService) {}
+  constructor(
+    private ordersService: OrdersService,
+    private paymentRecovery: PaymentRecoveryService,
+  ) {}
 
   ngOnInit() {
     this.loadOrders();
+    this.loadShippers();
+  }
+
+  loadShippers() {
+    this.ordersService.getActiveShippers().subscribe({
+      next: (response: any) => (this.shippers = response?.data ?? response ?? []),
+      error: () => (this.shippers = []),
+    });
   }
 
   loadOrders() {
+    this.loading = true;
+    this.loadError = '';
     const query = { ...this.filters };
     if (query.status?.length) query.status = query.status.join(',');
-    this.ordersService.getOrders(query).subscribe((res: any) => {
-      this.orders = res.data?.results || [];
-      this.applyFilters();
+    this.ordersService.getOrders(query).subscribe({
+      next: (res: any) => {
+        this.orders = res.data?.results || [];
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: () => {
+        this.orders = [];
+        this.filteredOrders = [];
+        this.loadError = 'Không tải được danh sách đơn hàng.';
+        this.loading = false;
+      },
     });
   }
 
@@ -129,15 +157,25 @@ export class AdminListOrder implements OnInit {
 
   deleteOrder(id: string, event: Event) {
     event.stopPropagation();
-    if (confirm('Bạn có chắc muốn xóa đơn hàng này? (Soft delete)')) {
+    Swal.fire({
+      title: 'Chuyển đơn hàng vào thùng rác?',
+      text: 'Bạn vẫn có thể khôi phục đơn hàng sau thao tác này.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Chuyển vào thùng rác',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#d03238',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
       this.ordersService.deleteOrder(id).subscribe({
         next: () => {
-          alert('Đơn hàng đã bị xóa tạm thời.');
+          Swal.fire('Đã xóa', 'Đơn hàng đã được chuyển vào thùng rác.', 'success');
           this.loadOrders();
         },
-        error: (err) => alert(err.error?.message || 'Xóa thất bại'),
+        error: (err) =>
+          Swal.fire('Không thể xóa', err.error?.message || 'Vui lòng thử lại.', 'error'),
       });
-    }
+    });
   }
 
   // COPY MÃ VẬN ĐƠN
@@ -149,14 +187,17 @@ export class AdminListOrder implements OnInit {
         this.copiedWaybill = waybill;
         setTimeout(() => (this.copiedWaybill = null), 2000);
       })
-      .catch(() => alert('Copy thất bại!'));
+      .catch(() =>
+        Swal.fire('Không thể sao chép', 'Vui lòng sao chép mã vận đơn thủ công.', 'error'),
+      );
   }
 
   // IN VẬN ĐƠN - ĐẸP CHUẨN A5
   printOrder(order: any) {
+    order = this.escapeForHtml(order);
     const printWin = window.open('', '_blank');
     if (!printWin) {
-      alert('Vui lòng cho phép popup để in đơn hàng!');
+      Swal.fire('Không mở được bản in', 'Vui lòng cho phép cửa sổ bật lên rồi thử lại.', 'warning');
       return;
     }
 
@@ -251,6 +292,23 @@ export class AdminListOrder implements OnInit {
     return parts.join(', ') || '—';
   }
 
+  private escapeForHtml(value: any): any {
+    if (typeof value === 'string') {
+      return value.replace(
+        /[&<>"']/g,
+        (character) =>
+          ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!,
+      );
+    }
+    if (Array.isArray(value)) return value.map((item) => this.escapeForHtml(item));
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [key, this.escapeForHtml(item)]),
+      );
+    }
+    return value;
+  }
+
   pagedOrders() {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredOrders.slice(start, start + this.pageSize);
@@ -272,85 +330,110 @@ export class AdminListOrder implements OnInit {
     this.applyFilters();
   }
 
-  // ==================== HIỂN THỊ QR ====================
-  showQr(orderId: string, e: Event) {
-    e.stopPropagation();
-
-    this.ordersService.getQr(orderId).subscribe({
-      next: (response: any) => {
-        const res = response.data || response;
-
-        if (!res?.qrUrl) {
-          Swal.fire('Lỗi', 'Không nhận được mã QR từ server', 'error');
-          return;
-        }
-
-        const amount = Number(res.amount) || 0;
-        const waybill = res.waybill || 'N/A';
-
-        Swal.fire({
-          title: 'Mã QR thanh toán',
-          html: `
-            <div class="text-center">
-              <img src="${res.qrUrl}" 
-                   style="max-width: 320px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
-              <p class="mt-3 fs-4 fw-bold text-success">${amount.toLocaleString()} ₫</p>
-              <p class="text-muted">Mã vận đơn: <strong>${waybill}</strong></p>
-              <small class="text-success">Quét bằng app ngân hàng bất kỳ (VietQR)</small>
-            </div>
-          `,
-          confirmButtonText: 'Tôi đã thanh toán',
-          showCancelButton: true,
-          cancelButtonText: 'Để sau',
-          width: '420px',
-        }).then((result) => {
-          if (result.isConfirmed) {
-            this.confirmQrPayment(orderId);
-          }
-        });
-      },
-      error: (err) => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Không lấy được mã QR',
-          text: err.error?.message || 'Vui lòng thử lại sau',
-        });
-      },
-    });
-  }
-
-  // ==================== XÁC NHẬN THANH TOÁN THỦ CÔNG ====================
-  private confirmQrPayment(orderId: string) {
+  confirmManualPayment(order: any, event: Event) {
+    event.stopPropagation();
     Swal.fire({
-      title: 'Xác nhận thanh toán?',
-      text: 'Đơn hàng sẽ chuyển sang trạng thái "Đã xác nhận" và gửi email thông báo.',
+      title: 'Xác nhận đã nhận thanh toán?',
+      text: `Đơn ${order.waybill} chỉ chuyển sang Đã xác nhận sau thao tác này.`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonText: 'Đã nhận tiền - Xác nhận',
-      confirmButtonColor: '#28a745',
+      confirmButtonText: 'Đã nhận tiền',
       cancelButtonText: 'Hủy',
     }).then((result) => {
-      if (result.isConfirmed) {
-        this.ordersService.confirmPayment(orderId).subscribe({
-          next: () => {
-            Swal.fire({
-              icon: 'success',
-              title: 'Thành công!',
-              text: 'Đơn hàng đã chuyển sang trạng thái ĐÃ XÁC NHẬN',
-              timer: 2000,
-              timerProgressBar: true,
-            });
-            this.loadOrders(); // Refresh danh sách
-          },
-          error: (err) => {
-            Swal.fire({
-              icon: 'error',
-              title: 'Xác nhận thất bại',
-              text: err.error?.message || 'Không thể cập nhật trạng thái',
-            });
-          },
-        });
-      }
+      if (!result.isConfirmed) return;
+      this.ordersService.confirmPayment(order._id).subscribe({
+        next: () => {
+          void Swal.fire('Thành công', 'Thanh toán đã được xác nhận.', 'success');
+          this.loadOrders();
+        },
+        error: (error) =>
+          void Swal.fire(
+            'Không thể xác nhận',
+            error.error?.message || 'Vui lòng thử lại.',
+            'error',
+          ),
+      });
     });
   }
+
+  retryMomoPayment(order: any, event: Event) {
+    event.stopPropagation();
+    Swal.fire({
+      title: 'Tiếp tục thanh toán MoMo?',
+      text: `Đơn ${order.waybill} sẽ được chuyển sang cổng thanh toán MoMo để hoàn tất.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Tiếp tục',
+      cancelButtonText: 'Hủy',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.ordersService.initiateMomoPayment(order._id).subscribe({
+        next: (res: any) => {
+          // TransformInterceptor wraps: { statusCode, message, data: { success, data: { payUrl, ... } } }
+          const inner = res?.data?.data ?? res?.data ?? res;
+          const payUrl = inner?.payUrl || inner?.paymentUrl;
+          const transactionCode = inner?.transactionCode;
+          if (payUrl && transactionCode) {
+            this.paymentRecovery.remember({
+              method: 'MOMO',
+              transactionCode,
+              orderId: order._id,
+              expiresAt: inner?.expiresAt,
+            });
+            window.location.assign(payUrl);
+          } else {
+            Swal.fire('Lỗi', 'Không nhận được đường dẫn thanh toán từ MoMo.', 'error');
+          }
+        },
+        error: (error) => {
+          Swal.fire(
+            'Không thể tạo giao dịch',
+            error.error?.message || 'Vui lòng thử lại sau.',
+            'error',
+          );
+        },
+      });
+    });
+  }
+
+  async manageShipper(order: any, event: Event) {
+    event.stopPropagation();
+    if (!this.shippers.length) {
+      await Swal.fire('Chưa có shipper', 'Hãy tạo và kích hoạt shipper cho chi nhánh trước.', 'info');
+      return;
+    }
+    const currentId = order.assignedShipperId?._id || order.assignedShipperId || '';
+    const options: Record<string, string> = Object.fromEntries(
+      this.shippers.map((shipper) => [
+        shipper._id,
+        `${shipper.name}${shipper.phone ? ` · ${shipper.phone}` : ''}`,
+      ]),
+    );
+    if (currentId) options['__unassign'] = '— Hủy phân công hiện tại —';
+    const result = await Swal.fire({
+      title: `Phân công đơn ${order.waybill}`,
+      input: 'select',
+      inputOptions: options,
+      inputValue: currentId,
+      inputPlaceholder: 'Chọn shipper',
+      showCancelButton: true,
+      confirmButtonText: 'Lưu phân công',
+      cancelButtonText: 'Hủy',
+      inputValidator: (value) => (!value ? 'Vui lòng chọn shipper.' : undefined),
+    });
+    if (!result.isConfirmed) return;
+    const request =
+      result.value === '__unassign'
+        ? this.ordersService.unassignShipper(order._id)
+        : this.ordersService.assignShipper(order._id, result.value);
+    request.subscribe({
+      next: () => {
+        void Swal.fire('Đã cập nhật', 'Phân công shipper đã được lưu.', 'success');
+        this.loadOrders();
+      },
+      error: (error) =>
+        void Swal.fire('Không thể phân công', error.error?.message || 'Vui lòng thử lại.', 'error'),
+    });
+  }
+
 }

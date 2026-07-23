@@ -1,0 +1,19 @@
+{
+  "name": "AP Post",
+  "short_name": "AP Post",
+  "description": "Tạo đơn, tính cước và theo dõi hành trình giao hàng trực tuyến.",
+  "lang": "vi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf4",
+  "theme_color": "#163300",
+  "icons": [
+    {
+      "src": "/assets/images/logos/logo.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

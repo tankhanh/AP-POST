@@ -12,7 +12,9 @@ import {
   Matches,
   IsMongoId,
   IsBoolean,
+  MinLength,
 } from 'class-validator';
+import { UserRole } from '../user-role.enum';
 
 export enum GenderEnum {
   MALE = 'MALE',
@@ -21,15 +23,20 @@ export enum GenderEnum {
 }
 
 export enum RoleEnum {
-  // route này dùng tạo nhân viên, chỉ cần STAFF/ADMIN
-  STAFF = 'STAFF',
-  ADMIN = 'ADMIN',
+  STAFF = UserRole.STAFF,
+  SHIPPER = UserRole.SHIPPER,
 }
 
 export enum AccountTypeEnum {
   LOCAL = 'LOCAL',
   GOOGLE = 'GOOGLE',
   FACEBOOK = 'FACEBOOK',
+}
+
+export enum VehicleTypeEnum {
+  MOTORBIKE = 'MOTORBIKE',
+  CAR = 'CAR',
+  VAN = 'VAN',
 }
 
 export class CreateUserDto {
@@ -41,6 +48,7 @@ export class CreateUserDto {
   @ApiProperty({ example: '123456', description: 'Mật khẩu người dùng' })
   @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
   @IsString()
+  @MinLength(8)
   password: string;
 
   @ApiProperty({ example: 'Nguyễn Văn A', description: 'Họ tên người dùng' })
@@ -88,7 +96,7 @@ export class CreateUserDto {
     required: false,
     enum: RoleEnum,
     example: RoleEnum.STAFF,
-    description: 'Phân quyền (mặc định STAFF)',
+    description: 'Phân quyền nhân sự (mặc định STAFF)',
   })
   @IsOptional()
   @IsEnum(RoleEnum, { message: 'Quyền không hợp lệ' })
@@ -124,6 +132,32 @@ export class CreateUserDto {
 
   @ApiProperty({
     required: false,
+    example: true,
+    description: 'Shipper sẵn sàng nhận phân công mới',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isAvailable?: boolean;
+
+  @ApiProperty({
+    required: false,
+    enum: VehicleTypeEnum,
+    example: VehicleTypeEnum.MOTORBIKE,
+  })
+  @IsOptional()
+  @IsEnum(VehicleTypeEnum, { message: 'Loại phương tiện không hợp lệ' })
+  vehicleType?: VehicleTypeEnum;
+
+  @ApiProperty({ required: false, example: '29A1-12345' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z0-9.-]{5,15}$/, {
+    message: 'Biển số xe không hợp lệ',
+  })
+  licensePlate?: string;
+
+  @ApiProperty({
+    required: false,
     example: 'https://example.com/avatar.png',
     description: 'Đường dẫn avatar người dùng',
   })
@@ -146,6 +180,8 @@ export class RegisterUserDto {
   email: string;
 
   @IsNotEmpty({ message: 'password should not be empty' })
+  @IsString()
+  @MinLength(8)
   password: string;
 
   @IsOptional()

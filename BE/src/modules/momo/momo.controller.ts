@@ -1,104 +1,189 @@
-import { Controller, Post, Body, Get, Query, Res } from '@nestjs/common';
-import { MomoService } from './momo.service';
-import { PaymentsService } from '../payments/payments.service';
-import { OrdersService } from '../orders/orders.service';
-import { Public } from 'src/health/decorator/customize';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Logger,
+  Param,
+  Post,
+  Query,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
-import { OrderStatus } from '../orders/schemas/order.schemas';
+import { Public } from 'src/health/decorator/customize';
+import { PaymentsService } from '../payments/payments.service';
+import { MomoService } from './momo.service';
+import { PaymentStatus } from '../payments/schemas/payment.schema';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { Throttle } from '@nestjs/throttler';
+
+class RetryMomoPaymentDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  transactionCode: string;
+}
 
 @Controller('payments/momo')
 export class MomoController {
+  private readonly logger = new Logger(MomoController.name);
+
   constructor(
-    private momoService: MomoService,
-    private paymentsService: PaymentsService,
-    private ordersService: OrdersService,
+    private readonly momoService: MomoService,
+    private readonly paymentsService: PaymentsService,
+    private readonly configService: ConfigService,
   ) {}
 
-  // IPN - Momo gọi về khi thanh toán thành công / thất bại
   @Post('ipn')
   @Public()
-  async handleIpn(@Body() body: any) {
-    console.log('📨 Momo IPN received:', JSON.stringify(body, null, 2));
-
-    const { signature, ...params } = body;
-
-    // Verify chữ ký
-    if (!this.momoService.verifySignature(params, signature)) {
-      console.error('❌ Momo IPN: Invalid signature');
-      return { message: 'Invalid signature' };
+  @HttpCode(204)
+  async handleIpn(@Body() body: Record<string, unknown>): Promise<void> {
+    const { signature, ...signedFields } = body;
+    if (
+      !this.momoService.isExpectedPartner(body.partnerCode) ||
+      !this.momoService.verifyCallbackSignature(signedFields, signature)
+    ) {
+      throw new UnauthorizedException('Invalid MoMo signature');
     }
 
-    const orderId = body.orderId || body.requestId; // MoMo có thể trả về orderId hoặc requestId
-    const resultCode = Number(body.resultCode);
-    const amount = Number(body.amount);
+    const orderId = String(body.orderId ?? '');
+    const payment = await this.paymentsService.findByTransactionId(orderId);
+    if (!payment) throw new BadRequestException('Payment not found');
+    if (Number(body.amount) !== payment.amount) {
+      throw new BadRequestException('Payment amount mismatch');
+    }
 
-    console.log(
-      `🔄 IPN OrderId: ${orderId}, ResultCode: ${resultCode}, Amount: ${amount}`,
+    const attempt = payment.attempts?.find(
+      (item) => item.transactionId === orderId,
     );
+    if (
+      attempt?.requestId &&
+      String(body.requestId ?? '') !== attempt.requestId
+    ) {
+      throw new BadRequestException('MoMo request ID mismatch');
+    }
 
-    if (resultCode === 0) {
-      // Thanh toán thành công
-      console.log(`✅ Momo thanh toán thành công cho order: ${orderId}`);
-
-      try {
-        // Cập nhật Payment
-        await this.paymentsService.updatePaymentStatusByTransaction(
-          orderId,
-          'paid',
-        );
-
-        // Cập nhật Order thành CONFIRMED
-        await this.ordersService.updateStatus(orderId, OrderStatus.CONFIRMED);
-        console.log(`✅ Đơn hàng ${orderId} đã chuyển sang CONFIRMED`);
-      } catch (err) {
-        console.error('❌ Lỗi cập nhật trạng thái đơn hàng hoặc payment:', err);
-      }
-    } else {
-      console.log(
-        `❌ Momo thanh toán thất bại. ResultCode: ${resultCode} - Message: ${body.message}`,
+    const resultCode = Number(body.resultCode);
+    const status = this.momoService.isSuccessfulResultCode(resultCode)
+      ? PaymentStatus.PAID
+      : this.momoService.isPendingResultCode(resultCode)
+        ? PaymentStatus.PENDING
+        : PaymentStatus.FAILED;
+    if (status === PaymentStatus.PENDING) {
+      await this.paymentsService.recordGatewayCheck(orderId, {
+        responseCode: String(body.resultCode ?? ''),
+        responseMessage: String(body.message ?? ''),
+        providerTransactionId: String(body.transId ?? ''),
+      });
+      return;
+    }
+    if (payment.status !== status) {
+      await this.paymentsService.updatePaymentStatusByTransaction(
+        orderId,
+        status,
+        {
+          responseCode: String(body.resultCode ?? ''),
+          responseMessage: String(body.message ?? ''),
+          providerTransactionId: String(body.transId ?? ''),
+        },
       );
     }
-
-    // MoMo yêu cầu phải trả về { message: 'success' } hoặc tương tự
-    return { message: 'success' };
+    this.logger.log(`Processed MoMo IPN for order ${orderId}: ${status}`);
   }
 
-  // Return URL - Người dùng được redirect về sau khi thanh toán
   @Get('return')
   @Public()
-  async handleReturn(@Query() query: any, @Res() res: Response) {
-    const orderId = query.orderId || query.requestId;
-    const resultCode = Number(query.resultCode || -1);
+  async handleReturn(
+    @Query() query: Record<string, unknown>,
+    @Res() response: Response,
+  ) {
+    const { signature, ...signedFields } = query;
+    const valid =
+      this.momoService.isExpectedPartner(query.partnerCode) &&
+      this.momoService.verifyCallbackSignature(signedFields, signature);
+    const orderId = String(query.orderId ?? query.requestId ?? '');
+    const resultCode = valid ? Number(query.resultCode ?? -1) : -1;
+    const frontendUrl = this.configService
+      .get<string>('FRONTEND_URL', 'https://ap-post.vercel.app')
+      .replace(/\/$/, '');
 
-    console.log('🔄 [MOMO RETURN URL] Full Query:', query);
-    console.log(`🔄 OrderId = ${orderId}, ResultCode = ${resultCode}`);
-
-    if (resultCode === 0 && orderId) {
-      console.log(
-        `✅ Bắt đầu cập nhật thanh toán thành công cho order: ${orderId}`,
-      );
-
-      try {
-        // Cập nhật Payment
+    if (
+      valid &&
+      this.momoService.isSuccessfulResultCode(resultCode) &&
+      orderId
+    ) {
+      const payment = await this.paymentsService.findByTransactionId(orderId);
+      const callbackAmount = Number(query.amount);
+      if (
+        payment &&
+        callbackAmount === payment.amount &&
+        payment.status !== PaymentStatus.PAID
+      ) {
         await this.paymentsService.updatePaymentStatusByTransaction(
           orderId,
-          'paid',
+          PaymentStatus.PAID,
+          {
+            responseCode: String(resultCode),
+            responseMessage: String(query.message ?? 'Payment successful'),
+            providerTransactionId: String(query.transId ?? ''),
+          },
         );
-        console.log(`✅ Payment updated thành công`);
-
-        // Cập nhật Order
-        await this.ordersService.updateStatus(orderId, OrderStatus.CONFIRMED);
-        console.log(`🎉 Order ${orderId} đã chuyển sang CONFIRMED`);
-      } catch (err: any) {
-        console.error('❌ Lỗi cập nhật từ Return URL:', err.message);
       }
-    } else {
-      console.warn(
-        `⚠️ Thanh toán không thành công. ResultCode = ${resultCode}`,
-      );
     }
 
-    const frontendUrl = `https://ap-post.vercel.app/payment/success?orderId=${orderId}&resultCode=${resultCode}&method=momo`;
-    return res.redirect(frontendUrl);
+    return response.redirect(
+      `${frontendUrl}/payment/success?orderId=${encodeURIComponent(
+        orderId,
+      )}&transactionCode=${encodeURIComponent(
+        orderId,
+      )}&resultCode=${resultCode}&method=momo`,
+    );
+  }
+
+  @Post('retry')
+  @Public()
+  @Throttle({ default: { limit: 6, ttl: 60_000 } })
+  async retryPayment(@Body() dto: RetryMomoPaymentDto) {
+    const result = await this.momoService.retryPaymentUrl(
+      dto.transactionCode,
+    );
+    return { success: true, data: result };
+  }
+
+  @Get('status/:orderId')
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  async getStatus(
+    @Param('orderId') orderId: string,
+    @Query('reconcile') reconcile?: string,
+  ) {
+    let reconciliation: 'not_requested' | 'completed' | 'unavailable' =
+      'not_requested';
+    if (reconcile === 'true') {
+      try {
+        await this.momoService.queryPaymentStatus(orderId);
+        reconciliation = 'completed';
+      } catch (error) {
+        reconciliation = 'unavailable';
+        this.logger.warn(
+          `MoMo reconciliation unavailable for ${orderId}: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
+      }
+    }
+    const payment = await this.paymentsService.getRecoveryStatus(orderId);
+    if (!payment) throw new BadRequestException('Payment not found');
+    return {
+      orderId: payment.orderId,
+      transactionCode: orderId,
+      status: payment.status,
+      amount: payment.amount,
+      expiresAt: payment.expiresAt ?? null,
+      reconciliation,
+    };
   }
 }

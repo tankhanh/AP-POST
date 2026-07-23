@@ -10,11 +10,11 @@ export class StaffService {
   constructor(private httpClient: HttpClient) {}
 
   // GET /users?current=&pageSize=&role=STAFF
-  findAll() {
+  findAll(role = 'STAFF') {
     const params = new HttpParams()
       .set('current', '1')
       .set('pageSize', '9999')
-      .set('role', 'STAFF')
+      .set('role', role)
       .set('populate', 'branchId');
 
     return lastValueFrom(this.httpClient.get(env.baseUrl + '/users', { params }));
@@ -22,18 +22,18 @@ export class StaffService {
 
   // Lấy danh sách nhân viên đã xoá mềm
   // GET /users/trash?role=STAFF&populate=branchId
-  getTrash() {
-    const params = new HttpParams().set('role', 'STAFF').set('populate', 'branchId');
+  getTrash(role = 'STAFF') {
+    const params = new HttpParams().set('role', role).set('populate', 'branchId');
 
     return lastValueFrom(this.httpClient.get<any>(env.baseUrl + '/users/trash', { params })).then(
-      (res) => res.data
+      (res) => res.data,
     ); // <-- chỉ trả về mảng user
   }
 
   // GET /users/:id
   findById(id: string) {
     return lastValueFrom(this.httpClient.get<any>(env.baseUrl + '/users/' + id)).then(
-      (res) => res.data
+      (res) => res.data,
     );
   }
 

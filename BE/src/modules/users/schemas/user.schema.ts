@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
+import { UserRole } from '../user-role.enum';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -10,6 +11,9 @@ export class User {
 
   @Prop({ required: false, select: false })
   password?: string;
+
+  @Prop({ select: false })
+  refreshToken?: string;
 
   @Prop()
   name: string;
@@ -27,10 +31,10 @@ export class User {
   accountType: string;
 
   @Prop({
-    default: 'USER',
-    enum: ['USER', 'ADMIN', 'STAFF'],
+    default: UserRole.USER,
+    enum: UserRole,
   })
-  role: string;
+  role: UserRole;
 
   @Prop()
   avatarUrl: string; // 👈 thống nhất với DTO
@@ -41,7 +45,22 @@ export class User {
   @Prop({ default: false })
   isActive: boolean;
 
+  @Prop({ default: true })
+  isAvailable: boolean;
+
+  @Prop({ default: false })
+  isOnline: boolean;
+
   @Prop()
+  lastSeenAt?: Date;
+
+  @Prop({ enum: ['MOTORBIKE', 'CAR', 'VAN'], required: false })
+  vehicleType?: 'MOTORBIKE' | 'CAR' | 'VAN';
+
+  @Prop({ uppercase: true, trim: true })
+  licensePlate?: string;
+
+  @Prop({ select: false })
   codeId: string;
 
   @Prop()
@@ -76,3 +95,7 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.index({ role: 1, branchId: 1, isDeleted: 1 });
+UserSchema.index({ phone: 1, isDeleted: 1 });
+UserSchema.index({ role: 1, isOnline: 1, lastSeenAt: -1 });

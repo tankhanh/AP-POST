@@ -7,23 +7,15 @@ import { catchError, map } from 'rxjs/operators';
 import { env } from '../../environments/environment';
 
 export interface TrackingEvent {
-  _id: string;
-  orderId: string; // ← Đổi từ shipmentId → orderId
   status: string;
   timestamp: string;
   location?: string;
-  branchId?: { _id: string; name: string };
-  note?: string;
+  branchId?: { name: string };
 }
 export interface TrackingResponse {
   waybill: string;
   currentStatus: string;
   updatedAt: string;
-  senderName: string;
-  receiverName: string;
-  receiverPhone: string;
-  codValue?: number;
-  shippingFee?: number;
   timeline: TrackingEvent[];
 }
 
@@ -45,7 +37,7 @@ export class TrackingPublicService {
       catchError((err) => {
         const msg = err.error?.message || 'Không tìm thấy vận đơn';
         return throwError(() => new Error(msg));
-      })
+      }),
     );
   }
 }

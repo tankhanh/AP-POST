@@ -1,6 +1,12 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  FormsModule,
+} from '@angular/forms';
 import { OrdersService } from '../../../services/dashboard/orders.service';
 import { LocationService } from '../../../services/location.service';
 import { Router, RouterModule } from '@angular/router';
@@ -10,14 +16,18 @@ import { GeocodingService } from '../../../services/geocoding.service';
 import { debounceTime } from 'rxjs/operators';
 import { firstValueFrom, merge, startWith } from 'rxjs';
 import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { PaymentRecoveryService } from '../../../services/payment-recovery.service';
 
 @Component({
   selector: 'app-create-order',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, DualMapComponent],
   templateUrl: './createOrder.html',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class CreateOrder implements OnInit, AfterViewInit {
+export class CreateOrder implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   orderForm!: FormGroup;
   loading = false;
   provinces: any[] = [];
@@ -35,6 +45,10 @@ export class CreateOrder implements OnInit, AfterViewInit {
   requestingOtp = false;
   verifyingOtp = false;
   otpVerified = false;
+  provincesLoading = false;
+  provincesError = '';
+  private verifiedContact = '';
+  private clientRequestId = this.newClientRequestId();
 
   constructor(
     private fb: FormBuilder,
@@ -43,6 +57,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     private router: Router,
     private geocoding: GeocodingService,
     private route: ActivatedRoute,
+    private paymentRecovery: PaymentRecoveryService,
   ) {}
 
   ngOnInit(): void {
@@ -52,46 +67,75 @@ export class CreateOrder implements OnInit, AfterViewInit {
       this.submitLabel = 'Tạo đơn gửi';
     }
     this.initForm();
+    if (this.isPublicFlow) {
+      this.orderForm
+        .get('senderPhone')
+        ?.setValidators([Validators.required, Validators.pattern('^[0-9]{9,11}$')]);
+      this.orderForm.get('email')?.setValidators([Validators.required, Validators.email]);
+      this.orderForm.get('senderPhone')?.updateValueAndValidity();
+      this.orderForm.get('email')?.updateValueAndValidity();
+    }
+    this.bindFormChanges();
     this.loadProvinces();
   }
 
-  ngAfterViewInit() {
-    setTimeout(() => {
-      // Tự động cập nhật bản đồ khi thay đổi Tỉnh / Phường
-      this.orderForm.get('pickupProvinceId')?.valueChanges.subscribe(() => this.autoUpdatePickup());
-      this.orderForm.get('pickupCommuneId')?.valueChanges.subscribe(() => this.autoUpdatePickup());
-      this.orderForm
-        .get('pickupDetailAddress')
-        ?.valueChanges.pipe(debounceTime(800))
-        .subscribe(() => this.autoUpdatePickup());
+  private bindFormChanges(): void {
+    this.orderForm
+      .get('pickupProvinceId')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.autoUpdatePickup());
+    this.orderForm
+      .get('pickupCommuneId')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.autoUpdatePickup());
+    this.orderForm
+      .get('pickupDetailAddress')
+      ?.valueChanges.pipe(debounceTime(800), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.autoUpdatePickup());
 
-      this.orderForm
-        .get('deliveryProvinceId')
-        ?.valueChanges.subscribe(() => this.autoUpdateDelivery());
-      this.orderForm
-        .get('deliveryCommuneId')
-        ?.valueChanges.subscribe(() => this.autoUpdateDelivery());
-      this.orderForm
-        .get('deliveryDetailAddress')
-        ?.valueChanges.pipe(debounceTime(800))
-        .subscribe(() => this.autoUpdateDelivery());
+    this.orderForm
+      .get('deliveryProvinceId')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.autoUpdateDelivery());
+    this.orderForm
+      .get('deliveryCommuneId')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.autoUpdateDelivery());
+    this.orderForm
+      .get('deliveryDetailAddress')
+      ?.valueChanges.pipe(debounceTime(800), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.autoUpdateDelivery());
 
-      // Tính phí
+    merge(
+      this.orderForm.get('pickupProvinceId')!.valueChanges,
+      this.orderForm.get('deliveryProvinceId')!.valueChanges,
+      this.orderForm.get('weightKg')!.valueChanges,
+      this.orderForm.get('serviceCode')!.valueChanges,
+      this.orderForm.get('codValue')!.valueChanges,
+      this.orderForm.get('shippingFeePayer')!.valueChanges.pipe(startWith('SENDER')),
+      this.orderForm.get('paymentMethod')!.valueChanges.pipe(startWith('CASH')),
+    )
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.calculateShippingFee());
+
+    if (this.isPublicFlow) {
       merge(
-        this.orderForm.get('pickupProvinceId')!.valueChanges,
-        this.orderForm.get('deliveryProvinceId')!.valueChanges,
-        this.orderForm.get('weightKg')!.valueChanges,
-        this.orderForm.get('serviceCode')!.valueChanges,
-        this.orderForm.get('codValue')!.valueChanges,
-        this.orderForm.get('shippingFeePayer')!.valueChanges.pipe(startWith('SENDER')),
-        this.orderForm.get('paymentMethod')!.valueChanges.pipe(startWith('CASH')),
+        this.orderForm.get('senderPhone')!.valueChanges,
+        this.orderForm.get('email')!.valueChanges,
       )
-        .pipe(debounceTime(300))
-        .subscribe(() => this.calculateShippingFee());
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          const contact = this.currentOtpContact();
+          if (this.verifiedContact && contact !== this.verifiedContact) {
+            this.otpVerified = false;
+            this.publicOtpToken = '';
+            this.verifiedContact = '';
+          }
+        });
+    }
 
-      this.calculateShippingFee();
-      this.updatePayments();
-    }, 200);
+    this.calculateShippingFee();
+    this.updatePayments();
   }
 
   private autoUpdatePickup() {
@@ -141,23 +185,28 @@ export class CreateOrder implements OnInit, AfterViewInit {
   requestOtp() {
     if (!this.isPublicFlow) return;
     const senderPhone = (this.orderForm.value.senderPhone || '').trim();
-    if (!senderPhone) {
-      Swal.fire('Thiếu thông tin', 'Vui lòng nhập số điện thoại người gửi', 'warning');
+    const email = (this.orderForm.value.email || '').trim().toLowerCase();
+    if (!senderPhone || !email || this.orderForm.get('email')?.invalid) {
+      Swal.fire(
+        'Thiếu thông tin',
+        'Vui lòng nhập số điện thoại và email hợp lệ để nhận OTP',
+        'warning',
+      );
       return;
     }
 
     this.requestingOtp = true;
-    this.ordersService.requestPublicOtp(senderPhone).subscribe({
+    this.ordersService.requestPublicOtp(senderPhone, email).subscribe({
       next: (res: any) => {
         this.requestingOtp = false;
         const data = res?.data || res;
         this.publicOtpToken = data.otpToken || '';
         if (data.devOtpCode) this.otpCode = data.devOtpCode;
+        this.otpVerified = false;
+        this.verifiedContact = '';
         Swal.fire(
           'OTP đã gửi',
-          data.devOtpCode
-            ? `Mã OTP dev: ${data.devOtpCode}`
-            : 'Vui lòng kiểm tra SMS/điện thoại để lấy mã OTP',
+          data.devOtpCode ? `Mã OTP dev: ${data.devOtpCode}` : data.message,
           'success',
         );
       },
@@ -171,20 +220,22 @@ export class CreateOrder implements OnInit, AfterViewInit {
   verifyOtp() {
     if (!this.isPublicFlow) return;
     const senderPhone = (this.orderForm.value.senderPhone || '').trim();
+    const email = (this.orderForm.value.email || '').trim().toLowerCase();
     const code = (this.otpCode || '').trim();
-    if (!senderPhone || !code || !this.publicOtpToken) {
+    if (!senderPhone || !email || !code || !this.publicOtpToken) {
       Swal.fire('Thiếu thông tin', 'Bạn cần gửi OTP và nhập mã xác thực', 'warning');
       return;
     }
 
     this.verifyingOtp = true;
-    this.ordersService.verifyPublicOtp(senderPhone, code).subscribe({
+    this.ordersService.verifyPublicOtp(senderPhone, email, code).subscribe({
       next: (res: any) => {
         this.verifyingOtp = false;
         const data = res?.data || res;
         this.publicOtpToken = data.otpToken || this.publicOtpToken;
         this.otpVerified = true;
-        Swal.fire('Thành công', 'Số điện thoại đã xác thực', 'success');
+        this.verifiedContact = this.currentOtpContact();
+        Swal.fire('Thành công', 'Email liên hệ đã được xác thực', 'success');
       },
       error: (err) => {
         this.verifyingOtp = false;
@@ -195,9 +246,17 @@ export class CreateOrder implements OnInit, AfterViewInit {
   }
 
   loadProvinces() {
+    this.provincesLoading = true;
+    this.provincesError = '';
     this.locationService.getProvinces().subscribe({
-      next: (res) => (this.provinces = res.data || []),
-      error: (err) => console.error('Load provinces failed', err),
+      next: (res) => {
+        this.provinces = res.data || [];
+        this.provincesLoading = false;
+      },
+      error: () => {
+        this.provincesLoading = false;
+        this.provincesError = 'Không thể tải địa danh. Vui lòng thử lại.';
+      },
     });
   }
 
@@ -301,8 +360,13 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
   private updatePayments() {
     const cod = Number(this.orderForm.value.codValue || 0);
-    const payer = this.orderForm.value.shippingFeePayer || 'SENDER';
+    let payer = this.orderForm.value.shippingFeePayer || 'SENDER';
     const method = this.orderForm.value.paymentMethod || 'CASH';
+
+    if (method === 'MOMO' && payer !== 'SENDER') {
+      payer = 'SENDER';
+      this.orderForm.get('shippingFeePayer')?.setValue('SENDER', { emitEvent: false });
+    }
 
     if (method === 'CASH') {
       this.senderPay = payer === 'SENDER' ? this.shippingFee : 0;
@@ -313,9 +377,9 @@ export class CreateOrder implements OnInit, AfterViewInit {
       this.receiverPay = cod + this.shippingFee;
       this.paymentNote = 'Người nhận trả COD + phí (nếu có)';
     } else if (method === 'MOMO') {
-      this.senderPay = this.shippingFee + (payer === 'SENDER' ? cod : 0);
-      this.receiverPay = payer === 'RECEIVER' ? cod : 0;
-      this.paymentNote = 'Thanh toán trực tuyến qua MOMO';
+      this.senderPay = this.shippingFee + cod;
+      this.receiverPay = 0;
+      this.paymentNote = `Thanh toán trực tuyến qua ${method}`;
     }
   }
 
@@ -412,6 +476,7 @@ export class CreateOrder implements OnInit, AfterViewInit {
     this.loading = true;
 
     const data = {
+      clientRequestId: this.clientRequestId,
       senderName: this.orderForm.value.senderName,
       senderPhone: this.orderForm.value.senderPhone?.trim() || null,
       receiverName: this.orderForm.value.receiverName,
@@ -444,7 +509,11 @@ export class CreateOrder implements OnInit, AfterViewInit {
 
     if (this.isPublicFlow && !this.otpVerified) {
       this.loading = false;
-      Swal.fire('Chưa xác thực OTP', 'Vui lòng xác thực số điện thoại trước khi tạo đơn', 'warning');
+      Swal.fire(
+        'Chưa xác thực OTP',
+        'Vui lòng xác thực số điện thoại trước khi tạo đơn',
+        'warning',
+      );
       return;
     }
 
@@ -456,28 +525,80 @@ export class CreateOrder implements OnInit, AfterViewInit {
       next: (apiResponse: any) => {
         this.loading = false;
         const res = apiResponse?.data || apiResponse;
+        this.clientRequestId = this.newClientRequestId();
 
-        if (this.orderForm.value.paymentMethod === 'MOMO' && res.redirectUrl) {
+        if (res.paymentAttempt) {
+          this.paymentRecovery.remember(res.paymentAttempt);
+          if (res.paymentAttempt.payUrl) {
+            window.location.assign(res.paymentAttempt.payUrl);
+            return;
+          }
+        }
+
+        if (res.redirectUrl) {
           window.location.href = res.redirectUrl;
           return;
         }
 
-        // CASH / COD
+        if (res.paymentError && res.paymentAttempt) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Đơn đã tạo, thanh toán chưa bắt đầu',
+            text: res.paymentError,
+            confirmButtonText: this.isPublicFlow ? 'Tra cứu đơn' : 'Về danh sách',
+          }).then(() => {
+            if (this.isPublicFlow) {
+              this.router.navigate(['/tracking'], { queryParams: { q: res.order.waybill } });
+            } else {
+              this.router.navigate(['/employee/orders/list']);
+            }
+          });
+          return;
+        }
+
+        // Thanh toán thủ công
         Swal.fire({
           icon: 'success',
           title: this.isPublicFlow ? 'Tạo đơn B2C thành công!' : 'Tạo đơn thành công!',
           text: `Mã vận đơn: ${res.order.waybill}`,
           confirmButtonText: this.isPublicFlow ? 'Tra cứu đơn' : 'Về danh sách',
-        }).then(() =>
-          this.router.navigate([
-            this.isPublicFlow ? '/tracking' : '/employee/orders/list',
-          ]),
-        );
+        }).then(() => {
+          if (this.isPublicFlow) {
+            this.router.navigate(['/tracking'], { queryParams: { q: res.order.waybill } });
+          } else {
+            this.router.navigate([this.ordersListLink]);
+          }
+        });
       },
       error: (err) => {
         this.loading = false;
         Swal.fire('Lỗi!', err.error?.message || 'Tạo đơn thất bại', 'error');
       },
     });
+  }
+
+  private newClientRequestId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+      const random = Math.floor(Math.random() * 16);
+      const value = character === 'x' ? random : (random & 0x3) | 0x8;
+      return value.toString(16);
+    });
+  }
+
+  private currentOtpContact(): string {
+    const phone = String(this.orderForm.value.senderPhone || '').replace(/\s+/g, '');
+    const email = String(this.orderForm.value.email || '')
+      .trim()
+      .toLowerCase();
+    return `${phone}|${email}`;
+  }
+
+  get ordersListLink(): string {
+    return this.router.url.startsWith('/customer/')
+      ? '/customer/orders/list'
+      : '/employee/orders/list';
   }
 }

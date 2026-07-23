@@ -33,11 +33,14 @@ export class LocationService {
   }
 
   async listAddresses(current = 1, pageSize = 10, q?: string) {
-    const filter: any = {};
+    current = Math.max(Number(current) || 1, 1);
+    pageSize = Math.min(Math.max(Number(pageSize) || 10, 1), 100);
+    const filter: any = { isDeleted: false };
     if (q) {
+      const safeQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { address: new RegExp(q, 'i') },
-        { contactName: new RegExp(q, 'i') },
+        { address: new RegExp(safeQuery, 'i') },
+        { contactName: new RegExp(safeQuery, 'i') },
       ];
     }
 
@@ -68,13 +71,17 @@ export class LocationService {
       'contactName',
       'contactPhone',
       'provinceId',
-      'communeId', 
+      'communeId',
     ];
     const $set: any = {};
     for (const k of allowed) if (dto[k] !== undefined) $set[k] = dto[k];
 
     const doc = await this.addressModel
-      .findByIdAndUpdate(id, { $set }, { new: true, runValidators: true })
+      .findOneAndUpdate(
+        { _id: id, isDeleted: { $ne: true } },
+        { $set },
+        { new: true, runValidators: true },
+      )
       .lean();
 
     if (!doc) throw new NotFoundException('Address not found');
@@ -84,6 +91,8 @@ export class LocationService {
   async getAddressById(id: string) {
     if (!Types.ObjectId.isValid(id))
       throw new BadRequestException('Invalid id');
-    return this.addressModel.findById(id).populate(['provinceId', 'communeId']);
+    return this.addressModel
+      .findOne({ _id: id, isDeleted: { $ne: true } })
+      .populate(['provinceId', 'communeId']);
   }
 }

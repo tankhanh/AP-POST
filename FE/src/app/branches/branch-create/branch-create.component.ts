@@ -31,7 +31,7 @@ export class BranchCreateComponent implements OnInit {
     private locationService: LocationService,
     private formBuilder: FormBuilder,
     private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit(): void {

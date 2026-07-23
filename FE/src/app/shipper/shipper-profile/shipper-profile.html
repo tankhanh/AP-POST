@@ -1,0 +1,79 @@
+<section class="profile-page">
+  <header>
+    <span class="profile-avatar">{{ (user.name || user.email || 'S').slice(0, 1) }}</span>
+    <div>
+      <span class="eyebrow">Tài khoản shipper</span>
+      <h1>{{ user.name || 'Hồ sơ của bạn' }}</h1>
+      <p>{{ user.email }}</p>
+    </div>
+  </header>
+
+  <section class="availability-card" [class.off-duty]="!form.controls.isAvailable.value">
+    <div>
+      <iconify-icon
+        [icon]="
+          form.controls.isAvailable.value ? 'mdi:check-circle-outline' : 'mdi:pause-circle-outline'
+        "
+      ></iconify-icon>
+      <span>
+        <strong>{{
+          form.controls.isAvailable.value ? 'Sẵn sàng nhận đơn' : 'Đang tạm nghỉ'
+        }}</strong>
+        <small>Điều phối chỉ thấy bạn khi trạng thái sẵn sàng được bật.</small>
+      </span>
+    </div>
+    <label class="availability-switch">
+      <input type="checkbox" [formControl]="form.controls.isAvailable" />
+      <span aria-hidden="true"></span>
+      <span class="visually-hidden">Sẵn sàng nhận đơn mới</span>
+    </label>
+  </section>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <label>
+      <span>Họ và tên</span>
+      <input formControlName="name" autocomplete="name" />
+    </label>
+    <label>
+      <span>Số điện thoại</span>
+      <input formControlName="phone" inputmode="tel" autocomplete="tel" />
+      <small *ngIf="form.controls.phone.invalid && form.controls.phone.touched">
+        Số điện thoại cần có 9–15 chữ số.
+      </small>
+    </label>
+    <label>
+      <span>Địa chỉ liên hệ</span>
+      <textarea formControlName="address" rows="3" autocomplete="street-address"></textarea>
+    </label>
+    <div class="vehicle-grid">
+      <label>
+        <span>Phương tiện</span>
+        <select formControlName="vehicleType">
+          <option value="MOTORBIKE">Xe máy</option>
+          <option value="CAR">Ô tô</option>
+          <option value="VAN">Xe tải nhẹ</option>
+        </select>
+      </label>
+      <label>
+        <span>Biển số xe</span>
+        <input formControlName="licensePlate" autocomplete="off" autocapitalize="characters" />
+        <small *ngIf="form.controls.licensePlate.invalid && form.controls.licensePlate.touched">
+          Biển số gồm 5–15 ký tự chữ, số, dấu chấm hoặc gạch ngang.
+        </small>
+      </label>
+    </div>
+
+    <div class="form-message error" *ngIf="error">{{ error }}</div>
+    <div class="form-message success" *ngIf="saved">Đã lưu thay đổi.</div>
+
+    <button class="save-button" type="submit" [disabled]="saving || form.invalid">
+      <span *ngIf="!saving">Lưu hồ sơ</span>
+      <span *ngIf="saving">Đang lưu...</span>
+    </button>
+  </form>
+
+  <button type="button" class="logout-button" (click)="logout()">
+    <iconify-icon icon="mdi:logout"></iconify-icon>
+    Đăng xuất
+  </button>
+</section>

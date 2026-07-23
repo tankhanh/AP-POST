@@ -32,12 +32,14 @@ export class DashboardLayout implements OnInit, OnDestroy {
     public authService: AuthService,
     private router: Router,
     private toastr: ToastrService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
     this.isBrowser = isPlatformBrowser(this.platformId);
     if (this.isBrowser) {
+      this.innerWidth = window.innerWidth;
+      this.sidebarOpen = this.innerWidth >= 992;
       this.userSubscription = this.authService.currentUser$.subscribe((user) => {
         this.user = user;
       });
@@ -55,10 +57,19 @@ export class DashboardLayout implements OnInit, OnDestroy {
     this.sidebarOpen = !this.sidebarOpen;
   }
 
+  closeSidebarOnMobile() {
+    if (this.innerWidth < 992) this.sidebarOpen = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    this.closeSidebarOnMobile();
+  }
+
   logout() {
     this.authService.logout();
     this.toastr.success('Đăng xuất thành công!');
-    setTimeout(() => this.router.navigate(['/']), 500);
+    this.router.navigate(['/']);
   }
 
   ngOnDestroy(): void {

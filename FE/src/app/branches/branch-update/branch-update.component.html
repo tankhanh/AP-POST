@@ -16,12 +16,16 @@
             <div class="row g-3">
               <!-- Tên chi nhánh -->
               <div class="col-md-6">
-                <label class="form-label"> Tên chi nhánh <span class="text-danger">*</span> </label>
+                <label class="form-label" for="branch-name">
+                  Tên chi nhánh <span class="text-danger">*</span>
+                </label>
                 <input
+                  id="branch-name"
                   type="text"
                   class="form-control"
                   formControlName="name"
                   placeholder="VD: Chi nhánh Hà Nội"
+                  autocomplete="organization"
                 />
                 <div
                   class="text-danger small"
@@ -33,8 +37,10 @@
 
               <!-- Mã chi nhánh -->
               <div class="col-md-6">
-                <label class="form-label"> Mã chi nhánh <span class="text-danger">*</span> </label>
-                <input title="form" type="text" class="form-control" formControlName="code" />
+                <label class="form-label" for="branch-code">
+                  Mã chi nhánh <span class="text-danger">*</span>
+                </label>
+                <input id="branch-code" type="text" class="form-control" formControlName="code" />
                 <div
                   class="text-danger small"
                   *ngIf="editForm.get('code')?.invalid && editForm.get('code')?.touched"
@@ -45,8 +51,17 @@
 
               <!-- Phone -->
               <div class="col-md-6">
-                <label class="form-label"> Số điện thoại <span class="text-danger">*</span> </label>
-                <input title="form" type="text" class="form-control" formControlName="phone" />
+                <label class="form-label" for="branch-phone">
+                  Số điện thoại <span class="text-danger">*</span>
+                </label>
+                <input
+                  id="branch-phone"
+                  type="tel"
+                  class="form-control"
+                  formControlName="phone"
+                  inputmode="tel"
+                  autocomplete="tel"
+                />
                 <div
                   class="text-danger small"
                   *ngIf="editForm.get('phone')?.invalid && editForm.get('phone')?.touched"
@@ -57,10 +72,10 @@
 
               <!-- Tỉnh -->
               <div class="col-md-6">
-                <label class="form-label">
+                <label class="form-label" for="branch-province">
                   Tỉnh / Thành phố <span class="text-danger">*</span>
                 </label>
-                <select title="form" class="form-select" formControlName="province">
+                <select id="branch-province" class="form-select" formControlName="province">
                   <option value="">Chọn tỉnh / thành phố</option>
                   <option *ngFor="let p of provinces" [value]="p._id">
                     {{ p.name }}
@@ -77,9 +92,11 @@
 
               <!-- Phường / Xã -->
               <div class="col-md-6">
-                <label class="form-label"> Phường / Xã <span class="text-danger">*</span> </label>
+                <label class="form-label" for="branch-ward">
+                  Phường / Xã <span class="text-danger">*</span>
+                </label>
 
-                <select title="form" class="form-select" formControlName="ward">
+                <select id="branch-ward" class="form-select" formControlName="ward">
                   <option value="">Chọn phường / xã</option>
                   <option *ngFor="let w of wards" [value]="w._id">
                     {{ w.name }}
@@ -96,17 +113,23 @@
 
               <!-- Địa chỉ -->
               <div class="col-12">
-                <label class="form-label">
+                <label class="form-label" for="branch-address">
                   Địa chỉ chi tiết <span class="text-danger">*</span>
                 </label>
-                <input title="form" type="text" class="form-control" formControlName="address" />
+                <input
+                  id="branch-address"
+                  type="text"
+                  class="form-control"
+                  formControlName="address"
+                  autocomplete="street-address"
+                />
               </div>
 
               <!-- Ghi chú -->
               <div class="col-12">
-                <label class="form-label">Ghi chú</label>
+                <label class="form-label" for="branch-note">Ghi chú</label>
                 <textarea
-                  title="form"
+                  id="branch-note"
                   class="form-control"
                   rows="3"
                   formControlName="note"

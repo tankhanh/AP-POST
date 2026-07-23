@@ -1,27 +1,57 @@
-<div class="container py-5" style="max-width: 800px">
-  <h2 class="mb-4 text-center fw-bold">Cập nhật thông tin cá nhân</h2>
+<div class="container py-4 ap-profile-page">
+  <div class="ap-dashboard-header mb-4">
+    <div>
+      <span class="ap-eyebrow">Tài khoản</span>
+      <h1 class="ap-title mb-1">Thông tin cá nhân</h1>
+      <p class="ap-subtitle mb-0">Quản lý thông tin liên hệ của bạn.</p>
+    </div>
+  </div>
 
-  <form (ngSubmit)="update()" class="shadow p-4 rounded bg-white">
+  <form (ngSubmit)="update()" class="ap-form-panel">
     <div class="row g-3">
       <!-- Cột trái -->
       <div class="col-md-6">
         <!-- Họ và tên -->
         <div class="mb-3">
-          <label class="form-label fw-semibold">Họ và tên</label>
-          <input type="text" class="form-control" [(ngModel)]="user.name" name="name" placeholder="Nhập họ và tên" />
+          <label class="form-label fw-semibold" for="profile-name">Họ và tên</label>
+          <input
+            id="profile-name"
+            type="text"
+            class="form-control"
+            [(ngModel)]="user.name"
+            name="name"
+            placeholder="Nhập họ và tên"
+            autocomplete="name"
+          />
         </div>
 
         <!-- Email (disabled, tránh lỗi form) -->
         <div class="mb-3">
-          <label class="form-label fw-semibold">Email</label>
-          <input type="email" class="form-control" [(ngModel)]="user.email" name="email" disabled />
+          <label class="form-label fw-semibold" for="profile-email">Email</label>
+          <input
+            id="profile-email"
+            type="email"
+            class="form-control"
+            [(ngModel)]="user.email"
+            name="email"
+            autocomplete="email"
+            disabled
+          />
         </div>
 
         <!-- Số điện thoại -->
         <div class="mb-3">
-          <label class="form-label fw-semibold">Số điện thoại</label>
-          <input type="text" class="form-control" [(ngModel)]="user.phone" name="phone"
-            placeholder="Nhập số điện thoại" />
+          <label class="form-label fw-semibold" for="profile-phone">Số điện thoại</label>
+          <input
+            id="profile-phone"
+            type="tel"
+            class="form-control"
+            [(ngModel)]="user.phone"
+            name="phone"
+            placeholder="Nhập số điện thoại"
+            inputmode="tel"
+            autocomplete="tel"
+          />
         </div>
       </div>
 
@@ -29,42 +59,62 @@
       <div class="col-md-6">
         <!-- Loại tài khoản -->
         <div class="mb-3">
-          <label class="form-label fw-semibold">Loại tài khoản</label>
-          <input type="text" class="form-control" [(ngModel)]="user.accountType" name="accountType" disabled />
+          <label class="form-label fw-semibold" for="profile-account-type">Loại tài khoản</label>
+          <input
+            id="profile-account-type"
+            type="text"
+            class="form-control"
+            [(ngModel)]="user.accountType"
+            name="accountType"
+            disabled
+          />
         </div>
 
         <!-- Vai trò -->
         <div class="mb-3">
-          <label class="form-label fw-semibold">Vai trò</label>
-          <input type="text" class="form-control" [(ngModel)]="user.role" name="role" disabled />
+          <label class="form-label fw-semibold" for="profile-role">Vai trò</label>
+          <input
+            id="profile-role"
+            type="text"
+            class="form-control"
+            [(ngModel)]="user.role"
+            name="role"
+            disabled
+          />
         </div>
 
         <!-- Branch -->
         <div class="mb-3">
-          <label class="form-label fw-semibold">Bưu cục</label>
-          <input type="text" class="form-control" [value]="user.branchId?.name || 'Chưa có'" disabled />
+          <label class="form-label fw-semibold" for="profile-branch">Bưu cục</label>
+          <input
+            id="profile-branch"
+            type="text"
+            class="form-control"
+            [value]="user.branchId?.name || 'Chưa có'"
+            disabled
+          />
         </div>
-
 
         <!-- Ngày tạo tài khoản -->
         <div class="mb-3">
-          <label class="form-label fw-semibold">Ngày tạo tài khoản</label>
-          <input type="text" class="form-control" [value]="user.createdAt | date : 'dd/MM/yyyy, HH:mm'" disabled />
+          <label class="form-label fw-semibold" for="profile-created-at">Ngày tạo tài khoản</label>
+          <input
+            id="profile-created-at"
+            type="text"
+            class="form-control"
+            [value]="user.createdAt | date: 'dd/MM/yyyy, HH:mm'"
+            disabled
+          />
         </div>
       </div>
 
-      <!-- Mật khẩu mới (cả 2 cột) -->
-      <div class="col-12">
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Mật khẩu mới</label>
-          <input type="password" class="form-control" [(ngModel)]="user.password" name="password"
-            placeholder="Để trống nếu không muốn đổi mật khẩu" />
-        </div>
+      <div class="col-12 text-center">
+        <a routerLink="/forget-password">Dùng luồng xác minh email để đổi mật khẩu</a>
       </div>
 
       <!-- Nút lưu -->
       <div class="col-12 text-center mt-3">
-        <button class="btn btn-primary px-4">Lưu thay đổi</button>
+        <button type="submit" class="btn btn-primary px-4">Lưu thay đổi</button>
       </div>
     </div>
   </form>

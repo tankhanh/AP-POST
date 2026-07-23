@@ -1,8 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
-import { Connection, Types } from 'mongoose';
+import { Connection, Model, Types } from 'mongoose';
 import { UsersService } from '../users/users.service';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Payment, PaymentDocument } from '../payments/schemas/payment.schema';
@@ -18,22 +17,12 @@ import {
 import {
   Tracking,
   TrackingDocument,
-  TrackingStatus,
 } from '../tracking/schemas/tracking.schemas';
 import {
   Province,
   ProvinceDocument,
 } from '../location/schemas/province.schema';
-import {
-  Shipment,
-  ShipmentDocument,
-  ShipmentStatus,
-} from '../shipments/schemas/shipment.schema';
-import {
-  NotificationDocument,
-  NotificationStatus,
-  NotificationType,
-} from '../notifications/schemas/notification.schemas';
+import { NotificationDocument } from '../notifications/schemas/notification.schemas';
 import { Commune, CommuneDocument } from '../location/schemas/commune.schema';
 
 /** Lean address type dùng trong seed */
@@ -52,30 +41,28 @@ export class DatabasesService implements OnModuleInit {
 
   constructor(
     @InjectModel(User.name)
-    private readonly userModel: SoftDeleteModel<UserDocument>,
+    private readonly userModel: Model<UserDocument>,
 
     @InjectModel(Province.name)
-    private readonly provinceModel: SoftDeleteModel<ProvinceDocument>,
+    private readonly provinceModel: Model<ProvinceDocument>,
     @InjectModel(Commune.name)
-    private readonly CommuneModel: SoftDeleteModel<CommuneDocument>,
+    private readonly CommuneModel: Model<CommuneDocument>,
     @InjectModel(Address.name)
-    private readonly addressModel: SoftDeleteModel<AddressDocument>,
+    private readonly addressModel: Model<AddressDocument>,
     @InjectModel(Branch.name)
-    private readonly branchModel: SoftDeleteModel<BranchDocument>,
+    private readonly branchModel: Model<BranchDocument>,
     @InjectModel(Service.name)
-    private readonly serviceModel: SoftDeleteModel<ServiceDocument>,
+    private readonly serviceModel: Model<ServiceDocument>,
     @InjectModel(Pricing.name)
-    private readonly pricingModel: SoftDeleteModel<PricingDocument>,
+    private readonly pricingModel: Model<PricingDocument>,
     @InjectModel(Order.name)
-    private readonly orderModel: SoftDeleteModel<OrderDocument>,
-    @InjectModel(Shipment.name)
-    private readonly shipmentModel: SoftDeleteModel<ShipmentDocument>,
+    private readonly orderModel: Model<OrderDocument>,
     @InjectModel(Payment.name)
-    private readonly paymentModel: SoftDeleteModel<PaymentDocument>,
+    private readonly paymentModel: Model<PaymentDocument>,
     @InjectModel(Tracking.name)
-    private readonly trackingModel: SoftDeleteModel<TrackingDocument>,
+    private readonly trackingModel: Model<TrackingDocument>,
     @InjectModel('Notification')
-    private readonly notificationModel: SoftDeleteModel<NotificationDocument>,
+    private readonly notificationModel: Model<NotificationDocument>,
 
     @InjectConnection() private readonly connection: Connection,
     private readonly config: ConfigService,
@@ -90,43 +77,45 @@ export class DatabasesService implements OnModuleInit {
     const { hn, hcm } = await this.seedLocation34(); // 34 tỉnh + quận/huyện
     const { addrHn1, addrHcm1, addrHn2 } = await this.seedAddresses(hn, hcm); // địa chỉ lean
     const { branchHN, branchHCM } = await this.seedBranches(addrHn1, addrHcm1);
+    void addrHn2;
+    void branchHCM;
     await this.userModel.updateOne(
-      { email: 'staff.hn@vtpost.local' },
+      { email: 'staff.hn@appost.com' },
+      { $set: { branchId: branchHN._id } },
+    );
+    await this.userModel.updateOne(
+      { email: 'shipper.hn@appost.com' },
       { $set: { branchId: branchHN._id } },
     );
     const { svcSTD, svcEXP } = await this.seedServices();
     await this.seedPricing(svcSTD._id, svcEXP._id);
-    // const { order1, customer } = await this.seedOrders(addrHn2, addrHcm1);
-    // await this.seedShipments(
-    //   order1,
-    //   customer,
-    //   branchHN,
-    //   branchHCM,
-    //   svcSTD,
-    //   addrHn2,
-    //   addrHcm1,
-    // );
-    // await this.seedTrackings();
-    // await this.seedNotifications(customer);
-
     this.logger.log('DATABASE SEEDING COMPLETED');
   }
 
   /* ---------------- USERS ---------------- */
   private async seedUsers() {
-    if (await this.userModel.countDocuments()) return;
-
     const hash = this.usersService.getHashPassword(
-      this.config.get<string>('INIT_PASSWORD') || '123456',
+      this.config.getOrThrow<string>('INIT_PASSWORD'),
     );
 
-    await this.userModel.insertMany([
+    const seedAccounts = [
       {
         name: 'Admin',
         email: 'admin@appost.com',
         password: hash,
         role: 'ADMIN',
         isActive: true,
+      },
+      {
+        name: 'Shipper HN',
+        email: 'shipper.hn@appost.com',
+        phone: '0900000002',
+        password: hash,
+        role: 'SHIPPER',
+        isActive: true,
+        isAvailable: true,
+        vehicleType: 'MOTORBIKE',
+        licensePlate: '29A1-12345',
       },
       {
         name: 'Staff HN',
@@ -142,7 +131,17 @@ export class DatabasesService implements OnModuleInit {
         role: 'USER',
         isActive: true,
       },
-    ]);
+    ];
+
+    await Promise.all(
+      seedAccounts.map((account) =>
+        this.userModel.updateOne(
+          { email: account.email },
+          { $setOnInsert: account },
+          { upsert: true },
+        ),
+      ),
+    );
 
     this.logger.log('>>> INIT USERS DONE');
   }
@@ -3790,7 +3789,7 @@ export class DatabasesService implements OnModuleInit {
   }
 
   /* ---------------- BRANCHES ---------------- */
-  private async seedBranches(addrHn: SeedAddress, addrHcm: SeedAddress) {
+  private async seedBranches(_addrHn: SeedAddress, _addrHcm: SeedAddress) {
     if (await this.branchModel.countDocuments()) {
       const branches = await this.branchModel.find().limit(2);
       return { branchHN: branches[0], branchHCM: branches[1] };
@@ -3933,9 +3932,7 @@ export class DatabasesService implements OnModuleInit {
     deliveryAddr: SeedAddress,
   ): Promise<{ order1: OrderDocument; customer: UserDocument }> {
     if (await this.orderModel.countDocuments({ isDeleted: false })) {
-      const customer = await this.userModel
-        .findOne({ role: 'USER' })
-        .lean();
+      const customer = await this.userModel.findOne({ role: 'USER' }).lean();
       const order1 = await this.orderModel
         .findOne({ userId: customer?._id })
         .lean();

@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule, NgIf, NgFor, NgClass, DecimalPipe, DatePipe } from '@angular/common';
+import { Component, HostListener, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { ToastrService } from 'ngx-toastr';
+import Swal from 'sweetalert2';
+import { env } from '../../../environments/environment';
 
 interface IService {
   _id: string;
@@ -26,6 +29,7 @@ interface IPricing {
   templateUrl: './dashboard-pricing.html',
   styleUrls: ['./dashboard-pricing.scss'],
   imports: [CommonModule, FormsModule, DecimalPipe, DatePipe],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class DashboardPricingComponent implements OnInit {
   // ====== STATE ======
@@ -40,11 +44,12 @@ export class DashboardPricingComponent implements OnInit {
 
   selected: IPricing = this.emptyPricing();
 
-  // ⚙️ Đổi lại URL nếu BE khác
-  // private readonly baseUrl = 'http://localhost:8000/api/v1';
-  private readonly baseUrl = 'https://ap-post-api.onrender.com/api/v1';
+  private readonly baseUrl = env.baseUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private toastr: ToastrService,
+  ) {}
 
   ngOnInit(): void {
     this.loadServices();
@@ -150,10 +155,15 @@ export class DashboardPricingComponent implements OnInit {
     this.modalOpen = false;
   }
 
+  @HostListener('document:keydown.escape')
+  closeModalOnEscape(): void {
+    if (this.modalOpen) this.closeModal();
+  }
+
   // ====== SAVE (CREATE / UPDATE) ======
   save(): void {
     if (!this.selected.serviceId) {
-      alert('Vui lòng chọn dịch vụ');
+      this.toastr.warning('Vui lòng chọn dịch vụ.', 'Thiếu thông tin');
       return;
     }
 
@@ -178,12 +188,13 @@ export class DashboardPricingComponent implements OnInit {
         next: () => {
           this.saving = false;
           this.modalOpen = false;
+          this.toastr.success('Đã tạo bảng giá mới.');
           this.loadPricing();
         },
         error: (err) => {
           this.saving = false;
           console.error('Create pricing failed', err);
-          alert('Tạo bảng giá thất bại (xem console).');
+          this.toastr.error(err?.error?.message || 'Tạo bảng giá thất bại.');
         },
       });
     } else {
@@ -196,21 +207,31 @@ export class DashboardPricingComponent implements OnInit {
           next: () => {
             this.saving = false;
             this.modalOpen = false;
+            this.toastr.success('Đã cập nhật bảng giá.');
             this.loadPricing();
           },
           error: (err) => {
             this.saving = false;
             console.error('Update pricing failed', err);
-            alert('Cập nhật bảng giá thất bại (xem console).');
+            this.toastr.error(err?.error?.message || 'Cập nhật bảng giá thất bại.');
           },
         });
     }
   }
 
   // ====== DELETE ======
-  remove(p: IPricing): void {
+  async remove(p: IPricing): Promise<void> {
     if (!p._id) return;
-    if (!confirm('Bạn có chắc muốn xoá bảng giá này?')) return;
+    const result = await Swal.fire({
+      title: 'Xóa bảng giá?',
+      text: 'Hành động này có thể ảnh hưởng tới việc tính cước.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Xóa bảng giá',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#d03238',
+    });
+    if (!result.isConfirmed) return;
 
     this.http
       .delete<any>(`${this.baseUrl}/pricing/${p._id}`, {
@@ -218,11 +239,12 @@ export class DashboardPricingComponent implements OnInit {
       })
       .subscribe({
         next: () => {
+          this.toastr.success('Đã xóa bảng giá.');
           this.loadPricing();
         },
         error: (err) => {
           console.error('Delete pricing failed', err);
-          alert('Xoá bảng giá thất bại (xem console).');
+          this.toastr.error(err?.error?.message || 'Xóa bảng giá thất bại.');
         },
       });
   }

@@ -1,6 +1,14 @@
 <div class="payment-result-container">
   <section class="result-section text-center">
-    <div *ngIf="isSuccess; else failedTemplate">
+    <div *ngIf="isProcessing" class="py-4">
+      <div class="spinner-border mb-4" role="status"></div>
+      <h1 class="success-title">Đang đối soát MoMo.</h1>
+      <p class="success-subtitle">
+        Đơn hàng vẫn Chờ xác nhận cho tới khi callback MoMo hợp lệ được ghi nhận.
+      </p>
+    </div>
+
+    <div *ngIf="!isProcessing && isSuccess; else failedTemplate">
       <div class="status-icon success-icon">
         <i class="bi bi-check-circle-fill"></i>
       </div>
@@ -17,6 +25,7 @@
     </div>
 
     <ng-template #failedTemplate>
+      <ng-container *ngIf="!isProcessing">
       <div class="status-icon failed-icon">
         <i class="bi bi-x-circle-fill"></i>
       </div>
@@ -30,14 +39,25 @@
           </div>
         </div>
       </div>
+      </ng-container>
     </ng-template>
 
     <div class="actions">
-      <button class="btn btn-primary btn-lg w-100" (click)="goToList()">
+      <button
+        *ngIf="!isProcessing && !isSuccess && orderId"
+        type="button"
+        class="btn btn-warning btn-lg w-100 mb-2"
+        (click)="retryPayment()"
+      >
+        Thanh toán lại qua MoMo
+      </button>
+      <button type="button" class="btn btn-primary btn-lg w-100" (click)="goToList()">
         Về danh sách đơn hàng
       </button>
     </div>
 
-    <small class="text-muted d-block mt-4">Tự động chuyển sau 4 giây.</small>
+    <small *ngIf="!isProcessing" class="text-muted d-block mt-4">
+      Tự động chuyển sau 6 giây.
+    </small>
   </section>
 </div>

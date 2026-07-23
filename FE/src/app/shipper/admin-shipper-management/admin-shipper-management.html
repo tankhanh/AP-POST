@@ -1,0 +1,278 @@
+<section class="admin-shipper-page">
+  <header>
+    <div>
+      <span class="eyebrow">Đội ngũ giao nhận</span>
+      <h1>Quản lý Shipper</h1>
+      <p>Tạo tài khoản, phân chi nhánh và kiểm soát trạng thái hoạt động.</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreate()">
+      <iconify-icon icon="mdi:account-plus-outline"></iconify-icon>
+      Thêm shipper
+    </button>
+  </header>
+
+  <div class="shipper-toolbar">
+    <label>
+      <iconify-icon icon="mdi:magnify"></iconify-icon>
+      <input [(ngModel)]="keyword" type="search" placeholder="Tìm tên, email, SĐT, chi nhánh" />
+    </label>
+    <span>{{ filteredShippers.length }} tài khoản</span>
+  </div>
+
+  <div class="loading-panel" *ngIf="loading" role="status">
+    <span class="spinner-border"></span> Đang tải danh sách shipper...
+  </div>
+
+  <div class="shipper-grid" *ngIf="!loading">
+    <article *ngFor="let shipper of filteredShippers">
+      <div class="shipper-card-head">
+        <span class="avatar">{{ (shipper.name || 'S').slice(0, 1) }}</span>
+        <div>
+          <strong>{{ shipper.name }}</strong>
+          <span>{{ shipper.email }}</span>
+        </div>
+        <span
+          class="status"
+          [class.online]="shipper.isActive !== false && shipper.isOnline"
+          [class.inactive]="shipper.isActive !== false && !shipper.isOnline"
+          [class.blocked]="shipper.isActive === false"
+        >
+          <span class="presence-dot"></span>
+          {{ presenceLabel(shipper) }}
+        </span>
+      </div>
+      <dl>
+        <div>
+          <dt>Điện thoại</dt>
+          <dd>{{ shipper.phone || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Chi nhánh</dt>
+          <dd>{{ shipper.branchId?.name || 'Chưa phân chi nhánh' }}</dd>
+        </div>
+        <div>
+          <dt>Nhận đơn mới</dt>
+          <dd>{{ shipper.isAvailable === false ? 'Tạm nghỉ' : 'Sẵn sàng' }}</dd>
+        </div>
+        <div>
+          <dt>Phiên làm việc</dt>
+          <dd>{{ lastSeenLabel(shipper) }}</dd>
+        </div>
+        <div>
+          <dt>Phương tiện</dt>
+          <dd>{{ shipper.licensePlate || 'Chưa cập nhật' }}</dd>
+        </div>
+      </dl>
+      <div class="card-actions">
+        <button type="button" (click)="openEdit(shipper)">Chỉnh sửa</button>
+        <button type="button" class="danger" (click)="remove(shipper)">Ngừng tài khoản</button>
+      </div>
+    </article>
+  </div>
+
+  <div class="empty-panel" *ngIf="!loading && filteredShippers.length === 0">
+    <iconify-icon icon="mdi:account-hard-hat-outline"></iconify-icon>
+    <strong>Chưa có shipper phù hợp</strong>
+    <span>Tạo tài khoản đầu tiên hoặc thay đổi từ khóa tìm kiếm.</span>
+  </div>
+
+  <section class="dispatch-board">
+    <header>
+      <div>
+        <span class="eyebrow">Điều phối giao hàng</span>
+        <h2>Bàn phân công đơn</h2>
+        <p>Chọn shipper cùng chi nhánh và theo dõi tải công việc trước khi giao đơn.</p>
+      </div>
+      <div class="dispatch-header-actions">
+        <button
+          type="button"
+          class="auto-queue-button"
+          (click)="autoAssignQueue()"
+          [disabled]="loadingDispatch || autoAssigningQueue || !dispatchOrders.length"
+        >
+          <iconify-icon icon="mdi:auto-fix"></iconify-icon>
+          {{ autoAssigningQueue ? 'Đang điều phối...' : 'Tự động phân công hàng chờ' }}
+        </button>
+        <button
+          type="button"
+          class="refresh-dispatch"
+          (click)="loadDispatch()"
+          [disabled]="loadingDispatch"
+        >
+          <iconify-icon icon="mdi:refresh"></iconify-icon>
+          Làm mới
+        </button>
+      </div>
+    </header>
+
+    <div class="dispatch-mode-guide">
+      <div>
+        <span class="mode-icon auto"><iconify-icon icon="mdi:robot-outline"></iconify-icon></span>
+        <p><strong>Tự động</strong><small>Cân bằng tải, chỉ chọn shipper phù hợp và thử lại khi đề nghị bị từ chối hoặc hết hạn.</small></p>
+      </div>
+      <div>
+        <span class="mode-icon manual"><iconify-icon icon="mdi:account-edit-outline"></iconify-icon></span>
+        <p><strong>Thủ công</strong><small>Điều phối viên chọn người phụ trách; hệ thống vẫn kiểm tra bưu cục và tính sẵn sàng.</small></p>
+      </div>
+    </div>
+
+    <div class="loading-panel" *ngIf="loadingDispatch" role="status">
+      <span class="spinner-border"></span> Đang tải hàng chờ điều phối...
+    </div>
+
+    <div class="dispatch-list" *ngIf="!loadingDispatch && dispatchOrders.length">
+      <article *ngFor="let order of dispatchOrders">
+        <div class="dispatch-order-head">
+          <div>
+            <strong>{{ order.waybill }}</strong>
+            <span>{{ order.receiverName }} · {{ order.receiverPhone }}</span>
+          </div>
+          <span class="dispatch-state" [attr.data-state]="order.deliveryState">
+            {{ stateLabel(order.deliveryState) }}
+          </span>
+        </div>
+        <div class="dispatch-meta">
+          <span>
+            <iconify-icon icon="mdi:source-branch"></iconify-icon>
+            {{ branchLabel(order) }}
+          </span>
+          <span [class.auto-mode]="order.assignmentMode === 'AUTO'">
+            <iconify-icon [icon]="order.assignmentMode === 'AUTO' ? 'mdi:robot-outline' : 'mdi:account-edit-outline'"></iconify-icon>
+            {{ assignmentModeLabel(order) }}
+          </span>
+        </div>
+        <div class="dispatch-alert" *ngIf="order.assignmentRejectionReason">
+          <iconify-icon icon="mdi:account-cancel-outline"></iconify-icon>
+          <span><strong>Phân công gần nhất bị từ chối:</strong> {{ order.assignmentRejectionReason }}</span>
+        </div>
+        <div class="dispatch-deadline" *ngIf="order.deliveryState === 'ASSIGNED' && order.assignmentExpiresAt">
+          Shipper cần phản hồi trước {{ order.assignmentExpiresAt | date: 'HH:mm, dd/MM' }}
+        </div>
+        <div class="dispatch-money">
+          <span>Thu người nhận</span>
+          <strong>{{ order.receiverPayAmount || 0 | number }} đ</strong>
+        </div>
+        <button
+          type="button"
+          class="auto-order-button"
+          *ngIf="canAutoAssign(order)"
+          [disabled]="busyOrderId === order._id"
+          (click)="autoAssignOrder(order)"
+        >
+          <iconify-icon icon="mdi:robot-outline"></iconify-icon>
+          Để hệ thống chọn shipper tốt nhất
+        </button>
+        <div class="manual-divider" *ngIf="canAssign(order)"><span>hoặc phân công thủ công</span></div>
+        <label class="shipper-select">
+          <span>Shipper phụ trách</span>
+          <select
+            [(ngModel)]="shipperSelections[order._id]"
+            [disabled]="!canAssign(order) || busyOrderId === order._id"
+          >
+            <option value="">Chọn shipper sẵn sàng</option>
+            <option *ngFor="let shipper of availableShippers(order)" [value]="shipper._id">
+              {{ shipper.name }} · {{ shipper.isOnline ? 'trực tuyến' : 'ngoại tuyến' }} ·
+              {{ shipper.activeJobs || 0 }} đơn đang xử lý
+            </option>
+          </select>
+        </label>
+        <div class="dispatch-actions">
+          <button
+            type="button"
+            class="assign-button"
+            *ngIf="canAssign(order)"
+            [disabled]="busyOrderId === order._id || !shipperSelections[order._id]"
+            (click)="assignOrder(order)"
+          >
+            {{ order.assignedShipperId ? 'Đổi phân công' : 'Phân công' }}
+          </button>
+          <button
+            type="button"
+            class="unassign-button"
+            *ngIf="canUnassign(order)"
+            [disabled]="busyOrderId === order._id"
+            (click)="unassignOrder(order)"
+          >
+            Hủy phân công
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <div class="empty-panel" *ngIf="!loadingDispatch && dispatchOrders.length === 0">
+      <iconify-icon icon="mdi:clipboard-check-outline"></iconify-icon>
+      <strong>Không có đơn chờ điều phối</strong>
+      <span>Các đơn đã xác nhận sẽ xuất hiện tại đây.</span>
+    </div>
+  </section>
+</section>
+
+<div class="form-backdrop" *ngIf="formOpen" (click)="closeForm()"></div>
+<aside class="shipper-form" *ngIf="formOpen" role="dialog" aria-modal="true">
+  <header>
+    <div>
+      <span class="eyebrow">Tài khoản giao nhận</span>
+      <h2>{{ editingId ? 'Cập nhật shipper' : 'Thêm shipper mới' }}</h2>
+    </div>
+    <button type="button" class="close-button" (click)="closeForm()" aria-label="Đóng">
+      <iconify-icon icon="mdi:close"></iconify-icon>
+    </button>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <label>
+      <span>Họ và tên *</span>
+      <input formControlName="name" autocomplete="name" />
+    </label>
+    <label>
+      <span>Email đăng nhập *</span>
+      <input formControlName="email" type="email" autocomplete="email" />
+    </label>
+    <label>
+      <span>Số điện thoại *</span>
+      <input formControlName="phone" inputmode="tel" autocomplete="tel" />
+    </label>
+    <label>
+      <span>Chi nhánh phụ trách *</span>
+      <select formControlName="branchId">
+        <option value="">Chọn chi nhánh</option>
+        <option *ngFor="let branch of branches" [value]="branch._id">{{ branch.name }}</option>
+      </select>
+    </label>
+    <label *ngIf="!editingId">
+      <span>Mật khẩu ban đầu *</span>
+      <input formControlName="password" type="password" autocomplete="new-password" />
+      <small>Tối thiểu 8 ký tự.</small>
+    </label>
+    <label class="switch-row">
+      <input formControlName="isActive" type="checkbox" />
+      <span>Cho phép tài khoản hoạt động</span>
+    </label>
+    <label class="switch-row">
+      <input formControlName="isAvailable" type="checkbox" />
+      <span>Sẵn sàng nhận phân công mới</span>
+    </label>
+    <label>
+      <span>Loại phương tiện</span>
+      <select formControlName="vehicleType">
+        <option value="MOTORBIKE">Xe máy</option>
+        <option value="CAR">Ô tô</option>
+        <option value="VAN">Xe tải nhẹ</option>
+      </select>
+    </label>
+    <label>
+      <span>Biển số xe</span>
+      <input formControlName="licensePlate" autocomplete="off" autocapitalize="characters" />
+      <small *ngIf="form.controls.licensePlate.invalid && form.controls.licensePlate.touched">
+        Biển số gồm 5–15 ký tự chữ, số, dấu chấm hoặc gạch ngang.
+      </small>
+    </label>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeForm()">Hủy</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving">
+        {{ saving ? 'Đang lưu...' : 'Lưu shipper' }}
+      </button>
+    </div>
+  </form>
+</aside>

@@ -4,23 +4,34 @@ import {
   HttpException,
   HttpStatus,
   Post,
+  ServiceUnavailableException,
+  UseGuards,
 } from '@nestjs/common';
 import { MailService } from './mail.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/health/decorator/roles.decorator';
 
 interface SendMailDto {
   to: string;
   subject: string;
-  html?: string;           // gửi HTML thô
-  template?: string;       // tên template (status/pending, ...)
-  context?: any;           // dữ liệu cho template
+  html?: string; // gửi HTML thô
+  template?: string; // tên template (status/pending, ...)
+  context?: any; // dữ liệu cho template
 }
 
 @Controller('mail')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'STAFF')
 export class MailController {
   constructor(private readonly mailService: MailService) {}
 
   @Post('send')
   async send(@Body() body: SendMailDto) {
+    if (!this.mailService.isConfigured()) {
+      throw new ServiceUnavailableException('SMTP is not configured');
+    }
+
     let result = false;
 
     if (body.template && body.context) {
