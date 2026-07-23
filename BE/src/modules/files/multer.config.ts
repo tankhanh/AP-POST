@@ -58,8 +58,9 @@ export class MulterConfigService implements MulterOptionsFactory {
           const expectedExtension = allowedMimeTypes.get(file.mimetype);
           const suppliedExtension = extname(file.originalname).toLowerCase();
           const extension =
-            suppliedExtension === '.jpeg' ? '.jpg' :
-            expectedExtension || suppliedExtension || '.jpg';
+            suppliedExtension === '.jpeg'
+              ? '.jpg'
+              : expectedExtension || suppliedExtension || '.jpg';
 
           if (!expectedExtension && !extension) {
             callback(

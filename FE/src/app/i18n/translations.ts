@@ -1013,6 +1013,10 @@ export const ENGLISH_PHRASES: Record<string, string> = {
   'Chỉ nhận JPG/PNG/HEIC tối đa 5 MB.': 'Only JPG, PNG, or HEIC files up to 5 MB are accepted.',
   'JPG/PNG/HEIC, tối đa 5 MB. Ảnh là bắt buộc để hoàn tất và đối soát giao hàng.':
     'JPG, PNG, or HEIC, up to 5 MB. A photo is required to complete delivery and support reconciliation.',
+  'Chỉ nhận JPG/PNG/HEIC, tối đa 20 MB.': 'Only JPG, PNG, or HEIC files up to 20 MB are accepted.',
+
+  'JPG/PNG/HEIC, tối đa 20 MB. Ảnh là bắt buộc để hoàn tất và đối soát giao hàng.':
+    'JPG, PNG, or HEIC, up to 20 MB. A photo is required to complete delivery and support reconciliation.',
 };
 
 export const ENGLISH_ATTRIBUTES: Record<string, string> = {
