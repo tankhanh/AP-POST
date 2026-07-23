@@ -999,6 +999,21 @@ export const ENGLISH_PHRASES: Record<string, string> = {
   'Tiếp tục thanh toán MoMo': 'Continue with MoMo payment',
   'Tiếp tục thanh toán MoMo?': 'Continue with MoMo payment?',
   'Vui lòng thử lại sau.': 'Please try again later.',
+  'Cập nhật gần nhất': 'Last updated',
+  'Cập nhật nhân viên.': 'Update staff member.',
+  'Chi tiết nhân viên.': 'Staff details.',
+  'Danh sách bảng giá.': 'Pricing list.',
+  'Đổi': 'Change',
+  'Quản lý nhân viên.': 'Manage staff.',
+  'Quản trị nhân sự': 'Human resources management',
+  'Tên': 'Name',
+  'Thêm nhân viên': 'Add staff member',
+  'Thêm nhân viên.': 'Add staff member.',
+  'Thông tin nhân viên': 'Staff information',
+  'Thùng rác.': 'Trash.',
+  'Tỉnh': 'Province',
+  'Trạng thái tài khoản': 'Account status',
+  'Xã/Phường': 'Ward/Commune',
 };
 
 export const ENGLISH_ATTRIBUTES: Record<string, string> = {
