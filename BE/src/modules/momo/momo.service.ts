@@ -68,7 +68,11 @@ export class MomoService {
     expiresAt: Date;
   }> {
     this.assertConfigured();
-    if (!Number.isSafeInteger(amount) || amount < 1_000 || amount > 50_000_000) {
+    if (
+      !Number.isSafeInteger(amount) ||
+      amount < 1_000 ||
+      amount > 50_000_000
+    ) {
       throw new BadRequestException(
         'MoMo amount must be an integer from 1,000 to 50,000,000 VND',
       );
@@ -269,7 +273,10 @@ export class MomoService {
         )) ?? payment
       );
     }
-    if (!this.isPendingResultCode(resultCode) && this.isFinalFailure(resultCode)) {
+    if (
+      !this.isPendingResultCode(resultCode) &&
+      this.isFinalFailure(resultCode)
+    ) {
       return (
         (await this.paymentsService.updatePaymentStatusByTransaction(
           transactionCode,
@@ -279,7 +286,9 @@ export class MomoService {
       );
     }
     await this.paymentsService.recordGatewayCheck(transactionCode, metadata);
-    return (await this.paymentsService.getRecoveryStatus(transactionCode)) ?? payment;
+    return (
+      (await this.paymentsService.getRecoveryStatus(transactionCode)) ?? payment
+    );
   }
 
   verifyCallbackSignature(
@@ -336,8 +345,8 @@ export class MomoService {
 
   private isFinalFailure(resultCode: number): boolean {
     return [
-      98, 99, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1017, 1026,
-      4001, 4002, 4100,
+      98, 99, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1017, 1026, 4001, 4002,
+      4100,
     ].includes(resultCode);
   }
 

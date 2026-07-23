@@ -2802,9 +2802,7 @@ export class OrdersService {
     if (!sameOwner) {
       throw new ConflictException('Mã chống tạo trùng đã được sử dụng');
     }
-    const payment = await this.paymentsService.findByOrderId(
-      String(order._id),
-    );
+    const payment = await this.paymentsService.findByOrderId(String(order._id));
     if (!payment) {
       throw new ConflictException(
         'Đơn đã tồn tại nhưng dữ liệu thanh toán chưa sẵn sàng',

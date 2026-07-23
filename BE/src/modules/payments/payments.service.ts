@@ -228,7 +228,8 @@ export class PaymentsService {
         attempt.providerTransactionId = metadata.providerTransactionId;
       }
       attempt.callbackReceivedAt = metadata.callbackReceivedAt ?? new Date();
-      if (metadata.lastCheckedAt) attempt.lastCheckedAt = metadata.lastCheckedAt;
+      if (metadata.lastCheckedAt)
+        attempt.lastCheckedAt = metadata.lastCheckedAt;
     }
 
     if (
@@ -265,14 +266,13 @@ export class PaymentsService {
   ): Promise<PaymentDocument | null> {
     return this.paymentModel.findOne({
       isDeleted: false,
-      $or: [
-        { transactionId },
-        { 'attempts.transactionId': transactionId },
-      ],
+      $or: [{ transactionId }, { 'attempts.transactionId': transactionId }],
     });
   }
 
-  async getRecoveryStatus(transactionId: string): Promise<PaymentDocument | null> {
+  async getRecoveryStatus(
+    transactionId: string,
+  ): Promise<PaymentDocument | null> {
     const payment = await this.findByTransactionId(transactionId);
     if (!payment) return null;
     if (
@@ -372,8 +372,12 @@ export class PaymentsService {
     if (paid) throw new BadRequestException('Order has already been paid');
 
     const now = new Date();
-    const expiresAt = metadata.expiresAt ?? new Date(now.getTime() + 15 * 60_000);
-    let payment = await this.paymentModel.findOne({ orderId, isDeleted: false });
+    const expiresAt =
+      metadata.expiresAt ?? new Date(now.getTime() + 15 * 60_000);
+    let payment = await this.paymentModel.findOne({
+      orderId,
+      isDeleted: false,
+    });
 
     if (!payment) {
       payment = await this.paymentModel.create({

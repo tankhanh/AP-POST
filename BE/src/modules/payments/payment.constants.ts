@@ -17,6 +17,4 @@ export const MANUAL_PAYMENT_METHODS = [
   PaymentMethod.COD,
 ] as const;
 
-export const ONLINE_PAYMENT_METHODS = [
-  PaymentMethod.MOMO,
-] as const;
+export const ONLINE_PAYMENT_METHODS = [PaymentMethod.MOMO] as const;

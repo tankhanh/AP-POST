@@ -147,9 +147,7 @@ export class MomoController {
   @Public()
   @Throttle({ default: { limit: 6, ttl: 60_000 } })
   async retryPayment(@Body() dto: RetryMomoPaymentDto) {
-    const result = await this.momoService.retryPaymentUrl(
-      dto.transactionCode,
-    );
+    const result = await this.momoService.retryPaymentUrl(dto.transactionCode);
     return { success: true, data: result };
   }
 

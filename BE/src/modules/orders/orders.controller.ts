@@ -123,7 +123,10 @@ export class OrdersController {
           orderId: result.order._id.toString(),
         };
       } catch (error) {
-        paymentError = error instanceof Error ? error.message : 'Không thể khởi tạo giao dịch MoMo';
+        paymentError =
+          error instanceof Error
+            ? error.message
+            : 'Không thể khởi tạo giao dịch MoMo';
       }
     }
 
@@ -166,7 +169,10 @@ export class OrdersController {
           orderId: result.order._id.toString(),
         };
       } catch (error) {
-        paymentError = error instanceof Error ? error.message : 'Không thể khởi tạo giao dịch MoMo';
+        paymentError =
+          error instanceof Error
+            ? error.message
+            : 'Không thể khởi tạo giao dịch MoMo';
       }
     }
 
@@ -275,7 +281,9 @@ export class OrdersController {
 
     const payment = await this.paymentsService.findByOrderId(id);
     if (!payment) {
-      throw new BadRequestException('Không tìm thấy giao dịch MOMO cho đơn hàng');
+      throw new BadRequestException(
+        'Không tìm thấy giao dịch MOMO cho đơn hàng',
+      );
     }
 
     const orderAmount = Number(payment.amount);

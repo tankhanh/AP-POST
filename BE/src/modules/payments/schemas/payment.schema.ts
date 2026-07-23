@@ -47,7 +47,8 @@ export class PaymentAttempt {
   lastCheckedAt?: Date;
 }
 
-export const PaymentAttemptSchema = SchemaFactory.createForClass(PaymentAttempt);
+export const PaymentAttemptSchema =
+  SchemaFactory.createForClass(PaymentAttempt);
 
 @Schema({ timestamps: true })
 export class Payment {
