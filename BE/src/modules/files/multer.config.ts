@@ -16,6 +16,8 @@ const allowedMimeTypes = new Map([
   ['image/jpeg', '.jpg'],
   ['image/png', '.png'],
   ['image/gif', '.gif'],
+  ['image/heic', '.heic'],
+  ['image/heif', '.heif'],
   ['application/pdf', '.pdf'],
   ['application/msword', '.doc'],
   [
@@ -81,7 +83,7 @@ export class MulterConfigService implements MulterOptionsFactory {
       },
       limits: {
         files: 1,
-        fileSize: 1024 * 1024,
+        fileSize: 5 * 1024 * 1024,
       },
     };
   }

@@ -230,9 +230,12 @@ export class ShipperJobDetail implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 2048 * 2048) {
+    if (
+      !['image/jpeg', 'image/png', 'image/heic', 'image/heif'].includes(file.type) ||
+      file.size > 5 * 1024 * 1024
+    ) {
       input.value = '';
-      void Swal.fire('Ảnh không hợp lệ', 'Chỉ nhận JPG/PNG tối đa 2 MB.', 'warning');
+      void Swal.fire('Ảnh không hợp lệ', 'Chỉ nhận JPG/PNG/HEIC tối đa 5 MB.', 'warning');
       return;
     }
     this.proofFile = file;
