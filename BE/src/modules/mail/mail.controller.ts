@@ -29,7 +29,7 @@ export class MailController {
   @Post('send')
   async send(@Body() body: SendMailDto) {
     if (!this.mailService.isConfigured()) {
-      throw new ServiceUnavailableException('SMTP is not configured');
+      throw new ServiceUnavailableException('Brevo is not configured');
     }
 
     let result = false;

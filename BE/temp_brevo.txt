@@ -1,0 +1,7 @@
+# Brevo (Sendinblue) - transactional email via API 
+# Get your API key from: https://app.brevo.com/settings/keys 
+BREVO_API_KEY= 
+BREVO_SENDER_EMAIL=no-reply@ap-post.vn 
+BREVO_SENDER_NAME=AP Post 
+SUPPORT_EMAIL=support@ap-post.vn 
+SUPPORT_PHONE=0908779245

@@ -6,7 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { readFile } from 'fs/promises';
 import Handlebars from 'handlebars';
-import nodemailer, { Transporter } from 'nodemailer';
+import { BrevoClient } from '@getbrevo/brevo';
 import { resolve, sep } from 'path';
 
 interface TemplateMailOptions {
@@ -20,7 +20,9 @@ interface TemplateMailOptions {
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private readonly transporter?: Transporter;
+  private readonly brevo?: BrevoClient;
+  private readonly senderEmail: string;
+  private readonly senderName: string;
   private readonly templateRoot = resolve(__dirname, 'templates');
   private readonly templateCache = new Map<
     string,
@@ -28,35 +30,24 @@ export class MailService {
   >();
 
   constructor(private readonly configService: ConfigService) {
-    const user = configService.get<string>('EMAIL_AUTH_USER')?.trim();
-    const pass = configService.get<string>('EMAIL_AUTH_PASS')?.trim();
-    if (!user || !pass) {
+    const apiKey = configService.get<string>('BREVO_API_KEY')?.trim();
+    if (!apiKey) {
       this.logger.warn(
-        'SMTP chưa được cấu hình; email thông báo sẽ được bỏ qua trong môi trường hiện tại.',
+        'Brevo API key chưa được cấu hình; email thông báo sẽ được bỏ qua trong môi trường hiện tại.',
       );
-      return;
+    } else {
+      this.brevo = new BrevoClient({
+        apiKey,
+      });
     }
 
-    this.transporter = nodemailer.createTransport({
-      host: configService.get<string>('EMAIL_HOST', 'smtp.gmail.com'),
-      port: Number(configService.get<string>('EMAIL_PORT', '587')),
-      secure: configService.get<string>('EMAIL_SECURE', 'false') === 'true',
-      requireTLS: true,
-      auth: {
-        user,
-        pass,
-      },
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 10_000,
-      disableFileAccess: true,
-      disableUrlAccess: true,
-    });
+    this.senderEmail = configService.get<string>('BREVO_SENDER_EMAIL', 'no-reply@ap-post.vn');
+    this.senderName = configService.get<string>('BREVO_SENDER_NAME', 'AP Post');
   }
 
   async sendMail(options: TemplateMailOptions) {
-    if (!this.transporter) {
-      throw new ServiceUnavailableException('SMTP is not configured');
+    if (!this.brevo) {
+      throw new ServiceUnavailableException('Brevo is not configured');
     }
 
     const html = options.template
@@ -74,20 +65,23 @@ export class MailService {
       : options.html;
     if (!html) throw new Error('Email HTML or template is required');
 
-    return this.transporter.sendMail({
-      from:
-        this.configService.get<string>('EMAIL_FROM')?.trim() ||
-        this.configService.get<string>('EMAIL_AUTH_USER'),
-      to: options.to,
+    await this.brevo.transactionalEmails.sendTransacEmail({
+      sender: {
+        email: this.senderEmail,
+        name: this.senderName,
+      },
+      to: [
+        {
+          email: options.to,
+        },
+      ],
       subject: options.subject,
-      html,
-      disableFileAccess: true,
-      disableUrlAccess: true,
+      htmlContent: html,
     });
   }
 
   isConfigured(): boolean {
-    return Boolean(this.transporter);
+    return Boolean(this.brevo);
   }
 
   async sendOrderConfirmation(params: {
@@ -203,7 +197,7 @@ export class MailService {
   }
 
   private async trySend(options: TemplateMailOptions): Promise<boolean> {
-    if (!this.transporter) return false;
+    if (!this.brevo) return false;
 
     try {
       await this.sendMail(options);

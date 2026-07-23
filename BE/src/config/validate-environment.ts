@@ -44,7 +44,7 @@ export function validateEnvironment(
       );
     }
   };
-  ensureCompleteGroup('Email', ['EMAIL_AUTH_USER', 'EMAIL_AUTH_PASS']);
+  ensureCompleteGroup('Brevo', ['BREVO_API_KEY']);
   ensureCompleteGroup('MoMo', [
     'MOMO_PARTNER_CODE',
     'MOMO_ACCESS_KEY',
@@ -111,11 +111,10 @@ export function validateEnvironment(
       }
     }
     if (
-      !String(config.EMAIL_AUTH_USER ?? '').trim() ||
-      !String(config.EMAIL_AUTH_PASS ?? '').trim()
+      !String(config.BREVO_API_KEY ?? '').trim()
     ) {
       throw new Error(
-        'Production email delivery requires EMAIL_AUTH_USER and EMAIL_AUTH_PASS',
+        'Production email delivery requires BREVO_API_KEY',
       );
     }
     for (const key of [
