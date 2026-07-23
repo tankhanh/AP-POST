@@ -35,9 +35,11 @@ describe('validateEnvironment', () => {
       validateEnvironment({
         ...validConfig,
         SHOULD_INIT: 'true',
-        INIT_PASSWORD: '123456',
+        INIT_PASSWORD: '1',
       }),
-    ).toThrow('INIT_PASSWORD must contain at least 2 characters');
+    ).toThrow(
+      'INIT_PASSWORD must contain at least 2 characters when SHOULD_INIT=true',
+    );
   });
 
   it('enforces independent strong secrets in production', () => {

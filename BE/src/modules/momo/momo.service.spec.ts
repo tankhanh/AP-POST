@@ -12,7 +12,12 @@ describe('MomoService callback verification', () => {
   const config = {
     get: (key: string, fallback?: string) => values[key] ?? fallback,
   } as ConfigService;
-  const service = new MomoService(config, {} as never);
+  const service = new MomoService(
+    config,
+    {} as never,
+    {} as never,
+    {} as never,
+  );
   const callback = {
     amount: 150000,
     extraData: '',

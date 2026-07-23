@@ -11,6 +11,8 @@ describe('PaymentsService state machine', () => {
   ) => {
     const payment: any = {
       orderId,
+      transactionId: 'transaction-1',
+      attempts: [],
       status,
       method,
       save: jest.fn(),
