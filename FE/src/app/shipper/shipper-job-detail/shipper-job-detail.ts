@@ -238,7 +238,58 @@ export class ShipperJobDetail implements OnInit, OnDestroy {
       void Swal.fire('Ảnh không hợp lệ', 'Chỉ nhận JPG/PNG/HEIC, tối đa 20 MB.', 'warning');
       return;
     }
-    this.proofFile = file;
+    // Nén ảnh nếu dung lượng > 1.5MB để giảm thời gian upload trên mobile
+    if (file.size > 1.5 * 1024 * 1024) {
+      this.compressImage(file).then((compressed) => {
+        this.proofFile = compressed;
+      }).catch(() => {
+        this.proofFile = file;
+      });
+    } else {
+      this.proofFile = file;
+    }
+  }
+
+  private compressImage(file: File): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        // Giảm kích thước nếu ảnh quá lớn (giữ tỷ lệ)
+        const MAX_DIM = 1920;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height / width) * MAX_DIM);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width / height) * MAX_DIM);
+            height = MAX_DIM;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(file); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return; }
+            const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressed);
+          },
+          'image/jpeg',
+          0.8,
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+      img.src = url;
+    });
   }
 
   proofImageUrl(value?: string): string {
