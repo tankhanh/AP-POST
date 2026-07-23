@@ -2777,7 +2777,9 @@ export class OrdersService {
         throw new BadRequestException('Đường dẫn ảnh giao hàng không hợp lệ');
       }
     }
-    if (!/^\/images\/proof\/[a-f0-9-]+\.(?:jpg|png|heic|heif)$/i.test(pathname)) {
+    if (
+      !/^\/images\/proof\/[a-f0-9-]+\.(?:jpg|png|heic|heif)$/i.test(pathname)
+    ) {
       throw new BadRequestException('Đường dẫn ảnh giao hàng không hợp lệ');
     }
     return pathname;

@@ -53,7 +53,13 @@ function readDictionaries() {
         continue;
       }
       for (const property of declaration.initializer.properties) {
-        if (ts.isPropertyAssignment(property) && ts.isStringLiteral(property.name)) {
+        if (!ts.isPropertyAssignment(property)) continue;
+
+        // Prettier sẽ bỏ dấu nháy khỏi các key là JavaScript identifier hợp lệ,
+        // bao gồm nhiều từ tiếng Việt như Có, Hủy, Lỗi, Tỉnh...
+        if (ts.isStringLiteral(property.name)) {
+          dictionary.add(property.name.text);
+        } else if (ts.isIdentifier(property.name)) {
           dictionary.add(property.name.text);
         }
       }
@@ -119,7 +125,13 @@ function isConsoleMessage(node) {
 
 function inspectTypeScript(file) {
   const source = fs.readFileSync(file, 'utf8');
-  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const sourceFile = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
   function visit(node) {
     if (
       ts.isPropertyAssignment(node) &&
