@@ -41,8 +41,10 @@ export class MailService {
       });
     }
 
-    this.senderEmail = configService.get<string>('BREVO_SENDER_EMAIL', 'no-reply@ap-post.vn');
-    this.senderName = configService.get<string>('BREVO_SENDER_NAME', 'AP Post');
+    this.senderEmail =
+      configService.get<string>('BREVO_SENDER_EMAIL')?.trim() ?? '';
+    this.senderName =
+      configService.get<string>('BREVO_SENDER_NAME')?.trim() ?? '';
   }
 
   async sendMail(options: TemplateMailOptions) {
@@ -52,14 +54,10 @@ export class MailService {
 
     const html = options.template
       ? await this.renderTemplate(options.template, {
-          supportEmail: this.configService.get<string>(
-            'SUPPORT_EMAIL',
-            'support@ap-post.vn',
-          ),
-          supportPhone: this.configService.get<string>(
-            'SUPPORT_PHONE',
-            '0908779245',
-          ),
+          supportEmail:
+            this.configService.get<string>('SUPPORT_EMAIL')?.trim() ?? '',
+          supportPhone:
+            this.configService.get<string>('SUPPORT_PHONE')?.trim() ?? '',
           ...(options.context ?? {}),
         })
       : options.html;

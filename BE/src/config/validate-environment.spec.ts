@@ -70,7 +70,8 @@ describe('validateEnvironment', () => {
       JWT_ACCESS_TOKEN_SECRET: 'a'.repeat(40),
       JWT_REFRESH_TOKEN: 'b'.repeat(40),
       CORS_ORIGINS: 'https://app.example.com',
-      BREVO_API_KEY: 'xkeysib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      BREVO_API_KEY:
+        'xkeysib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     };
     expect(() =>
       validateEnvironment({

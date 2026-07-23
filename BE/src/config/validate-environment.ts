@@ -110,12 +110,8 @@ export function validateEnvironment(
         throw new Error(`${key} must be a valid HTTPS URL in production`);
       }
     }
-    if (
-      !String(config.BREVO_API_KEY ?? '').trim()
-    ) {
-      throw new Error(
-        'Production email delivery requires BREVO_API_KEY',
-      );
+    if (!String(config.BREVO_API_KEY ?? '').trim()) {
+      throw new Error('Production email delivery requires BREVO_API_KEY');
     }
     for (const key of [
       'FRONTEND_URL',
