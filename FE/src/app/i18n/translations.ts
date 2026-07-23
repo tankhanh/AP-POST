@@ -475,7 +475,7 @@ export const ENGLISH_PHRASES: Record<string, string> = {
     'Can a branch view orders from another branch?',
   'Chi nhánh đã được chuyển vào thùng rác.': 'The branch was moved to trash.',
   'Chi nhánh làm việc': 'Work branch',
-  'Chỉ nhận JPG/PNG tối đa 1 MB.': 'JPG/PNG only, up to 1 MB.',
+  'Chỉ nhận JPG/PNG tối đa 2 MB.': 'JPG/PNG only, up to 2 MB.',
   'Chi tiết các thành phần tính phí vận chuyển': 'Shipping fee breakdown',
   'Chi tiết thanh toán': 'Payment details',
   'Chọn shipper': 'Select shipper',
