@@ -143,12 +143,12 @@
           <span>{{ proofName(job._id) || 'Thêm ảnh giao hàng' }}</span>
           <input
             type="file"
-            accept="image/jpeg,image/png"
+            accept="image/jpeg,image/png,image/heic,image/heif"
             capture="environment"
             (change)="selectProof(job._id, $event)"
           />
         </label>
-        <small>JPG/PNG, tối đa 1 MB</small>
+        <small>JPG/PNG/HEIC, tối đa 20 MB</small>
       </div>
 
       <div class="job-actions">

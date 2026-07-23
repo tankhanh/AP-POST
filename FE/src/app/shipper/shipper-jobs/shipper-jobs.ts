@@ -322,12 +322,65 @@ export class ShipperJobs implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 2048 * 2048) {
+    if (
+      !['image/jpeg', 'image/png', 'image/heic', 'image/heif'].includes(file.type) ||
+      file.size > 20 * 1024 * 1024
+    ) {
       input.value = '';
-      void Swal.fire('Ảnh không hợp lệ', 'Chỉ nhận JPG/PNG tối đa 2 MB.', 'warning');
+      void Swal.fire('Ảnh không hợp lệ', 'Chỉ nhận JPG/PNG/HEIC, tối đa 20 MB.', 'warning');
       return;
     }
-    this.proofFiles.set(jobId, file);
+    // Nén ảnh nếu dung lượng > 1.5MB để giảm thời gian upload trên mobile
+    if (file.size > 1.5 * 1024 * 1024) {
+      this.compressImage(file).then((compressed) => {
+        this.proofFiles.set(jobId, compressed);
+      }).catch(() => {
+        this.proofFiles.set(jobId, file);
+      });
+    } else {
+      this.proofFiles.set(jobId, file);
+    }
+  }
+
+  private compressImage(file: File): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        const MAX_DIM = 1920;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height / width) * MAX_DIM);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width / height) * MAX_DIM);
+            height = MAX_DIM;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(file); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return; }
+            const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressed);
+          },
+          'image/jpeg',
+          0.8,
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+      img.src = url;
+    });
   }
 
   proofName(jobId: string): string {
