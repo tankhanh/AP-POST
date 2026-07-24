@@ -99,6 +99,8 @@ describe('validateEnvironment', () => {
         JWT_REFRESH_TOKEN: 'b'.repeat(40),
         CORS_ORIGINS: 'https://app.example.com',
       }),
-    ).toThrow('Production email delivery requires BREVO_API_KEY and BREVO_SENDER_EMAIL');
+    ).toThrow(
+      'Production email delivery requires BREVO_API_KEY and BREVO_SENDER_EMAIL',
+    );
   });
 });
