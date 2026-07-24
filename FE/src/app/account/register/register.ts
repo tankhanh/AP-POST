@@ -51,8 +51,6 @@ export class Register implements OnInit {
       phone: this.phone,
       email: this.email,
       password: this.password,
-      status: false,
-      balance: 0,
     };
 
     this.authService.register(userData).subscribe({
