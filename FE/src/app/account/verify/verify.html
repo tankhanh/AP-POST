@@ -43,6 +43,29 @@
 
         <button type="submit" class="btn btn-primary btn-lg w-100">Xác nhận</button>
       </form>
+
+      @if (!successMessage) {
+        <div class="text-center mt-3">
+          <button
+            type="button"
+            class="btn btn-link"
+            (click)="retryCode()"
+            [disabled]="isResending"
+          >
+            @if (!isResending) {
+              <iconify-icon icon="mdi:email-sync"></iconify-icon>
+              Gửi lại mã xác nhận
+            } @else {
+              <iconify-icon
+                icon="mdi:loading"
+                class="animate-spin"
+                aria-hidden="true"
+              ></iconify-icon>
+              Đang gửi...
+            }
+          </button>
+        </div>
+      }
     </div>
   </div>
 </section>

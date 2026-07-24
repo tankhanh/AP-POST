@@ -157,6 +157,20 @@ export class UsersService {
       throw new BadRequestException(`Email: ${emailNorm} is existed.`);
     }
 
+    // Kiểm tra phone trùng nếu có
+    const phoneNorm = this.normalizePhone(phone);
+    if (phoneNorm) {
+      const phoneExist = await this.userModel.findOne({
+        phone: phoneNorm,
+        isDeleted: false,
+      });
+      if (phoneExist) {
+        throw new BadRequestException(
+          `Số điện thoại ${phoneNorm} đã được sử dụng.`,
+        );
+      }
+    }
+
     // mã 6 ký tự
     const codeId = this.generateCode6();
     const hashPassword = this.getHashPassword(password);
@@ -168,11 +182,11 @@ export class UsersService {
       age,
       gender,
       address,
-      phone: this.normalizePhone(phone),
+      phone: phoneNorm,
       role: 'USER',
       isActive: false,
       codeId: this.hashVerificationCode(codeId),
-      codeExpired: dayjs().add(30, 'minute'),
+      codeExpired: dayjs().add(5, 'minute'),
     });
 
     await this.sendVerificationEmail(emailNorm, name, codeId);
@@ -252,7 +266,7 @@ export class UsersService {
       { _id: user._id },
       {
         codeId: this.hashVerificationCode(codeId),
-        codeExpired: dayjs().add(30, 'minute'),
+        codeExpired: dayjs().add(5, 'minute'),
       },
     );
 

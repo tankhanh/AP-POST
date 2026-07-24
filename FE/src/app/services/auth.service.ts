@@ -107,6 +107,10 @@ export class AuthService {
     return this.http.post(`${this.authUrl}/check-code`, data);
   }
 
+  resendVerificationCode(email: string): Observable<unknown> {
+    return this.http.post(`${this.authUrl}/retry-active`, { email });
+  }
+
   requestPasswordReset(email: string): Observable<unknown> {
     return this.http.post(`${this.authUrl}/retry-password`, { email });
   }

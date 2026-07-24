@@ -1,43 +1,50 @@
-<html lang='en'>
+<html lang='vi'>
 
   <head>
     <meta charset='UTF-8' />
     <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-    <title>Account Activation</title>
+    <title>Kích hoạt tài khoản AP Post</title>
     <style>
       body { margin: 0; padding: 0; font-family: Arial, sans-serif;
       background-color: #f4f4f4; color: #333333; } .container { max-width:
       600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px;
       overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); } .header {
-      background-color: #0070f3; color: #ffffff; padding: 24px; text-align:
-      center; } .header h1 { margin: 0; font-size: 24px; } .content { padding:
-      24px; font-size: 16px; line-height: 1.6; } .content h2 { font-size: 22px;
-      color: #0070f3; text-align: center; margin: 20px 0; } .footer {
-      background-color: #f0f0f0; padding: 16px 24px; font-size: 14px; color:
-      #666666; text-align: center; } a { color: #0070f3; text-decoration: none;
-      } a:hover { text-decoration: underline; }
+      background-color: #0d6efd; color: #ffffff; padding: 24px; text-align:
+      center; } .header h1 { margin: 0; font-size: 24px; } .header .brand {
+      font-size: 28px; font-weight: bold; letter-spacing: 2px; } .content {
+      padding: 24px; font-size: 16px; line-height: 1.6; } .content .code-box {
+      background-color: #f0f4ff; border: 2px dashed #0d6efd; border-radius:
+      8px; padding: 20px; text-align: center; margin: 24px 0; } .content .code-box
+      h2 { font-size: 36px; color: #0d6efd; letter-spacing: 6px; margin: 0; }
+      .footer { background-color: #f0f0f0; padding: 16px 24px; font-size: 14px;
+      color: #666666; text-align: center; } a { color: #0d6efd; text-decoration:
+      none; } a:hover { text-decoration: underline; }
     </style>
   </head>
 
   <body>
     <div class='container'>
       <div class='header'>
-        <h1>Welcome to Mail</h1>
+        <div class='brand'>AP Post</div>
+        <h1>Kích hoạt tài khoản</h1>
       </div>
 
       <div class='content'>
-        <p>Hi {{name}},</p>
-        <p>Thank you for registering an account with us.</p>
-        <p>To activate your account, please enter the following activation code:</p>
+        <p>Xin chào <strong>{{name}}</strong>,</p>
+        <p>Cảm ơn bạn đã đăng ký tài khoản tại <strong>AP Post</strong>.</p>
+        <p>Vui lòng nhập mã kích hoạt bên dưới để hoàn tất đăng ký:</p>
 
-        <h2>{{activationCode}}</h2>
+        <div class='code-box'>
+          <h2>{{activationCode}}</h2>
+        </div>
 
-        <p>This code is valid for the next <strong>5 minutes</strong>.</p>
-        <p>If you did not sign up for an account, please ignore this email.</p>
+        <p>Mã có hiệu lực trong vòng <strong>5 phút</strong>.</p>
+        <p>Nếu bạn không đăng ký tài khoản, vui lòng bỏ qua email này.</p>
       </div>
 
       <div class='footer'>
-        <p>If you have any questions, feel free to contact us at
+        <p><strong>AP Post</strong> &mdash; Giải pháp vận chuyển hàng đầu Việt Nam</p>
+        <p>Mọi thắc mắc vui lòng liên hệ
           <a href='mailto:{{supportEmail}}'>{{supportEmail}}</a>
         </p>
       </div>

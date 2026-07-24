@@ -198,7 +198,8 @@ export class RegisterUserDto {
   address?: string;
 
   @IsOptional()
-  phone?: number;
+  @Matches(/^[0-9]{9,15}$/, { message: 'Số điện thoại không hợp lệ' })
+  phone?: string;
 }
 
 export class UserLoginDto {

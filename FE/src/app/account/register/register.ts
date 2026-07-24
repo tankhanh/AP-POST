@@ -60,6 +60,8 @@ export class Register implements OnInit {
         this.isLoading = false;
         if (res.data?._id) {
           localStorage.setItem('pending_user_id', res.data._id);
+          // Lưu email để dùng cho chức năng gửi lại mã
+          sessionStorage.setItem('pending_user_email', this.email);
           this.router.navigate(['/verify'], { queryParams: { user: res.data._id } });
         }
         this.successMessage = 'Đăng ký thành công. Vui lòng xác minh email.';
