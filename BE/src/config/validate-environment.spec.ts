@@ -70,8 +70,8 @@ describe('validateEnvironment', () => {
       JWT_ACCESS_TOKEN_SECRET: 'a'.repeat(40),
       JWT_REFRESH_TOKEN: 'b'.repeat(40),
       CORS_ORIGINS: 'https://app.example.com',
-      BREVO_API_KEY:
-        'xkeysib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      BREVO_API_KEY: 'test-brevo-api-key',
+      BREVO_SENDER_EMAIL: 'no-reply@example.com',
     };
     expect(() =>
       validateEnvironment({
@@ -90,7 +90,7 @@ describe('validateEnvironment', () => {
     ).toThrow('MoMo configuration is incomplete');
   });
 
-  it('requires Brevo API key in production', () => {
+  it('requires Brevo credentials in production', () => {
     expect(() =>
       validateEnvironment({
         ...validConfig,
@@ -99,6 +99,6 @@ describe('validateEnvironment', () => {
         JWT_REFRESH_TOKEN: 'b'.repeat(40),
         CORS_ORIGINS: 'https://app.example.com',
       }),
-    ).toThrow('Production email delivery requires');
+    ).toThrow('Production email delivery requires BREVO_API_KEY and BREVO_SENDER_EMAIL');
   });
 });

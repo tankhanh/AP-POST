@@ -45,11 +45,22 @@ export class MailService {
       configService.get<string>('BREVO_SENDER_EMAIL')?.trim() ?? '';
     this.senderName =
       configService.get<string>('BREVO_SENDER_NAME')?.trim() ?? '';
+
+    if (!this.senderEmail) {
+      this.logger.warn(
+        'BREVO_SENDER_EMAIL chưa được cấu hình; email sẽ không gửi được.',
+      );
+    }
   }
 
   async sendMail(options: TemplateMailOptions) {
     if (!this.brevo) {
       throw new ServiceUnavailableException('Brevo is not configured');
+    }
+    if (!this.senderEmail) {
+      throw new ServiceUnavailableException(
+        'BREVO_SENDER_EMAIL is not configured',
+      );
     }
 
     const html = options.template
@@ -196,12 +207,24 @@ export class MailService {
 
   private async trySend(options: TemplateMailOptions): Promise<boolean> {
     if (!this.brevo) return false;
+    if (!this.senderEmail) {
+      this.logger.warn(
+        'Cannot send email: BREVO_SENDER_EMAIL chưa được cấu hình',
+      );
+      return false;
+    }
 
     try {
       await this.sendMail(options);
+      this.logger.log(
+        `Email sent successfully to ${options.to}: "${options.subject}"`,
+      );
       return true;
     } catch (error) {
-      this.logger.error('Failed to send email', error);
+      this.logger.error(
+        `Failed to send email to ${options.to}: "${options.subject}"`,
+        error,
+      );
       return false;
     }
   }
