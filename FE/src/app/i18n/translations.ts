@@ -1017,6 +1017,18 @@ export const ENGLISH_PHRASES: Record<string, string> = {
 
   'JPG/PNG/HEIC, tối đa 20 MB. Ảnh là bắt buộc để hoàn tất và đối soát giao hàng.':
     'JPG, PNG, or HEIC, up to 20 MB. A photo is required to complete delivery and support reconciliation.',
+  'Gửi lại mã thất bại. Vui lòng thử lại sau.':
+    'Failed to resend the verification code. Please try again later.',
+
+  'Gửi lại mã xác nhận': 'Resend verification code',
+
+  'Không tìm thấy email để gửi lại mã.':
+    'No email address was found to resend the verification code.',
+
+  'Mã xác nhận đã được gửi lại. Vui lòng kiểm tra email.':
+    'The verification code has been resent. Please check your email.',
+
+  'Thiếu thông tin người dùng.': 'Missing user information.',
 };
 
 export const ENGLISH_ATTRIBUTES: Record<string, string> = {
@@ -1088,4 +1100,5 @@ export const ENGLISH_ATTRIBUTES: Record<string, string> = {
   'Xóa từ khóa': 'Clear search',
   'Điều hướng chính của shipper': 'Primary shipper navigation',
   'Ảnh bằng chứng giao hàng': 'Delivery proof photo',
+  'Tối thiểu 8 ký tự': 'At least 8 characters',
 };
