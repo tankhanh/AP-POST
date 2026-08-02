@@ -65,6 +65,11 @@
     "socket.io": "^4.8.3",
     "swagger-ui-express": "^5.0.1"
   },
+  "overrides": {
+    "@nestjs/swagger": {
+      "js-yaml": "5.2.2"
+    }
+  },
   "devDependencies": {
     "@nestjs/cli": "11.0.24",
     "@nestjs/schematics": "11.1.0",
