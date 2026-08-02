@@ -18,11 +18,12 @@ import { firstValueFrom, merge, startWith } from 'rxjs';
 import { DualMapComponent } from '../../../shared/app-dual-map/app-dual-map';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PaymentRecoveryService } from '../../../services/payment-recovery.service';
+import { CurrencyInputDirective } from '../../../shared/currency-input.directive';
 
 @Component({
   selector: 'app-create-order',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, DualMapComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, DualMapComponent, CurrencyInputDirective],
   templateUrl: './createOrder.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
@@ -71,7 +72,9 @@ export class CreateOrder implements OnInit {
       this.orderForm
         .get('senderPhone')
         ?.setValidators([Validators.required, Validators.pattern('^[0-9]{9,11}$')]);
-      this.orderForm.get('email')?.setValidators([Validators.required, Validators.email]);
+      this.orderForm
+        .get('email')
+        ?.setValidators([Validators.required, Validators.email, Validators.maxLength(254)]);
       this.orderForm.get('senderPhone')?.updateValueAndValidity();
       this.orderForm.get('email')?.updateValueAndValidity();
     }
@@ -156,21 +159,21 @@ export class CreateOrder implements OnInit {
 
   initForm() {
     this.orderForm = this.fb.group({
-      senderName: ['', Validators.required],
+      senderName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
       senderPhone: [''],
-      receiverName: ['', Validators.required],
+      receiverName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
       receiverPhone: ['', [Validators.required, Validators.pattern('^[0-9]{9,11}$')]],
       pickupProvinceId: ['', Validators.required],
       pickupCommuneId: ['', Validators.required],
-      pickupDetailAddress: ['', Validators.required],
+      pickupDetailAddress: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(300)]],
       deliveryProvinceId: ['', Validators.required],
       deliveryCommuneId: ['', Validators.required],
-      deliveryDetailAddress: ['', Validators.required],
+      deliveryDetailAddress: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(300)]],
       serviceCode: ['STD'],
-      weightKg: [1, [Validators.required, Validators.min(0.01)]],
-      codValue: [0, [Validators.required, Validators.min(0)]],
-      email: [''],
-      details: [''],
+      weightKg: [1, [Validators.required, Validators.min(0.01), Validators.max(1000)]],
+      codValue: [0, [Validators.required, Validators.min(0), Validators.max(1_000_000_000)]],
+      email: ['', [Validators.email, Validators.maxLength(254)]],
+      details: ['', Validators.maxLength(500)],
       pickupLat: [null],
       pickupLng: [null],
       deliveryLat: [null],

@@ -29,7 +29,8 @@ export class ForgetPassword implements OnInit {
     this.successMessage = '';
     this.errorMessage = '';
 
-    if (!this.email) {
+    this.email = this.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.email)) {
       this.errorMessage = 'Vui lòng nhập địa chỉ email của bạn.';
       this.toastr.warning(this.errorMessage, 'Thiếu thông tin');
       return;

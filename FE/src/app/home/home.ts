@@ -2,12 +2,13 @@ import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { ParcelNetworkScene } from '../shared/parcel-network-scene/parcel-network-scene';
 
 @Component({
   selector: 'app-home',
   standalone: true,
   templateUrl: './home.html',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ParcelNetworkScene],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class Home {

@@ -8,7 +8,7 @@ import {
   OnInit,
   PLATFORM_ID,
 } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NotificationCenter } from '../../shared/notification-center/notification-center';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -17,7 +17,7 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'employee-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, NotificationCenter],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NotificationCenter],
   templateUrl: './employee-layout.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

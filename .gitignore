@@ -1,0 +1,104 @@
+# AP Post repository ignore policy
+# Source code, lockfiles, CI workflows, public assets and safe configuration
+# examples remain tracked. Generated, local and sensitive files stay local.
+
+# Dependencies
+**/node_modules/
+
+# Build output and framework caches
+**/dist/
+**/out-tsc/
+**/bazel-out/
+**/.angular/cache/
+**/.cache/
+**/.next/
+**/.nuxt/
+**/.output/
+**/tmp/
+**/temp/
+
+# Test and analysis output
+**/coverage/
+**/.nyc_output/
+**/test-results/
+**/playwright-report/
+**/.eslintcache
+
+# Environment files and secrets
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.template
+!**/.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+
+# Logs and runtime files
+**/logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.pid
+*.pid.lock
+*.seed
+
+# Local databases, dumps and uploaded runtime content
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
+**/uploads/
+
+# IDE and editor state
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+.project
+.classpath
+.settings/
+.c9/
+*.launch
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Local tooling
+.agents/
+.codex/
+connect.lock
+libpeerconnection.log
+testem.log
+typings/
+
+# Package-manager cache and local archives
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+*.tgz
+*.zip
+*.7z
+
+# Keep GitHub documentation focused: only the root README is published.
+**/*.md
+!/README.md

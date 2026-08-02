@@ -2,12 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PricingService } from '../../../services/dashboard/pricing.service';
+import { CurrencyInputDirective } from '../../../shared/currency-input.directive';
 
 @Component({
   selector: 'app-list-pricing',
   templateUrl: './listPricing.html',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CurrencyInputDirective],
 })
 export class ListPricing implements OnInit {
   prices: any[] = [];

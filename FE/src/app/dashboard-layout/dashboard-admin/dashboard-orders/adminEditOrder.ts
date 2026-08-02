@@ -55,25 +55,25 @@ export class AdminEditOrder implements OnInit {
 
   createForm() {
     this.orderForm = this.fb.group({
-      senderName: ['', Validators.required],
-      receiverName: ['', Validators.required],
+      senderName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
+      receiverName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
       receiverPhone: ['', [Validators.required, Validators.pattern('^[0-9]{9,11}$')]],
-      email: [''], // ← Thêm trường email
+      email: ['', [Validators.email, Validators.maxLength(254)]],
 
       pickupProvinceId: ['', Validators.required],
       pickupCommuneId: ['', Validators.required],
-      pickupDetailAddress: ['', Validators.required],
+      pickupDetailAddress: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(300)]],
 
       deliveryProvinceId: ['', Validators.required],
       deliveryCommuneId: ['', Validators.required],
-      deliveryDetailAddress: ['', Validators.required],
+      deliveryDetailAddress: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(300)]],
 
       serviceCode: ['STD'],
-      weightKg: [1, [Validators.required, Validators.min(0.01)]],
+      weightKg: [1, [Validators.required, Validators.min(0.01), Validators.max(1000)]],
 
       status: ['PENDING'],
 
-      details: [''],
+      details: ['', Validators.maxLength(500)],
     });
   }
 

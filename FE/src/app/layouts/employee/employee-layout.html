@@ -1,4 +1,5 @@
 @if (!isAuthPage) {
+  <a class="ap-skip-link" href="#main-content">Bỏ qua điều hướng</a>
   <nav class="navbar navbar-expand-lg ap-site-nav">
     <div class="container-fluid px-4">
       <a [routerLink]="['/']" class="navbar-brand ap-nav-brand">
@@ -23,15 +24,15 @@
             <app-notification-center></app-notification-center>
           }
 
-          <a [routerLink]="['/tracking']" class="nav-link">
+          <a [routerLink]="['/tracking']" routerLinkActive="active" class="nav-link">
             <iconify-icon icon="mdi:magnify-scan"></iconify-icon>
             Tra cứu
           </a>
-          <a [routerLink]="['/calculator']" class="nav-link">
+          <a [routerLink]="['/calculator']" routerLinkActive="active" class="nav-link">
             <iconify-icon icon="mdi:calculator-variant"></iconify-icon>
             Tính cước
           </a>
-          <a [routerLink]="['/ship']" class="nav-link">
+          <a [routerLink]="['/ship']" routerLinkActive="active" class="nav-link">
             <iconify-icon icon="mdi:package-variant-closed-plus"></iconify-icon>
             Gửi hàng
           </a>

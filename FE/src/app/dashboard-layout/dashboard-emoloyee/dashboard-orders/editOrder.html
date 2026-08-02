@@ -32,13 +32,13 @@
         </div>
       </div>
     </div>
-    <div class="ap-metric-card" style="background: var(--wise-mint);">
-      <span class="ap-metric-icon" style="background: var(--wise-green); color: #fff;">
+    <div class="ap-metric-card ap-metric-card--highlight">
+      <span class="ap-metric-icon ap-metric-icon--inverse">
         <iconify-icon icon="mdi:receipt-text-check-outline"></iconify-icon>
       </span>
       <div>
-        <div class="ap-metric-label" style="color: var(--wise-green);">TỔNG KHÁCH TRẢ</div>
-        <div class="ap-metric-value" style="color: var(--wise-success);">
+        <div class="ap-metric-label text-success">TỔNG KHÁCH TRẢ</div>
+        <div class="ap-metric-value text-success">
           {{ order.codValue + currentShippingFee | number }} ₫
         </div>
       </div>
@@ -55,7 +55,7 @@
               <iconify-icon icon="mdi:account-arrow-right-outline"></iconify-icon>
             </span>
             <div>
-              <div class="fw-bold" style="font-size: 18px;">Người gửi</div>
+              <div class="ap-form-group-title">Người gửi</div>
             </div>
           </div>
           <div class="mb-3">
@@ -111,7 +111,7 @@
               <iconify-icon icon="mdi:account-check-outline"></iconify-icon>
             </span>
             <div>
-              <div class="fw-bold" style="font-size: 18px;">Người nhận</div>
+              <div class="ap-form-group-title">Người nhận</div>
             </div>
           </div>
           <div class="mb-3">
@@ -189,7 +189,7 @@
               <iconify-icon icon="mdi:clipboard-text-outline"></iconify-icon>
             </span>
             <div>
-              <div class="fw-bold" style="font-size: 18px;">Thông tin bổ sung</div>
+              <div class="ap-form-group-title">Thông tin bổ sung</div>
             </div>
           </div>
           <div class="row g-3">

@@ -52,6 +52,8 @@
               name="name"
               placeholder="Nguyễn Văn A"
               autocomplete="name"
+              minlength="2"
+              maxlength="120"
               required
             />
           </div>
@@ -66,6 +68,10 @@
               name="phone"
               placeholder="0900 000 000"
               autocomplete="tel"
+              inputmode="numeric"
+              pattern="[0-9]{9,11}"
+              minlength="9"
+              maxlength="11"
               required
             />
           </div>
@@ -80,6 +86,7 @@
               name="email"
               placeholder="you@example.com"
               autocomplete="email"
+              maxlength="254"
               required
             />
           </div>
@@ -95,8 +102,11 @@
               placeholder="Tối thiểu 8 ký tự"
               autocomplete="new-password"
               minlength="8"
+              maxlength="72"
+              aria-describedby="passwordRequirements"
               required
             />
+            <small id="passwordRequirements" class="ap-field-hint">Dùng từ 8–72 ký tự và không chia sẻ mật khẩu.</small>
           </div>
 
           @if (errorMessage) {

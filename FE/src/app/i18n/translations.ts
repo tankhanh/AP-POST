@@ -1029,6 +1029,26 @@ export const ENGLISH_PHRASES: Record<string, string> = {
     'The verification code has been resent. Please check your email.',
 
   'Thiếu thông tin người dùng.': 'Missing user information.',
+  'Dùng từ 8–72 ký tự và không chia sẻ mật khẩu.':
+    'Use 8–72 characters and never share your password.',
+  'Địa chỉ email không hợp lệ.': 'The email address is invalid.',
+  'Giá cơ bản phải từ 0 đến 1 tỷ đồng.': 'Base price must be between 0 and VND 1 billion.',
+  'Giá không hợp lệ': 'Invalid price',
+  'Họ và tên phải có từ 2 đến 120 ký tự.': 'Full name must contain 2–120 characters.',
+  'Khoảng ngày không hợp lệ': 'Invalid date range',
+  'Khối lượng không hợp lệ': 'Invalid weight',
+  'Mật khẩu chưa hợp lệ': 'Invalid password',
+  'Mật khẩu phải có từ 8 đến 72 ký tự': 'Password must contain 8–72 characters',
+  'Mật khẩu phải có từ 8 đến 72 ký tự.': 'Password must contain 8–72 characters.',
+  'Ngày kết thúc phải sau ngày bắt đầu.': 'The end date must be after the start date.',
+  'Ngưỡng quá cân phải từ 0 đến 1.000 kg.':
+    'The overweight threshold must be between 0 and 1,000 kg.',
+  'Phụ phí phải từ 0 đến 1 tỷ đồng.': 'The surcharge must be between 0 and VND 1 billion.',
+  'Số điện thoại phải gồm 9 đến 11 chữ số.': 'Phone number must contain 9–11 digits.',
+  'Thông tin chưa hợp lệ': 'Invalid information',
+  'Tối đa 1 tỷ đồng.': 'Maximum VND 1 billion.',
+  'Vui lòng chọn ngày bắt đầu hiệu lực.': 'Please select an effective start date.',
+  'Vui lòng nhập email hợp lệ và mật khẩu.': 'Please enter a valid email and password.',
 };
 
 export const ENGLISH_ATTRIBUTES: Record<string, string> = {

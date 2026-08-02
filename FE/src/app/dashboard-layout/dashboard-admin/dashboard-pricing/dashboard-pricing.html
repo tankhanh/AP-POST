@@ -50,7 +50,7 @@
         </tr>
 
         <tr *ngIf="pricing.length === 0">
-          <td colspan="8" class="ap-empty-state" style="border: none;">
+          <td colspan="8" class="ap-empty-state border-0">
             <iconify-icon icon="mdi:table-cog"></iconify-icon>
             <p>Chưa có bảng giá nào</p>
           </td>
@@ -112,10 +112,11 @@
           <label for="basePrice">Giá cơ bản (đ) *</label>
           <input
             id="basePrice"
-            type="number"
+            apCurrencyInput
+            [currencyMax]="1000000000"
             [(ngModel)]="selected.basePrice"
             name="basePrice"
-            min="0"
+            required
             title="Nhập giá cơ bản cho dịch vụ"
           />
         </div>
@@ -129,6 +130,9 @@
             [(ngModel)]="selected.overweightThresholdKg"
             name="overweightThresholdKg"
             min="0"
+            max="1000"
+            step="0.1"
+            required
             title="Khối lượng bắt đầu tính phụ phí"
           />
         </div>
@@ -138,10 +142,11 @@
           <label for="overFee">Phụ phí quá cân (đ) *</label>
           <input
             id="overFee"
-            type="number"
+            apCurrencyInput
+            [currencyMax]="1000000000"
             [(ngModel)]="selected.overweightFee"
             name="overweightFee"
-            min="0"
+            required
             title="Số tiền phụ phí khi quá cân"
           />
         </div>

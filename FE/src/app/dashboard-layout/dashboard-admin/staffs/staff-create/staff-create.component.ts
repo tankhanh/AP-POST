@@ -35,7 +35,7 @@ export class StaffCreateComponent implements OnInit {
   ) {
     this.addForm = this.fb.group(
       {
-        name: ['', Validators.required],
+        name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
         email: ['', [Validators.required, Validators.email]],
 
         // khớp với DTO: branchId
@@ -44,7 +44,7 @@ export class StaffCreateComponent implements OnInit {
         // mặc định ĐANG HOẠT ĐỘNG
         isActive: [true],
 
-        password: ['', [Validators.required, Validators.minLength(6)]],
+        password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(72)]],
         confirmPassword: ['', Validators.required],
       },
       {

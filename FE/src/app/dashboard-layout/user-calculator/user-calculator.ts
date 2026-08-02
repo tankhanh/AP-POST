@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { env } from '../../environments/environment';
+import { CurrencyInputDirective } from '../../shared/currency-input.directive';
 
 interface ShippingRequest {
   originProvinceCode: string;
@@ -42,7 +43,7 @@ type ShippingForm = ShippingRequest & {
   standalone: true,
   templateUrl: './user-calculator.html',
   styleUrls: ['./user-calculator.scss'],
-  imports: [CommonModule, FormsModule, DecimalPipe, RouterLink],
+  imports: [CommonModule, FormsModule, DecimalPipe, RouterLink, CurrencyInputDirective],
 })
 export class CalculateShippingComponent implements OnInit {
   private http = inject(HttpClient);

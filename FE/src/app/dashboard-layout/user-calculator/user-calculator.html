@@ -79,14 +79,15 @@
           <label for="cod">Tiền hàng (COD)</label>
           <input
             id="cod"
-            type="number"
+            apCurrencyInput
+            [currencyMax]="1000000000"
             min="0"
-            step="1000"
             [(ngModel)]="formData.codValue"
             name="codValue"
-            placeholder="VD: 150000"
-            inputmode="numeric"
+            placeholder="VD: 150.000"
+            aria-describedby="codHelp"
           />
+          <small id="codHelp" class="ap-field-hint">Tối đa 1 tỷ đồng.</small>
         </div>
       </div>
 

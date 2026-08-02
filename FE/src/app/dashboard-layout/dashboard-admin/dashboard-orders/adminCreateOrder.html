@@ -82,11 +82,14 @@
             <label class="form-label fw-semibold mb-2" for="codValue">Giá trị hàng (VNĐ)</label>
             <input
               id="codValue"
-              type="number"
+              apCurrencyInput
+              [currencyMax]="1000000000"
               class="form-control"
               formControlName="codValue"
               placeholder="0"
+              aria-describedby="adminCodValueHelp"
             />
+            <small id="adminCodValueHelp" class="ap-field-hint">Tối đa 1 tỷ đồng.</small>
           </div>
           <div class="col-md-4">
             <label class="form-label fw-semibold mb-2" for="shippingFeePayer"

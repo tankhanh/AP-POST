@@ -42,9 +42,9 @@ export class BranchUpdateComponent implements OnInit {
 
     // Khởi tạo form
     this.editForm = this.formBuilder.group({
-      code: ['', Validators.required],
-      name: ['', Validators.required],
-      address: ['', Validators.required],
+      code: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9_-]{2,30}$/)]],
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
+      address: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(300)]],
       phone: [
         '',
         [
@@ -54,7 +54,7 @@ export class BranchUpdateComponent implements OnInit {
       ],
       province: ['', Validators.required],
       ward: ['', Validators.required],
-      note: [''],
+      note: ['', Validators.maxLength(500)],
       isActive: [true],
     });
 

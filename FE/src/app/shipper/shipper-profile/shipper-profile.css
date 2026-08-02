@@ -8,7 +8,8 @@ header {
   align-items: center;
   gap: 14px;
   padding: 18px;
-  border-radius: 24px;
+  border: 1px solid rgba(22, 51, 0, 0.08);
+  border-radius: 28px;
   color: #163300;
   background: #dff8cf;
 }
@@ -37,7 +38,8 @@ header {
 h1 {
   margin: 3px 0;
   font-size: 25px;
-  line-height: 1;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
 }
 
 p {
@@ -50,8 +52,9 @@ form {
   gap: 14px;
   padding: 18px;
   border: 1px solid rgba(14, 15, 12, 0.1);
-  border-radius: 24px;
-  background: #fff;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 34px rgba(14, 15, 12, 0.05);
 }
 
 .availability-card {

@@ -47,6 +47,12 @@ export class ResetPassword {
       return;
     }
 
+    if (this.newPassword.length < 8 || this.newPassword.length > 72) {
+      this.errorMessage = 'Mật khẩu phải có từ 8 đến 72 ký tự.';
+      this.toastr.warning(this.errorMessage, 'Mật khẩu chưa hợp lệ');
+      return;
+    }
+
     this.authService
       .resetPassword({
         email: this.email,

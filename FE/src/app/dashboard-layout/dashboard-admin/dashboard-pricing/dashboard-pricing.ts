@@ -5,6 +5,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import Swal from 'sweetalert2';
 import { env } from '../../../environments/environment';
+import { CurrencyInputDirective } from '../../../shared/currency-input.directive';
 
 interface IService {
   _id: string;
@@ -28,7 +29,7 @@ interface IPricing {
   standalone: true,
   templateUrl: './dashboard-pricing.html',
   styleUrls: ['./dashboard-pricing.scss'],
-  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe],
+  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, CurrencyInputDirective],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class DashboardPricingComponent implements OnInit {
@@ -167,11 +168,35 @@ export class DashboardPricingComponent implements OnInit {
       return;
     }
 
+    const basePrice = Number(this.selected.basePrice);
+    const threshold = Number(this.selected.overweightThresholdKg);
+    const overweightFee = Number(this.selected.overweightFee);
+    if (!Number.isFinite(basePrice) || basePrice < 0 || basePrice > 1_000_000_000) {
+      this.toastr.warning('Giá cơ bản phải từ 0 đến 1 tỷ đồng.', 'Giá không hợp lệ');
+      return;
+    }
+    if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1000) {
+      this.toastr.warning('Ngưỡng quá cân phải từ 0 đến 1.000 kg.', 'Khối lượng không hợp lệ');
+      return;
+    }
+    if (!Number.isFinite(overweightFee) || overweightFee < 0 || overweightFee > 1_000_000_000) {
+      this.toastr.warning('Phụ phí phải từ 0 đến 1 tỷ đồng.', 'Giá không hợp lệ');
+      return;
+    }
+    if (!this.selected.effectiveFrom) {
+      this.toastr.warning('Vui lòng chọn ngày bắt đầu hiệu lực.', 'Thiếu thông tin');
+      return;
+    }
+    if (this.selected.effectiveTo && this.selected.effectiveTo < this.selected.effectiveFrom) {
+      this.toastr.warning('Ngày kết thúc phải sau ngày bắt đầu.', 'Khoảng ngày không hợp lệ');
+      return;
+    }
+
     const body: any = {
       serviceId: this.selected.serviceId,
-      basePrice: Number(this.selected.basePrice || 0),
-      overweightThresholdKg: Number(this.selected.overweightThresholdKg || 0),
-      overweightFee: Number(this.selected.overweightFee || 0),
+      basePrice,
+      overweightThresholdKg: threshold,
+      overweightFee,
       isActive: this.selected.isActive,
       effectiveFrom: this.selected.effectiveFrom
         ? new Date(this.selected.effectiveFrom)

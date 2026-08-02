@@ -30,7 +30,7 @@
         <label class="form-label" for="pricingMin">Giá từ</label>
         <input
           id="pricingMin"
-          type="number"
+          apCurrencyInput
           class="form-control"
           [(ngModel)]="filters.minPrice"
           name="minPrice"
@@ -43,7 +43,7 @@
         <label class="form-label" for="pricingMax">Giá đến</label>
         <input
           id="pricingMax"
-          type="number"
+          apCurrencyInput
           class="form-control"
           [(ngModel)]="filters.maxPrice"
           name="maxPrice"

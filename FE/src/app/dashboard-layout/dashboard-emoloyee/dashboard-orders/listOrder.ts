@@ -6,12 +6,13 @@ import { PaymentRecoveryService } from '../../../services/payment-recovery.servi
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { AuthService } from '../../../services/auth.service';
+import { CurrencyInputDirective } from '../../../shared/currency-input.directive';
 
 @Component({
   selector: 'app-list-order',
   templateUrl: './listOrder.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, RouterLink],
+  imports: [CommonModule, FormsModule, DecimalPipe, DatePipe, RouterLink, CurrencyInputDirective],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class ListOrder implements OnInit {
@@ -229,7 +230,7 @@ export class ListOrder implements OnInit {
 <!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Vận đơn ${order.waybill || order._id}</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 15px; width: 148mm; min-height: 210mm; background: white; }
+  body { font-family: Inter, 'Segoe UI', Arial, sans-serif; margin: 0; padding: 15px; width: 148mm; min-height: 210mm; background: white; }
   .container { border: 2px solid #000; padding: 20px; border-radius: 10px; }
   .header img { height: 60px; display: block; margin: 0 auto 10px; }
   .header h1 { text-align: center; margin: 10px 0; color: #1976d2; font-size: 24px; }

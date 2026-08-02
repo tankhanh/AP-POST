@@ -31,9 +31,33 @@ export class Register implements OnInit {
   ngOnInit() {}
 
   register() {
+    this.name = this.name.trim().replace(/\s+/g, ' ');
+    this.phone = this.phone.replace(/\D/g, '');
+    this.email = this.email.trim().toLowerCase();
     if (!this.name || !this.phone || !this.email || !this.password) {
       this.errorMessage = 'Vui lòng nhập đầy đủ thông tin.';
       this.toastr.error(this.errorMessage);
+      return;
+    }
+
+    if (this.name.length < 2 || this.name.length > 120) {
+      this.errorMessage = 'Họ và tên phải có từ 2 đến 120 ký tự.';
+      this.toastr.warning(this.errorMessage);
+      return;
+    }
+    if (!/^[0-9]{9,11}$/.test(this.phone)) {
+      this.errorMessage = 'Số điện thoại phải gồm 9 đến 11 chữ số.';
+      this.toastr.warning(this.errorMessage);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.email)) {
+      this.errorMessage = 'Địa chỉ email không hợp lệ.';
+      this.toastr.warning(this.errorMessage);
+      return;
+    }
+    if (this.password.length < 8 || this.password.length > 72) {
+      this.errorMessage = 'Mật khẩu phải có từ 8 đến 72 ký tự.';
+      this.toastr.warning(this.errorMessage);
       return;
     }
 

@@ -1,7 +1,9 @@
 :host {
   display: block;
   min-height: 100dvh;
-  background: #f5f6f2;
+  background:
+    radial-gradient(circle at 90% 0, rgba(159, 232, 112, 0.16), transparent 24rem),
+    #f7f7f3;
 }
 
 .shipper-shell {
@@ -36,7 +38,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
-  border-bottom: 1px solid rgba(14, 15, 12, 0.1);
+  border-bottom: 1px solid rgba(14, 15, 12, 0.08);
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(18px);
 }
@@ -106,7 +108,7 @@
 }
 
 .shipper-content {
-  width: min(720px, 100%);
+  width: min(780px, 100%);
   margin-inline: auto;
   padding: 18px 16px 28px;
 }
@@ -160,7 +162,8 @@
   }
 
   .shipper-content {
-    padding-top: 28px;
+    padding-top: 36px;
+    padding-inline: 24px;
   }
 
   .driver-name {
@@ -171,7 +174,7 @@
     right: 24px;
     bottom: 24px;
     left: 50%;
-    width: min(600px, calc(100% - 48px));
+    width: min(640px, calc(100% - 48px));
     transform: translateX(-50%);
     border: 1px solid rgba(14, 15, 12, 0.12);
     border-radius: 24px;

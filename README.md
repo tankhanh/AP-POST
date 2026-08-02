@@ -1,22 +1,77 @@
 # AP Post
 
-Hệ thống quản lý giao nhận gồm Angular 20 ở `FE/` và NestJS 11 + MongoDB ở
-`BE/`. Project hỗ trợ đặt đơn B2C/B2B, vận đơn, tracking, thông báo thời gian
-thực, thanh toán MoMo/VNPAY, giao diện Việt/Anh và quy trình giao hàng dành riêng
-cho Shipper trên thiết bị di động.
+AP Post là nền tảng quản lý giao nhận và vận hành bưu kiện, được xây dựng để kết nối khách hàng, nhân viên, quản trị viên và shipper trong một quy trình thống nhất. Dự án hướng đến trải nghiệm gửi hàng nhanh, theo dõi minh bạch và quản lý vận hành tập trung trên cả máy tính lẫn thiết bị di động.
 
-Báo cáo đầy đủ về chức năng, phần còn thiếu và checklist go-live nằm tại
-[`docs/PROJECT_AUDIT_PRODUCTION.md`](docs/PROJECT_AUDIT_PRODUCTION.md).
-Hướng dẫn cấu hình và phát hành VNPAY/i18n/Shipper nằm tại
-[`docs/VNPAY_I18N_SHIPPER_RELEASE.md`](docs/VNPAY_I18N_SHIPPER_RELEASE.md).
+## Tổng quan
 
-## Yêu cầu
+Hệ thống gồm hai phần chính:
 
-- Node.js 20.19 trở lên
-- npm 10 trở lên
-- MongoDB 7 trở lên (local hoặc MongoDB Atlas)
+- **Frontend:** Angular 20, Bootstrap 5, Chart.js, Leaflet và Three.js.
+- **Backend:** NestJS 11, MongoDB, Mongoose, Socket.IO và JWT.
 
-## Chạy local
+Giao diện hỗ trợ tiếng Việt và tiếng Anh, thiết kế responsive, validation biểu mẫu, định dạng tiền tệ và các luồng riêng theo từng vai trò.
+
+## AP Post đáp ứng được gì?
+
+### Dành cho khách hàng
+
+- Tạo và quản lý đơn giao hàng.
+- Tra cứu trạng thái đơn bằng mã vận đơn.
+- Ước tính cước phí trước khi gửi.
+- Theo dõi hành trình giao nhận.
+- Đăng ký, đăng nhập, xác minh và khôi phục mật khẩu.
+- Thanh toán qua các cổng tích hợp như MoMo và VNPAY.
+
+### Dành cho nhân viên vận hành
+
+- Tạo, cập nhật và quản lý danh sách đơn hàng.
+- Theo dõi trạng thái xử lý và tiến trình giao nhận.
+- Tra cứu bảng giá, chi nhánh và thông tin liên quan.
+- In thông tin đơn hàng phục vụ vận hành.
+
+### Dành cho quản trị viên
+
+- Theo dõi dashboard, doanh thu và chỉ số vận hành.
+- Quản lý đơn hàng, nhân viên, shipper và chi nhánh.
+- Cấu hình dịch vụ, bảng giá và chính sách tính cước.
+- Theo dõi đơn chậm, đơn hủy/hoàn và hiệu suất giao hàng.
+
+### Dành cho shipper
+
+- Nhận và theo dõi công việc được phân công.
+- Xem chi tiết điểm lấy hàng và giao hàng.
+- Cập nhật trạng thái trong quá trình vận chuyển.
+- Xem lịch sử giao hàng và quản lý hồ sơ cá nhân.
+
+### Nền tảng kỹ thuật
+
+- Phân quyền truy cập theo vai trò bằng guard và JWT.
+- Cập nhật thời gian thực bằng WebSocket/Socket.IO.
+- Bản đồ và định tuyến giao nhận bằng Leaflet.
+- Giao diện trực quan Three.js trên trang chủ.
+- API có validation, rate limiting, bảo mật HTTP và health check.
+- Service worker hỗ trợ khả năng vận hành theo hướng PWA.
+- CI tự động kiểm tra frontend và backend trước khi triển khai.
+
+## Cấu trúc dự án
+
+```text
+AP-POST/
+├── FE/                 # Ứng dụng Angular
+├── BE/                 # API NestJS và MongoDB
+├── .github/workflows/  # CI và quy trình triển khai
+└── README.md           # Tài liệu tổng quan duy nhất được công khai
+```
+
+## Yêu cầu môi trường
+
+- Node.js 20.19 trở lên.
+- npm 10 trở lên.
+- MongoDB 7 hoặc MongoDB Atlas.
+
+## Khởi chạy dự án
+
+### 1. Backend
 
 ```bash
 cd BE
@@ -25,11 +80,11 @@ npm ci
 npm run dev
 ```
 
-Điền tối thiểu `MONGO_URL`, hai JWT secret và thời hạn token theo
-`BE/.env.example`. Backend mặc định chạy tại `http://localhost:8000/api/v1`;
-Swagger chỉ bật ngoài production tại `http://localhost:8000/docs`.
+Cập nhật các biến môi trường trong `BE/.env` trước khi chạy. Backend mặc định phục vụ API tại `http://localhost:8000/api/v1`. Swagger có thể được bật ở môi trường phát triển tại `http://localhost:8000/docs`.
 
-Ở terminal khác:
+### 2. Frontend
+
+Mở terminal khác:
 
 ```bash
 cd FE
@@ -37,13 +92,13 @@ npm ci
 npm start
 ```
 
-Frontend chạy tại `http://localhost:4200`. Khách chưa đăng nhập có thể tạo đơn tại
-`/ship`; OTP được gửi đến email đã nhập. URL API được chọn theo hostname và có thể
-ghi đè lúc deploy bằng `/runtime-config.js`:
+Frontend mặc định chạy tại `http://localhost:4200`.
+
+Có thể cấu hình API khi triển khai bằng `runtime-config.js`:
 
 ```js
 window.__AP_POST_CONFIG__ = {
-  apiBaseUrl: "https://api.example.com/api/v1",
+  apiBaseUrl: 'https://api.example.com/api/v1',
 };
 ```
 
@@ -53,39 +108,39 @@ window.__AP_POST_CONFIG__ = {
 # Backend
 cd BE
 npm run check
-npm audit
 
 # Frontend
 cd FE
 npm run build
 npm run test:ci
-npm audit
+npm run i18n:audit
 ```
 
-CI tự động thực hiện audit, format check, lint, unit test và production build
-cho mỗi pull request/push lên `main`.
+## Biến môi trường và bảo mật
 
-## Cấu hình tích hợp
+Các file `.env` không được commit. Chỉ `BE/.env.example` được lưu trong repository để mô tả cấu hình cần thiết, bao gồm:
 
-- SMTP: `EMAIL_*`
-- MoMo: `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`
-- VNPAY: `VNPAY_URL`, `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_RETURN_URL`
-- CORS HTTP/WebSocket: danh sách phân cách bằng dấu phẩy trong `CORS_ORIGINS`
+- MongoDB và JWT.
+- SMTP/Brevo phục vụ email xác minh.
+- MoMo và VNPAY.
+- CORS cho HTTP và WebSocket.
+- Cấu hình môi trường production.
 
-Callback/IPN phải trỏ về HTTPS public của backend. Trạng thái thanh toán chỉ
-được cập nhật từ callback/IPN đã xác thực. Production dùng IPN GET làm nguồn xác
-nhận; signed Return chỉ được phép đối soát ở local khi `VNPAY_CONFIRM_ON_RETURN=true`.
-Thanh toán QR/VietQR đã được gỡ khỏi luồng tạo đơn.
+Không đưa secret, khóa riêng, chứng thư, dữ liệu database, log hoặc nội dung upload runtime lên GitHub.
 
-## Triển khai
+## Định hướng phát triển
 
-- Vercel frontend cần các secret `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
-  `VERCEL_PROJECT_ID`.
-- Render backend cần `RENDER_API_KEY`, `RENDER_SERVICE_ID` và toàn bộ biến môi
-  trường production trong `BE/.env.example`.
-- Đặt `NODE_ENV=production`, `SWAGGER_ENABLED=false`, dùng secret ngẫu nhiên
-  khác nhau, và không commit file `.env`.
-- Chạy `npm run db:indexes` trong `BE/` khi triển khai schema/index mới. Lệnh chỉ
-  tạo index được khai báo và không tự xóa index hiện có.
-- Frontend production có service worker; đảm bảo output chứa `ngsw.json` và
-  `ngsw-worker.js` trước khi deploy.
+Trong các phiên bản tiếp theo, AP Post dự kiến tập trung vào:
+
+- Tối ưu tuyến giao hàng dựa trên vị trí, tải trọng và thời gian thực.
+- Nâng cấp theo dõi bản đồ trực tiếp và dự báo thời gian giao dự kiến.
+- Hoàn thiện PWA, thông báo đẩy và trải nghiệm offline có kiểm soát.
+- Mở rộng báo cáo vận hành, đối soát COD và phân tích hiệu suất.
+- Bổ sung kiểm thử end-to-end và kiểm thử tải cho các luồng quan trọng.
+- Tăng cường quan sát hệ thống bằng logging tập trung, metrics và cảnh báo.
+- Chuẩn hóa quy trình triển khai container, staging và rollback.
+- Nâng cao khả năng tiếp cận, hiệu năng và trải nghiệm trên thiết bị cấu hình thấp.
+
+## Chính sách file Git
+
+Repository chỉ theo dõi mã nguồn, lockfile, workflow CI/CD, tài nguyên công khai và file cấu hình mẫu an toàn. File sinh ra khi build, dependency, cache, log, biến môi trường, secret, dữ liệu cục bộ và tài liệu Markdown nội bộ đều bị bỏ qua. `README.md` ở thư mục gốc là file Markdown duy nhất được công khai trên GitHub.

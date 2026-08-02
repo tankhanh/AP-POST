@@ -32,6 +32,12 @@ export class Login implements OnInit {
 
   login() {
     this.errorMessage = '';
+    this.email = this.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.email) || !this.password) {
+      this.errorMessage = 'Vui lòng nhập email hợp lệ và mật khẩu.';
+      this.toastr.warning(this.errorMessage, 'Thông tin chưa hợp lệ');
+      return;
+    }
     this.isLoading = true;
 
     this.authService.login(this.email, this.password).subscribe({
